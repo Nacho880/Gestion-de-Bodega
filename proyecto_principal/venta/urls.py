@@ -17,15 +17,8 @@ urlpatterns = [
     path('editar_ajax/<int:id>/', views.editar_venta_ajax, name='editar_venta_ajax'),
     path('autocomplete_productos/', views.autocomplete_productos, name='autocomplete_productos'),
     path('autocomplete_sucursales/', views.autocomplete_sucursales, name='autocomplete_sucursales'),
-    path('reembolsos/', views.listar_reembolsos, name='listar_reembolsos'),
-
-    path('reembolsos/exportar/excel/', views.exportar_reembolsos_excel, name='exportar_reembolsos_excel'),
-    path('reembolsos/exportar/pdf/', views.exportar_reembolsos_pdf, name='exportar_reembolsos_pdf'),
-    path('reembolsos/eliminar/<int:id_reembolso>/', views.eliminar_reembolso, name='eliminar_reembolso'),
-    path('reembolsos/restaurar/<int:id_reembolso>/', views.restaurar_reembolso, name='restaurar_reembolso'),
     path('estado/<int:id_venta>/', views.obtener_estado_venta, name='obtener_estado_venta'),
     path('confirmar-entrega/<int:id>/', views.confirmar_entrega, name='confirmar_entrega_venta'),
     path('boleta/<int:id_venta>/', views.boleta_venta, name='boleta_venta'),
-    path('configurar-boleta/', views.configurar_boleta, name='configurar_boleta'),
     path('eliminar-historial/', eliminar_historial_ventas, name='eliminar_historial_ventas'),
 ]

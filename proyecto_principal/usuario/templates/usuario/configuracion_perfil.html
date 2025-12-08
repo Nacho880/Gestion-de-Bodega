@@ -1,0 +1,908 @@
+{% extends 'home/base_main.html' %}
+{% load static %}
+
+{% block title %}Configuración de Perfil - Inventario{% endblock %}
+
+{% block extra_css %}
+<style>
+  /* Mantener el fondo azul del header en modo oscuro */
+  .config-perfil-header {
+    background-color: #0d6efd !important;
+    padding-top: 1.25rem !important;
+    padding-bottom: 1.25rem !important;
+  }
+  
+  [data-theme="dark"] .config-perfil-header {
+    background-color: #0d6efd !important;
+    padding-top: 1.25rem !important;
+    padding-bottom: 1.25rem !important;
+  }
+
+  /* Aplicar estilos de modal-body a la página de configuración en modo oscuro */
+  [data-theme="dark"] .config-perfil-card-body {
+    background: #282828 !important;
+    color: #fff !important;
+  }
+
+  [data-theme="dark"] .config-perfil-card-body input[type="text"],
+  [data-theme="dark"] .config-perfil-card-body input[type="email"],
+  [data-theme="dark"] .config-perfil-card-body input[type="password"],
+  [data-theme="dark"] .config-perfil-card-body .form-control {
+    background-color: #23272b !important;
+    color: #fff !important;
+    border: 2px solid #444 !important;
+  }
+
+  [data-theme="dark"] .config-perfil-card-body input[type="text"]:focus,
+  [data-theme="dark"] .config-perfil-card-body input[type="email"]:focus,
+  [data-theme="dark"] .config-perfil-card-body input[type="password"]:focus,
+  [data-theme="dark"] .config-perfil-card-body .form-control:focus {
+    background-color: #23272b !important;
+    color: #fff !important;
+    border-color: #6b7280 !important;
+    box-shadow: 0 0 0 0.2rem rgba(107, 114, 128, 0.25) !important;
+    outline: none !important;
+  }
+
+  [data-theme="dark"] .config-perfil-card-body input[type="text"]::placeholder,
+  [data-theme="dark"] .config-perfil-card-body input[type="email"]::placeholder,
+  [data-theme="dark"] .config-perfil-card-body input[type="password"]::placeholder {
+    color: #9ca3af !important;
+    opacity: 1 !important;
+  }
+
+  [data-theme="dark"] .config-perfil-card-body .text-muted {
+    color: rgba(255,255,255,0.7) !important;
+  }
+
+  [data-theme="dark"] .config-perfil-card-body .form-label {
+    color: #fff !important;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+  <h1 class="fw-bold mb-4 mt-2">Configuración de Perfil</h1>
+  
+  <div class="row">
+    <div class="col-lg-8 col-xl-6">
+      <div class="card shadow-lg border-0">
+        <div class="card-header bg-primary text-white rounded-top config-perfil-header">
+          <h5 class="mb-0"><i class="bi bi-gear me-2"></i>Editar Mi Perfil</h5>
+        </div>
+        <div class="card-body p-4 config-perfil-card-body">
+          <form id="configuracionForm" method="post">
+            {% csrf_token %}
+            
+            <div class="mb-3">
+              <label for="nombre_usuario" class="form-label fw-semibold">
+                <i class="bi bi-person me-2"></i>Nombre de Usuario
+              </label>
+              <input 
+                type="text" 
+                id="nombre_usuario" 
+                name="nombre_usuario" 
+                class="form-control rounded px-3" 
+                value="{{ usuario.nombre_usuario }}"
+                required 
+                pattern="^[a-zA-Z0-9_]+$" 
+                minlength="3" 
+                maxlength="30" 
+                title="Solo letras, números y guiones bajos" 
+                placeholder="usuario123" 
+                autocomplete="username" 
+              />
+              <div class="form-text">
+                <i class="bi bi-info-circle me-1"></i>
+                Entre 3 y 30 caracteres, solo letras, números y guiones bajos
+              </div>
+              <div id="username-error" class="mt-1" style="display: none;">
+                <small class="text-danger">
+                  <i class="bi bi-x-circle me-1"></i> <span class="error-text"></span>
+                </small>
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label for="correo" class="form-label fw-semibold">
+                <i class="bi bi-envelope me-2"></i>Correo Electrónico
+              </label>
+              <input 
+                type="email" 
+                id="correo" 
+                name="correo" 
+                class="form-control rounded px-3" 
+                value="{{ usuario.correo }}"
+                placeholder="usuario@correo.com" 
+                autocomplete="email" 
+                required
+              />
+              <div id="email-error" class="mt-1" style="display: none;">
+                <small class="text-danger">
+                  <i class="bi bi-x-circle me-1"></i> <span class="error-text"></span>
+                </small>
+              </div>
+            </div>
+
+            <hr class="my-4">
+
+            <div class="mb-3">
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="cambiar_password" name="cambiar_password" value="false">
+                <label class="form-check-label fw-semibold" for="cambiar_password">
+                  <i class="bi bi-key text-primary me-2"></i>
+                  Cambiar contraseña
+                </label>
+              </div>
+            </div>
+
+            <div id="password-section" class="d-none">
+              <!-- Campos de contraseña (mostrar primero) -->
+              <div id="passwordFields">
+                <div class="mb-3">
+                  <label for="password" class="form-label fw-semibold">
+                    <i class="bi bi-lock me-2"></i>Nueva Contraseña
+                  </label>
+                  <input 
+                    type="password" 
+                    id="password" 
+                    name="password" 
+                    class="form-control rounded px-3" 
+                    minlength="8" 
+                    maxlength="50" 
+                    placeholder="Contraseña123" 
+                    autocomplete="off"
+                    data-1p-ignore
+                    data-lpignore="true"
+                    readonly
+                    onfocus="this.removeAttribute('readonly');"
+                  />
+                  <div class="form-text">
+                    <i class="bi bi-shield-lock me-1"></i>
+                    Mínimo 8 caracteres, al menos una mayúscula y un número
+                  </div>
+                  <div id="password-requirements" class="mt-2">
+                    <small id="req-length" class="d-block text-muted">
+                      <i class="bi bi-circle me-1"></i> Mínimo 8 caracteres
+                    </small>
+                    <small id="req-uppercase" class="d-block text-muted">
+                      <i class="bi bi-circle me-1"></i> Al menos una letra mayúscula
+                    </small>
+                    <small id="req-number" class="d-block text-muted">
+                      <i class="bi bi-circle me-1"></i> Al menos un número
+                    </small>
+                  </div>
+                  <div id="password-error" class="mt-1" style="display: none;">
+                    <small class="text-danger">
+                      <i class="bi bi-x-circle me-1"></i> <span class="error-text"></span>
+                    </small>
+                  </div>
+                </div>
+
+                <div class="mb-3">
+                  <label for="password2" class="form-label fw-semibold">
+                    <i class="bi bi-lock-fill me-2"></i>Confirmar Nueva Contraseña
+                  </label>
+                  <input 
+                    type="password" 
+                    id="password2" 
+                    name="password2" 
+                    class="form-control rounded px-3" 
+                    minlength="8" 
+                    maxlength="50" 
+                    placeholder="Contraseña123" 
+                    autocomplete="off"
+                    data-1p-ignore
+                    data-lpignore="true"
+                    readonly
+                    onfocus="this.removeAttribute('readonly');"
+                  />
+                  <div id="password2-error" class="mt-1" style="display: none;">
+                    <small class="text-danger">
+                      <i class="bi bi-x-circle me-1"></i> <span class="error-text"></span>
+                    </small>
+                  </div>
+                </div>
+
+                <div class="mb-3">
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="mostrarPassword">
+                    <label class="form-check-label" for="mostrarPassword">
+                      Mostrar contraseñas
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Sección de verificación (oculta inicialmente, aparece después de aceptar) -->
+              <div id="verification-section" class="d-none">
+                <div class="alert alert-info mb-3">
+                  <i class="bi bi-envelope-check me-2"></i>
+                  Se ha enviado un código de verificación a <strong id="verification-email"></strong>
+                </div>
+                <p class="text-muted mb-3">Ingresa el código de 6 dígitos que recibiste en tu correo electrónico para confirmar el cambio de contraseña.</p>
+                <div class="mb-3">
+                  <label class="form-label fw-semibold">Código de Verificación</label>
+                  <div class="d-flex justify-content-center gap-2 mb-2" id="codigo-container">
+                    <input
+                      type="text"
+                      id="codigo-0"
+                      class="form-control text-center fs-3 fw-bold"
+                      maxlength="1"
+                      pattern="[0-9]"
+                      inputmode="numeric"
+                      autocomplete="one-time-code"
+                      style="width: 65px; height: 60px;"
+                      autofocus
+                    />
+                    <input
+                      type="text"
+                      id="codigo-1"
+                      class="form-control text-center fs-3 fw-bold"
+                      maxlength="1"
+                      pattern="[0-9]"
+                      inputmode="numeric"
+                      autocomplete="one-time-code"
+                      style="width: 65px; height: 60px;"
+                    />
+                    <input
+                      type="text"
+                      id="codigo-2"
+                      class="form-control text-center fs-3 fw-bold"
+                      maxlength="1"
+                      pattern="[0-9]"
+                      inputmode="numeric"
+                      autocomplete="one-time-code"
+                      style="width: 65px; height: 60px;"
+                    />
+                    <input
+                      type="text"
+                      id="codigo-3"
+                      class="form-control text-center fs-3 fw-bold"
+                      maxlength="1"
+                      pattern="[0-9]"
+                      inputmode="numeric"
+                      autocomplete="one-time-code"
+                      style="width: 65px; height: 60px;"
+                    />
+                    <input
+                      type="text"
+                      id="codigo-4"
+                      class="form-control text-center fs-3 fw-bold"
+                      maxlength="1"
+                      pattern="[0-9]"
+                      inputmode="numeric"
+                      autocomplete="one-time-code"
+                      style="width: 65px; height: 60px;"
+                    />
+                    <input
+                      type="text"
+                      id="codigo-5"
+                      class="form-control text-center fs-3 fw-bold"
+                      maxlength="1"
+                      pattern="[0-9]"
+                      inputmode="numeric"
+                      autocomplete="one-time-code"
+                      style="width: 65px; height: 60px;"
+                    />
+                  </div>
+                  <input type="hidden" id="codigo" name="codigo" />
+                  <div id="codigo-help" class="form-text">
+                    <i class="bi bi-info-circle me-1"></i>
+                    Revisa también tu carpeta de spam si no encuentras el correo.
+                  </div>
+                  <div id="codigo-error" class="mt-1" style="display: none;">
+                    <small class="text-danger">
+                      <i class="bi bi-x-circle me-1"></i> <span class="error-text"></span>
+                    </small>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="mt-4 d-flex gap-2">
+              <button type="submit" id="main-action-btn" class="btn btn-primary" data-accion="guardar">
+                Guardar Cambios
+              </button>
+              <button type="button" class="btn btn-outline-secondary" onclick="location.reload();">
+                Cancelar
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="messages-container" class="position-fixed top-0 start-50 translate-middle-x mt-5" style="z-index: 9999; width: 90%; max-width: 600px;"></div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const cambiarPasswordCheckbox = document.getElementById('cambiar_password');
+  const passwordSection = document.getElementById('password-section');
+  const passwordFieldsContainer = document.getElementById('passwordFields');
+  const passwordFields = passwordFieldsContainer ? passwordFieldsContainer.querySelectorAll('input[type="password"]') : [];
+  const form = document.getElementById('configuracionForm');
+
+  const mainActionBtn = document.getElementById('main-action-btn');
+  
+  // Función para cambiar el texto y comportamiento del botón principal
+  function cambiarEstadoBoton(estado) {
+    if (!mainActionBtn) return;
+    
+    switch(estado) {
+      case 'aceptar':
+        mainActionBtn.textContent = 'Aceptar';
+        mainActionBtn.setAttribute('data-accion', 'aceptar');
+        mainActionBtn.type = 'button';
+        break;
+      case 'verificar':
+        mainActionBtn.textContent = 'Verificar Código';
+        mainActionBtn.setAttribute('data-accion', 'verificar');
+        mainActionBtn.type = 'button';
+        break;
+      case 'guardar':
+      default:
+        mainActionBtn.textContent = 'Guardar Cambios';
+        mainActionBtn.setAttribute('data-accion', 'guardar');
+        mainActionBtn.type = 'submit';
+        break;
+    }
+  }
+
+  // Mostrar/ocultar sección de contraseña
+  cambiarPasswordCheckbox.addEventListener('change', function() {
+    if (this.checked) {
+      // Mostrar campos de contraseña primero
+      passwordSection.classList.remove('d-none');
+      document.getElementById('passwordFields').classList.remove('d-none');
+      document.getElementById('verification-section').classList.add('d-none');
+      passwordFields.forEach(field => {
+        field.required = false; // No requeridos hasta presionar Aceptar
+        field.value = '';
+      });
+      this.value = 'true';
+      
+      // Cambiar botón a "Aceptar"
+      cambiarEstadoBoton('aceptar');
+      
+      // Enfocar el primer campo de contraseña
+      setTimeout(() => {
+        const passwordInput = document.getElementById('password');
+        if (passwordInput) passwordInput.focus();
+      }, 300);
+    } else {
+      // Ocultar todo y limpiar
+      passwordSection.classList.add('d-none');
+      document.getElementById('verification-section').classList.add('d-none');
+      document.getElementById('passwordFields').classList.add('d-none');
+      passwordFields.forEach(field => {
+        field.required = false;
+        field.value = '';
+      });
+      this.value = 'false';
+      
+      // Volver botón a "Guardar Cambios"
+      cambiarEstadoBoton('guardar');
+      
+      // Limpiar errores
+      document.querySelectorAll('#password-section .text-danger').forEach(el => {
+        el.style.display = 'none';
+      });
+      // Limpiar campos de código
+      for (let i = 0; i < 6; i++) {
+        const input = document.getElementById(`codigo-${i}`);
+        if (input) input.value = '';
+      }
+      const codigoHidden = document.getElementById('codigo');
+      if (codigoHidden) codigoHidden.value = '';
+      
+      // Limpiar flag de verificación
+      cambiarPasswordCheckbox.removeAttribute('data-codigo-verificado');
+    }
+  });
+
+  // Función para enviar código de verificación
+  function enviarCodigoVerificacion(correo, password, password2) {
+    const formData = new FormData();
+    formData.append('enviar_codigo', 'true');
+    formData.append('correo', correo);
+    formData.append('password', password);
+    formData.append('password2', password2);
+    formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+
+    fetch(window.location.href, {
+      method: 'POST',
+      body: formData,
+      headers: {
+        'X-Requested-With': 'XMLHttpRequest'
+      }
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.success && data.needs_verification) {
+        // Ocultar campos de contraseña y mostrar sección de verificación
+        document.getElementById('passwordFields').classList.add('d-none');
+        document.getElementById('verification-section').classList.remove('d-none');
+        document.getElementById('verification-email').textContent = data.correo || correo;
+        
+        // Cambiar botón a "Verificar Código"
+        cambiarEstadoBoton('verificar');
+        
+        // Enfocar el primer campo de código
+        setTimeout(() => {
+          const firstCodigoInput = document.getElementById('codigo-0');
+          if (firstCodigoInput) firstCodigoInput.focus();
+        }, 300);
+
+        // Mostrar mensaje de éxito
+        const messagesContainer = document.getElementById('messages-container');
+        messagesContainer.innerHTML = `
+          <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="bi bi-check-circle me-2"></i>${data.message || 'Se ha enviado un código de verificación.'}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+          </div>
+        `;
+      } else {
+        // Mostrar error
+        const messagesContainer = document.getElementById('messages-container');
+        messagesContainer.innerHTML = `
+          <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="bi bi-exclamation-circle me-2"></i>${data.message || 'Error al enviar el código de verificación.'}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+          </div>
+        `;
+        cambiarPasswordCheckbox.checked = false;
+      }
+    })
+    .catch(error => {
+      console.error('Error:', error);
+      const messagesContainer = document.getElementById('messages-container');
+      messagesContainer.innerHTML = `
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+          <i class="bi bi-exclamation-circle me-2"></i>Error de conexión. Intenta nuevamente.
+          <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+      `;
+      cambiarPasswordCheckbox.checked = false;
+    });
+  }
+
+  // Inicializar campos de código
+  const codigoInputs = [];
+  for (let i = 0; i < 6; i++) {
+    const input = document.getElementById(`codigo-${i}`);
+    if (input) {
+      codigoInputs.push(input);
+      
+      // Auto-avance al siguiente campo
+      input.addEventListener('input', function(e) {
+        const value = e.target.value.replace(/[^0-9]/g, '');
+        e.target.value = value.slice(0, 1);
+        
+        // Actualizar campo hidden
+        updateCodigoHidden();
+        
+        // Auto-avance
+        if (value && i < 5) {
+          codigoInputs[i + 1].focus();
+        }
+      });
+      
+      // Manejar Backspace
+      input.addEventListener('keydown', function(e) {
+        if (e.key === 'Backspace' && !e.target.value && i > 0) {
+          codigoInputs[i - 1].focus();
+        }
+      });
+      
+      // Manejar flechas
+      input.addEventListener('keydown', function(e) {
+        if (e.key === 'ArrowLeft' && i > 0) {
+          e.preventDefault();
+          codigoInputs[i - 1].focus();
+        } else if (e.key === 'ArrowRight' && i < 5) {
+          e.preventDefault();
+          codigoInputs[i + 1].focus();
+        }
+      });
+      
+      // Manejar pegar
+      input.addEventListener('paste', function(e) {
+        e.preventDefault();
+        const pastedData = (e.clipboardData || window.clipboardData).getData('text').replace(/[^0-9]/g, '').slice(0, 6);
+        
+        if (pastedData.length > 0) {
+          for (let j = 0; j < pastedData.length && (i + j) < 6; j++) {
+            codigoInputs[i + j].value = pastedData[j];
+          }
+          const nextEmptyIndex = Math.min(i + pastedData.length, 5);
+          codigoInputs[nextEmptyIndex].focus();
+          updateCodigoHidden();
+        }
+      });
+    }
+  }
+
+  // Función para actualizar el campo hidden con el código completo
+  function updateCodigoHidden() {
+    const codigoCompleto = codigoInputs.map(input => input.value || '').join('');
+    const hiddenInput = document.getElementById('codigo');
+    if (hiddenInput) {
+      hiddenInput.value = codigoCompleto;
+    }
+  }
+
+  // Manejar clic del botón principal según su estado
+  if (mainActionBtn) {
+    mainActionBtn.addEventListener('click', function(e) {
+      const accion = this.getAttribute('data-accion');
+      
+      if (accion === 'aceptar') {
+        e.preventDefault();
+        // Validar y enviar código
+        const password = document.getElementById('password').value;
+        const password2 = document.getElementById('password2').value;
+        const correoInput = document.getElementById('correo');
+        const correo = correoInput ? correoInput.value : '{{ usuario.correo|default:"" }}';
+        
+        // Validar que haya correo
+        if (!correo) {
+          const messagesContainer = document.getElementById('messages-container');
+          messagesContainer.innerHTML = `
+            <div class="alert alert-warning alert-dismissible fade show" role="alert">
+              <i class="bi bi-exclamation-triangle me-2"></i>Debes ingresar un correo electrónico para cambiar la contraseña.
+              <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+          `;
+          return;
+        }
+        
+        // Validar que las contraseñas estén completas
+        if (!password || !password2) {
+          const messagesContainer = document.getElementById('messages-container');
+          messagesContainer.innerHTML = `
+            <div class="alert alert-warning alert-dismissible fade show" role="alert">
+              <i class="bi bi-exclamation-triangle me-2"></i>Debes ingresar la nueva contraseña y su confirmación.
+              <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+          `;
+          return;
+        }
+        
+        // Validar que coincidan
+        if (password !== password2) {
+          const password2Error = document.getElementById('password2-error');
+          if (password2Error) {
+            password2Error.querySelector('.error-text').textContent = 'Las contraseñas no coinciden.';
+            password2Error.style.display = 'block';
+          }
+          return;
+        }
+        
+        // Validar requisitos
+        const lengthValid = password.length >= 8;
+        const upperValid = /[A-Z]/.test(password);
+        const numberValid = /[0-9]/.test(password);
+        
+        if (!lengthValid || !upperValid || !numberValid) {
+          const messagesContainer = document.getElementById('messages-container');
+          messagesContainer.innerHTML = `
+            <div class="alert alert-warning alert-dismissible fade show" role="alert">
+              <i class="bi bi-exclamation-triangle me-2"></i>La contraseña no cumple con los requisitos mínimos.
+              <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+          `;
+          return;
+        }
+        
+        // Si todo está bien, enviar código
+        enviarCodigoVerificacion(correo, password, password2);
+        return;
+      }
+      
+      if (accion === 'verificar') {
+        e.preventDefault();
+        // Verificar código
+        verificarCodigo();
+        return;
+      }
+      
+      // Si es 'guardar', dejar que el formulario se envíe normalmente
+      // pero validar que si se quiere cambiar contraseña, el código esté verificado
+      if (cambiarPasswordCheckbox.checked) {
+        const codigoVerificado = cambiarPasswordCheckbox.getAttribute('data-codigo-verificado') === 'true';
+        if (!codigoVerificado) {
+          e.preventDefault();
+          const messagesContainer = document.getElementById('messages-container');
+          messagesContainer.innerHTML = `
+            <div class="alert alert-warning alert-dismissible fade show" role="alert">
+              <i class="bi bi-exclamation-triangle me-2"></i>Debes verificar el código de verificación antes de guardar los cambios.
+              <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+          `;
+          return;
+        }
+      }
+    });
+  }
+
+  // Función para verificar código
+  function verificarCodigo() {
+      const codigo = document.getElementById('codigo').value;
+      const codigoError = document.getElementById('codigo-error');
+      const codigoHelp = document.getElementById('codigo-help');
+      
+      if (codigo.length !== 6) {
+        if (codigoError) {
+          codigoError.querySelector('.error-text').textContent = 'El código debe tener 6 dígitos.';
+          codigoError.style.display = 'block';
+        }
+        if (codigoHelp) codigoHelp.style.display = 'none';
+        return;
+      }
+      
+      const formData = new FormData();
+      formData.append('codigo', codigo);
+      formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+      
+      fetch('/configuracion/verificar/', {
+        method: 'POST',
+        body: formData,
+        headers: {
+          'X-Requested-With': 'XMLHttpRequest'
+        }
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          // Código verificado - ahora se puede guardar el formulario
+          // Ocultar sección de verificación y campos de contraseña (ya no se necesitan)
+          document.getElementById('verification-section').classList.add('d-none');
+          document.getElementById('passwordFields').classList.add('d-none');
+          
+          // Marcar que el código está verificado para permitir guardar
+          cambiarPasswordCheckbox.setAttribute('data-codigo-verificado', 'true');
+          
+          // Cambiar botón a "Guardar Cambios"
+          cambiarEstadoBoton('guardar');
+          
+          // Mostrar mensaje de éxito
+          const messagesContainer = document.getElementById('messages-container');
+          messagesContainer.innerHTML = `
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+              <i class="bi bi-check-circle me-2"></i>${data.message || 'Código verificado correctamente. Ahora puedes guardar los cambios.'}
+              <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+          `;
+        } else {
+          // Mostrar error
+          if (codigoError) {
+            codigoError.querySelector('.error-text').textContent = data.message || 'El código ingresado es incorrecto.';
+            codigoError.style.display = 'block';
+          }
+          if (codigoHelp) codigoHelp.style.display = 'none';
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        if (codigoError) {
+          codigoError.querySelector('.error-text').textContent = 'Error de conexión. Intenta nuevamente.';
+          codigoError.style.display = 'block';
+        }
+      });
+  }
+
+  // Función para actualizar requisito (igual que en el modal de agregar perfiles)
+  function updateRequirement(element, isValid) {
+    if (!element) return;
+    if (isValid) {
+      element.classList.remove('text-muted', 'text-danger');
+      element.classList.add('text-success');
+      element.querySelector('i').className = 'bi bi-check-circle-fill me-1';
+    } else {
+      element.classList.remove('text-success', 'text-danger');
+      element.classList.add('text-muted');
+      element.querySelector('i').className = 'bi bi-circle me-1';
+    }
+  }
+
+  // Función para marcar requisito como error (rojo)
+  function markRequirementError(element) {
+    if (!element) return;
+    element.classList.remove('text-muted', 'text-success');
+    element.classList.add('text-danger');
+    element.querySelector('i').className = 'bi bi-x-circle-fill me-1';
+  }
+
+  // Validación de contraseña en tiempo real
+  const passwordInput = document.getElementById('password');
+  if (passwordInput) {
+    passwordInput.addEventListener('input', function() {
+      const password = this.value;
+      const reqLength = document.getElementById('req-length');
+      const reqUppercase = document.getElementById('req-uppercase');
+      const reqNumber = document.getElementById('req-number');
+
+      // Validar longitud
+      const lengthValid = password.length >= 8;
+      updateRequirement(reqLength, lengthValid);
+
+      // Validar mayúscula
+      const upperValid = /[A-Z]/.test(password);
+      updateRequirement(reqUppercase, upperValid);
+
+      // Validar número
+      const numberValid = /[0-9]/.test(password);
+      updateRequirement(reqNumber, numberValid);
+    });
+  }
+
+  // Validación de confirmación de contraseña
+  const password2Input = document.getElementById('password2');
+  if (password2Input) {
+    password2Input.addEventListener('input', function() {
+      const password = document.getElementById('password').value;
+      const password2 = this.value;
+      const errorDiv = document.getElementById('password2-error');
+      
+      if (password2 && password !== password2) {
+        errorDiv.style.display = 'block';
+        errorDiv.querySelector('.error-text').textContent = 'Las contraseñas no coinciden.';
+      } else {
+        errorDiv.style.display = 'none';
+      }
+    });
+  }
+
+  // Manejar checkbox "mostrar contraseñas"
+  const mostrarPassword = document.getElementById('mostrarPassword');
+  if (mostrarPassword) {
+    mostrarPassword.addEventListener('change', function() {
+      const password = document.getElementById('password');
+      const password2 = document.getElementById('password2');
+      
+      if (password) {
+        password.type = this.checked ? 'text' : 'password';
+        // Asegurar que el placeholder se mantenga
+        if (!password.value) {
+          password.placeholder = 'Contraseña123';
+        }
+      }
+      if (password2) {
+        password2.type = this.checked ? 'text' : 'password';
+        // Asegurar que el placeholder se mantenga
+        if (!password2.value) {
+          password2.placeholder = 'Contraseña123';
+        }
+      }
+    });
+  }
+
+  // Envío del formulario
+  form.addEventListener('submit', function(e) {
+    // Si el botón no está en modo "guardar", prevenir el submit
+    // (el botón manejará la acción según su estado)
+    const accion = mainActionBtn ? mainActionBtn.getAttribute('data-accion') : 'guardar';
+    if (accion !== 'guardar') {
+      e.preventDefault();
+      return;
+    }
+    
+    e.preventDefault();
+    
+    // Limpiar errores anteriores
+    document.querySelectorAll('.text-danger').forEach(el => {
+      el.style.display = 'none';
+    });
+
+    const formData = new FormData(form);
+    
+    // Si no se va a cambiar la contraseña, no incluir los campos de contraseña
+    if (!cambiarPasswordCheckbox.checked) {
+      formData.delete('password');
+      formData.delete('password2');
+      formData.delete('cambiar_password');
+    } else {
+      // Si se va a cambiar la contraseña, verificar que el código esté verificado
+      const codigoVerificado = cambiarPasswordCheckbox.getAttribute('data-codigo-verificado') === 'true';
+      if (!codigoVerificado) {
+        const messagesContainer = document.getElementById('messages-container');
+        messagesContainer.innerHTML = `
+          <div class="alert alert-warning alert-dismissible fade show" role="alert">
+            <i class="bi bi-exclamation-triangle me-2"></i>Debes verificar el código de verificación antes de guardar los cambios.
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+          </div>
+        `;
+        return;
+      }
+      // El código ya se verificó y la contraseña ya está guardada en sesión
+      // Solo necesitamos indicar que se quiere cambiar
+      formData.append('cambiar_password', 'true');
+    }
+
+    fetch(form.action || window.location.href, {
+      method: 'POST',
+      body: formData,
+      headers: {
+        'X-Requested-With': 'XMLHttpRequest'
+      }
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        // Mostrar mensaje de éxito
+        const messagesContainer = document.getElementById('messages-container');
+        messagesContainer.innerHTML = `
+          <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="bi bi-check-circle me-2"></i>${data.message || 'Perfil actualizado correctamente.'}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+          </div>
+        `;
+        
+        // Auto-ocultar después de 3 segundos
+        setTimeout(() => {
+          const alert = messagesContainer.querySelector('.alert');
+          if (alert) {
+            const bsAlert = new bootstrap.Alert(alert);
+            bsAlert.close();
+          }
+        }, 3000);
+
+        // Recargar página después de un breve delay para actualizar datos
+        setTimeout(() => {
+          window.location.reload();
+        }, 1500);
+      } else {
+        // Mostrar error
+        const errorMessage = data.message || 'Error al actualizar el perfil.';
+        
+        // Determinar qué campo tiene el error
+        if (errorMessage.toLowerCase().includes('nombre') || errorMessage.toLowerCase().includes('usuario')) {
+          showError('username-error', errorMessage);
+        } else if (errorMessage.toLowerCase().includes('correo') || errorMessage.toLowerCase().includes('email')) {
+          showError('email-error', errorMessage);
+        } else if (errorMessage.toLowerCase().includes('contraseña') || errorMessage.toLowerCase().includes('password')) {
+          if (errorMessage.toLowerCase().includes('coinciden')) {
+            showError('password2-error', errorMessage);
+          } else {
+            showError('password-error', errorMessage);
+          }
+        } else {
+          // Error general
+          const messagesContainer = document.getElementById('messages-container');
+          messagesContainer.innerHTML = `
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+              <i class="bi bi-exclamation-circle me-2"></i>${errorMessage}
+              <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+          `;
+        }
+      }
+    })
+    .catch(error => {
+      console.error('Error:', error);
+      const messagesContainer = document.getElementById('messages-container');
+      messagesContainer.innerHTML = `
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+          <i class="bi bi-exclamation-circle me-2"></i>Error de conexión. Intenta nuevamente.
+          <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+      `;
+    });
+  });
+
+  function showError(errorId, message) {
+    const errorDiv = document.getElementById(errorId);
+    if (errorDiv) {
+      errorDiv.querySelector('.error-text').textContent = message;
+      errorDiv.style.display = 'block';
+    }
+  }
+});
+</script>
+{% endblock %}

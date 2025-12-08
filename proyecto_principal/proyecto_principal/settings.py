@@ -226,7 +226,11 @@ STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
 # WHITENOISE_USE_FINDERS permite buscar archivos en STATICFILES_DIRS y apps si no están en staticfiles
 # Esto es importante en Vercel porque los archivos pueden no estar en la ubicación esperada
 WHITENOISE_USE_FINDERS = True  # CRÍTICO: Permite buscar archivos en tiempo de ejecución
-WHITENOISE_AUTOREFRESH = False  # Desactivar auto-refresh en producción
+WHITENOISE_AUTOREFRESH = DEBUG  # Auto-refresh solo en desarrollo
+# Crear el directorio STATIC_ROOT si no existe (para evitar warnings)
+import os
+if not os.path.exists(STATIC_ROOT):
+    os.makedirs(STATIC_ROOT, exist_ok=True)
 WHITENOISE_ROOT = STATIC_ROOT  # Directorio donde están los archivos recopilados
 WHITENOISE_MANIFEST_STRICT = False  # No fallar si falta un archivo
 WHITENOISE_MAX_AGE = 31536000  # Cache por 1 año

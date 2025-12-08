@@ -148,6 +148,12 @@
                 <span>Correo Electrónico</span>
               </div>
             </th>
+            <th class="text-left">
+              <div class="d-flex align-items-center gap-2">
+                <i class="bi bi-shop text-primary"></i>
+                <span>Sucursal</span>
+              </div>
+            </th>
             <th class="text-center">Acciones</th>
           </tr>
         </thead>
@@ -161,7 +167,15 @@
                   </div>
                   <div style="min-width: 0; flex: 1;">
                     <div class="fw-medium text-truncate">{{ usuario.nombre_usuario }}</div>
-                    <small class="text-muted">Usuario del sistema</small>
+                    <div>
+                      {% if usuario.id_usuario in dueños_ids %}
+                        <small class="text-muted">Dueño</small>
+                      {% elif usuario.id_usuario in admins_ids %}
+                        <small class="text-muted">Administrador</small>
+                      {% else %}
+                        <small class="text-muted">Usuario del sistema</small>
+                      {% endif %}
+                    </div>
                   </div>
                 </div>
               </td>
@@ -170,31 +184,77 @@
                   <span>{% if usuario.correo %}{{ usuario.correo }}{% else %}<span class="text-muted fst-italic">Sin correo</span>{% endif %}</span>
                 </div>
               </td>
-              <td class="text-center" style="white-space: nowrap;">
+              <td class="text-left">
+                <div class="d-flex align-items-center gap-2">
+                  {% if usuario.sucursal %}
+                    <span>{{ usuario.sucursal.nombre }}</span>
+                    <small class="text-muted">({{ usuario.sucursal.get_tipo_display }})</small>
+                  {% else %}
+                    <span class="text-muted fst-italic">Sin sucursal</span>
+                  {% endif %}
+                </div>
+              </td>
+              <td class="text-center" style="white-space: nowrap;" onclick="event.stopPropagation();">
                 <div class="btn-group" role="group">
-                  <button 
-                    type="button"
-                    class="btn btn-warning btn-sm" 
-                    data-bs-toggle="modal" 
-                    data-bs-target="#editPerfilModal"
-                    data-id="{{ usuario.id_usuario }}" 
-                    data-nombre="{{ usuario.nombre_usuario|escapejs }}"
-                    data-correo="{{ usuario.correo|default:''|escapejs }}"
-                    title="Editar perfil">
-                    <i class="bi bi-pencil"></i>
-                  </button>
+                  {% if usuario_actual_es_dueño %}
+                    {# Botón editar - siempre visible para dueños #}
+                    <button 
+                      type="button"
+                      class="btn btn-warning btn-sm"
+                      data-bs-toggle="modal"
+                      data-bs-target="#editPerfilModal"
+                      data-id="{{ usuario.id_usuario }}"
+                      data-nombre="{{ usuario.nombre_usuario|escapejs }}"
+                      data-correo="{{ usuario.correo|escapejs }}"
+                      data-sucursal-id="{{ usuario.sucursal.id_sucursal|default:'' }}"
+                      data-es-admin="{{ usuario.es_admin|yesno:'true,false' }}"
+                      data-es-dueño="{{ usuario.es_dueño|yesno:'true,false' }}"
+                      title="Editar perfil">
+                      <i class="bi bi-pencil"></i>
+                    </button>
 
-                  <button 
-                    type="button"
-                    class="btn btn-danger btn-sm"
-                    data-bs-toggle="modal"
-                    data-bs-target="#deleteModal"
-                    data-id="{{ usuario.id_usuario }}"
-                    data-nombre="{{ usuario.nombre_usuario|escapejs }}"
-                    title="Eliminar perfil"
-                  >
-                    <i class="bi bi-trash"></i>
-                  </button>
+                    {# Botón eliminar - siempre visible para dueños #}
+                    <button 
+                      type="button"
+                      class="btn btn-danger btn-sm"
+                      data-bs-toggle="modal"
+                      data-bs-target="#deleteModal"
+                      data-id="{{ usuario.id_usuario }}"
+                      data-nombre="{{ usuario.nombre_usuario|escapejs }}"
+                      title="Eliminar perfil"
+                    >
+                      <i class="bi bi-trash"></i>
+                    </button>
+                  {% else %}
+                    {# Para administradores (no dueños), solo mostrar editar y eliminar para usuarios del sistema #}
+                    {% if usuario.id_usuario not in dueños_ids and usuario.id_usuario not in admins_ids %}
+                    <button 
+                      type="button"
+                      class="btn btn-warning btn-sm"
+                      data-bs-toggle="modal"
+                      data-bs-target="#editPerfilModal"
+                      data-id="{{ usuario.id_usuario }}"
+                      data-nombre="{{ usuario.nombre_usuario|escapejs }}"
+                      data-correo="{{ usuario.correo|escapejs }}"
+                      data-sucursal-id="{% if usuario.sucursal %}{{ usuario.sucursal.id_sucursal }}{% else %}0{% endif %}"
+                      data-es-admin="false"
+                      data-es-dueño="false"
+                      title="Editar perfil">
+                      <i class="bi bi-pencil"></i>
+                    </button>
+                    <button 
+                      type="button"
+                      class="btn btn-danger btn-sm"
+                      data-bs-toggle="modal"
+                      data-bs-target="#deleteModal"
+                      data-id="{{ usuario.id_usuario }}"
+                      data-nombre="{{ usuario.nombre_usuario|escapejs }}"
+                      title="Eliminar perfil"
+                    >
+                      <i class="bi bi-trash"></i>
+                    </button>
+                    {% endif %}
+                  {% endif %}
                 </div>
               </td>
             </tr>

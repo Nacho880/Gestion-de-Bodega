@@ -128,6 +128,9 @@
     text-align: center !important;
   }
   
+  /* Información de devolución/agregar más compacta */
+  .devolucion-info,
+  .agregar-info {
     font-size: 0.7rem !important;
     margin-top: 0.25rem !important;
   }
@@ -342,6 +345,14 @@
                            required />
                     <span class="input-group-text">unid.</span>
                   </div>
+                  <div class="devolucion-info mt-1 small text-warning d-none">
+                    <i class="bi bi-arrow-return-left"></i> 
+                    <span class="cantidad-devolucion"></span> unidades a reembolsar
+                  </div>
+                  <div class="agregar-info mt-1 small text-success d-none">
+                    <i class="bi bi-plus-circle"></i> 
+                    <span class="cantidad-agregar"></span> unidades a agregar
+                  </div>
                 </td>
                 <td class="text-center precio-unitario" data-precio="{{ detalle.precio_unitario }}">${{ detalle.precio_unitario|floatformat:0|intcomma }}</td>
                 <td class="text-center">
@@ -357,6 +368,10 @@
               <tr>
                 <th colspan="6" class="text-end">Total salida:</th>
                 <th class="text-center" id="total-venta">${{ venta.total_venta|floatformat:0|intcomma }}</th>
+              </tr>
+              <tr class="table-warning d-none" id="fila-reembolso">
+                <th colspan="6" class="text-end">Total a reembolsar:</th>
+                <th class="text-center" id="total-reembolso">$0</th>
               </tr>
             </tfoot>
           </table>
@@ -380,13 +395,42 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-  // Función para actualizar subtotales
-  function actualizarSubtotal(input) {
+  // Función para actualizar el badge de reembolso/agregar y subtotales
+  function actualizarReembolso(input) {
     const row = input.closest('tr');
-    const cantidad = parseInt(input.value) || 0;
+    const cantidadOriginal = parseInt(input.getAttribute('data-cantidad-original') || input.value);
+    const cantidadNueva = parseInt(input.value);
     const precio = parseFloat(row.querySelector('.precio-unitario').getAttribute('data-precio')) || 0;
-    const subtotal = cantidad * precio;
-    row.querySelector('.subtotal').textContent = `$${subtotal.toLocaleString('es-CL', {maximumFractionDigits: 0})}`;
+    const badgeReembolso = row.querySelector('.devolucion-info');
+    const badgeAgregar = row.querySelector('.agregar-info');
+    const cantidadReembolso = row.querySelector('.cantidad-devolucion');
+    const cantidadAgregar = row.querySelector('.cantidad-agregar');
+    
+    // Ocultar ambos badges primero
+    badgeReembolso.classList.add('d-none');
+    badgeAgregar.classList.add('d-none');
+    row.classList.remove('table-warning', 'table-success');
+    
+    if (cantidadNueva < cantidadOriginal) {
+      // Hay reembolso/reducción
+      const diferencia = cantidadOriginal - cantidadNueva;
+      badgeReembolso.classList.remove('d-none');
+      cantidadReembolso.textContent = diferencia;
+      row.classList.add('table-warning');
+    } else if (cantidadNueva > cantidadOriginal) {
+      // Hay agregado
+      const diferencia = cantidadNueva - cantidadOriginal;
+      badgeAgregar.classList.remove('d-none');
+      cantidadAgregar.textContent = diferencia;
+      row.classList.add('table-success');
+    }
+    
+    // Actualizar subtotal de la fila
+    const subtotal = cantidadNueva * precio;
+    const subtotalElement = row.querySelector('.subtotal');
+    if (subtotalElement) {
+      subtotalElement.textContent = `$${subtotal.toLocaleString('es-CL', {maximumFractionDigits: 0})}`;
+    }
     
     // Actualizar totales
     actualizarTotales();
@@ -395,15 +439,32 @@ document.addEventListener('DOMContentLoaded', function() {
   // Función para actualizar totales
   function actualizarTotales() {
     let totalVenta = 0;
+    let totalReembolso = 0;
+    let hayReembolso = false;
     
     document.querySelectorAll('.producto-row').forEach(row => {
       const input = row.querySelector('input[name*="cantidad"]');
+      const cantidadOriginal = parseInt(input.getAttribute('data-cantidad-original')) || 0;
       const cantidadActual = parseInt(input.value) || 0;
       const precio = parseFloat(row.querySelector('.precio-unitario').getAttribute('data-precio')) || 0;
+      const diferencia = cantidadOriginal - cantidadActual;
       totalVenta += cantidadActual * precio;
+      if (diferencia > 0) {
+        totalReembolso += diferencia * precio;
+        hayReembolso = true;
+      }
     });
     
     document.getElementById('total-venta').textContent = `$${totalVenta.toLocaleString('es-CL', {maximumFractionDigits: 0})}`;
+    document.getElementById('total-reembolso').textContent = `$${totalReembolso.toLocaleString('es-CL', {maximumFractionDigits: 0})}`;
+    
+    // Mostrar/ocultar fila de reembolso
+    const filaReembolso = document.getElementById('fila-reembolso');
+    if (hayReembolso) {
+      filaReembolso.classList.remove('d-none');
+    } else {
+      filaReembolso.classList.add('d-none');
+    }
   }
   
   // Event listeners para inputs de cantidad
@@ -420,16 +481,16 @@ document.addEventListener('DOMContentLoaded', function() {
         mostrarMensajeAdvertencia(`La cantidad máxima disponible es ${maxValue} unidades. Se ajustó automáticamente.`);
       }
       
-      actualizarSubtotal(this);
+      actualizarReembolso(this);
     });
     input.addEventListener('input', function() {
-      actualizarSubtotal(this);
+      actualizarReembolso(this);
     });
     input.addEventListener('blur', function() {
       // Si el campo está vacío, establecer a 0
       if (this.value === '' || this.value === null) {
         this.value = 0;
-        actualizarSubtotal(this);
+        actualizarReembolso(this);
         return;
       }
       
@@ -441,7 +502,7 @@ document.addEventListener('DOMContentLoaded', function() {
         this.value = maxValue;
         // Mostrar mensaje de advertencia
         mostrarMensajeAdvertencia(`La cantidad máxima disponible es ${maxValue} unidades. Se ajustó automáticamente.`);
-        actualizarSubtotal(this);
+        actualizarReembolso(this);
       }
     });
   });

@@ -1,25 +1,31 @@
-# 🏪 Sistema de Gestión de Ferretería
+# 🏪 Sistema de Gestión de Inventario
 
 Sistema web desarrollado en Django para la gestión integral de una ferretería, incluyendo inventario, ventas, compras, proveedores y reportes.
 
-**Desarrollado por:** [Cristopher Retamales Pedreros, Bianca Torres Rivadeneira, Paz Pérez Avaria, Ignacio Ortega Bustamante, Maximiliano Campos Camimil]
+**Desarrollado por:** [Ignacio Ortega , Joaquin Apablaza, Camilo Moya, Ignacio Molina, Renato Alvarez]
 
 ## 📋 Características
 
-- **Gestión de Productos**: Inventario con stock mínimo, categorías
-- **Ventas**: Registro de ventas, boletas, reembolsos
-- **Compras**: Gestión de compras a proveedores
-- **Proveedores**: Catálogo de proveedores y productos
-- **Usuarios**: Sistema de autenticación y perfiles
-- **Estadísticas**: Reportes y análisis de ventas
-- **Categorías**: Organización de productos por categorías
+- **Gestión de Productos**: Inventario con stock mínimo, categorías múltiples, códigos SKU
+- **Ventas (Salidas)**: Registro de ventas, boletas, reembolsos, gestión de stock automática
+- **Compras (Entradas)**: Gestión de compras a proveedores, confirmación de entrega
+- **Proveedores**: Catálogo de proveedores y productos con precios personalizados
+- **Usuarios y Permisos**: 
+  - Sistema de autenticación y roles (Dueño, Administrador, Usuario del sistema)
+  - Control de acceso basado en roles (RBAC)
+  - Configuración personal de perfil con verificación por email para cambio de contraseña
+- **Sucursales**: Gestión de bodegas y tiendas, asignación por salida/entrada
+- **Estadísticas**: Reportes y análisis de ventas y compras
+- **Categorías**: Organización flexible de productos con múltiples categorías
+- **Edición de Registros**: Edición completa de entradas y salidas con indicadores visuales de cambios
 
 ## 🛠️ Tecnologías
 
-- **Backend**: Django 4.x
-- **Base de Datos**: MySQL
-- **Frontend**: HTML, CSS, JavaScript, Bootstrap
+- **Backend**: Django 5.x
+- **Base de Datos**: MySQL / PostgreSQL (compatible con ambos)
+- **Frontend**: HTML5, CSS3, JavaScript (ES6+), Bootstrap 5, Bootstrap Icons
 - **Control de Versiones**: Git & GitHub
+- **Despliegue**: Vercel (serverless), compatible con otros servicios
 
 ## 📋 Requisitos Previos
 
@@ -69,10 +75,22 @@ pip install -r requirements.txt
 python manage.py migrate
 ```
 
-### 7. Crear superusuario (opcional)
+### 7. Crear primer usuario (Dueño)
+El sistema requiere crear el primer usuario manualmente. Este usuario será automáticamente asignado como "Dueño" con todos los permisos:
 ```bash
-python manage.py createsuperuser
+python manage.py runserver
+# Acceder a la URL de creación de primer usuario cuando se inicie el sistema
 ```
+
+O usar el comando de gestión para asignar el rol de Dueño:
+```bash
+python manage.py asignar_dueño
+```
+
+**Nota sobre roles:**
+- **Dueño**: Puede gestionar todos los perfiles, asignar roles, eliminar cualquier usuario
+- **Administrador**: Puede gestionar perfiles excepto Dueños, eliminar solo usuarios del sistema
+- **Usuario del sistema**: Acceso básico, no puede gestionar perfiles
 
 ### 8. Ejecutar el servidor
 ```bash
@@ -86,15 +104,50 @@ El proyecto estará disponible en: http://127.0.0.1:8000/
 ```
 proyecto_principal/
 ├── categoria/          # Gestión de categorías de productos
-├── compras/           # Sistema de compras a proveedores
+├── compra/            # Sistema de compras a proveedores (entradas)
 ├── estadistica/       # Reportes y estadísticas
 ├── home/              # Página principal y modelos base
 ├── producto/          # Gestión de productos
 ├── proveedor/         # Gestión de proveedores
-├── usuario/           # Sistema de usuarios y autenticación
-├── venta/             # Sistema de ventas y boletas
+├── sucursal/          # Gestión de sucursales (bodegas y tiendas)
+├── usuario/           # Sistema de usuarios, autenticación y RBAC
+├── venta/             # Sistema de ventas y boletas (salidas)
 └── proyecto_principal/ # Configuración principal de Django
 ```
+
+## 📊 Gestión de Stock
+
+### Sistema de Stock en Entradas (Compras)
+
+El stock se gestiona de la siguiente manera:
+
+1. **Al crear una entrada**: No se modifica el stock (solo se crea el registro)
+2. **Al confirmar entrega**: Se **suma** el stock al inventario
+3. **Al editar una entrada** (si ya está entregada):
+   - Si aumentas cantidad → Se suma la diferencia al stock
+   - Si reduces cantidad → Se resta la diferencia del stock
+4. **Al eliminar una entrada** (si estaba entregada): Se resta el stock que se había sumado
+5. **Al restaurar una entrada** (si estaba entregada): Se vuelve a sumar el stock
+
+### Sistema de Stock en Salidas (Ventas)
+
+El stock se gestiona de la siguiente manera:
+
+1. **Al crear una salida**: Se **resta** el stock inmediatamente (con validación de stock disponible)
+2. **Al confirmar envío**: No se modifica el stock (ya se restó al crear)
+3. **Al editar una salida**:
+   - Si reduces cantidad (reembolso) → Se devuelve stock al inventario
+   - Si aumentas cantidad → Se resta stock adicional (validando disponibilidad)
+4. **Al eliminar una salida**: Se devuelve el stock al inventario
+5. **Al restaurar una salida**: Se vuelve a restar el stock
+
+### Indicadores Visuales en Edición
+
+Al editar entradas o salidas, el sistema muestra:
+- **Badge amarillo**: Indica unidades que se reducirán/devolverán
+- **Badge verde**: Indica unidades que se agregarán
+- **Colores en filas**: Fondo amarillo (reducción) o verde (agregado) para visualización rápida
+- **Total calculado**: Muestra el total actualizado y el monto a reembolsar si aplica
 
 ## 🔧 Configuración de Variables de Entorno
 
@@ -123,8 +176,11 @@ python manage.py makemigrations
 # Aplicar migraciones
 python manage.py migrate
 
-# Crear superusuario
-python manage.py createsuperuser
+# Asignar rol de Dueño a un usuario existente
+python manage.py asignar_dueño
+
+# Recolectar archivos estáticos (para producción)
+python manage.py collectstatic --noinput
 
 # Ejecutar tests
 python manage.py test
@@ -281,6 +337,62 @@ El proyecto incluye los siguientes archivos para Vercel:
 ## 🙏 Agradecimientos
 
 Agradecemos especialmente a nuestro socio por confiar en nuestro equipo para el desarrollo de este sistema de gestión. Su visión y requerimientos fueron fundamentales para crear una solución que se adapta perfectamente a las necesidades de su negocio.
+
+## 🔐 Sistema de Roles y Permisos
+
+### Roles Disponibles
+
+1. **Dueño**
+   - Acceso completo al sistema
+   - Puede gestionar todos los perfiles (agregar, editar, eliminar)
+   - Puede asignar/quitar roles de Dueño y Administrador
+   - Puede eliminar cualquier usuario
+   - Acceso al módulo de Perfiles
+
+2. **Administrador**
+   - Puede gestionar perfiles (excepto Dueños)
+   - Puede asignar/quitar rol de Administrador
+   - Puede eliminar solo usuarios del sistema
+   - Acceso al módulo de Perfiles
+
+3. **Usuario del sistema**
+   - Acceso básico al sistema
+   - No puede gestionar perfiles
+   - Puede editar su propio perfil en "Configuración"
+
+### Configuración Personal
+
+Cada usuario puede:
+- Actualizar su nombre y correo electrónico
+- Cambiar su contraseña (con verificación por email de 6 dígitos)
+- Ver información de su sucursal asignada
+
+## 📧 Verificación por Email
+
+El sistema incluye verificación por email para:
+- Cambio de contraseña en "Configuración"
+- Códigos de 6 dígitos con validez de 10 minutos
+
+**Configuración requerida:**
+Asegúrate de configurar las variables de entorno para el envío de emails:
+```env
+EMAIL_HOST=smtp.gmail.com
+EMAIL_PORT=587
+EMAIL_USE_TLS=True
+EMAIL_HOST_USER=tu_correo@gmail.com
+EMAIL_HOST_PASSWORD=tu_contraseña_app
+```
+
+## 🏢 Gestión de Sucursales
+
+El sistema permite gestionar:
+- **Bodegas**: Puntos de salida de productos
+- **Tiendas**: Puntos de llegada de productos
+
+Al crear salidas (ventas), puedes:
+- Seleccionar la bodega de salida
+- Seleccionar la tienda de llegada
+- Asignar sucursal a usuarios
 
 ## 📄 Licencia
 

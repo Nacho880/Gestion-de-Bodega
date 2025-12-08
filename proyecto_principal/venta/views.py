@@ -472,17 +472,31 @@ def finalizar_venta(request):
                 print(f"DEBUG - Procesando item del carrito: {item}")
                 producto = Producto.objects.get(id_producto=item['producto_id'])
                 precio = Decimal(str(item.get('precio', producto.precio_unitario)))
-                print(f"DEBUG - Creando detalle: {producto.nombre}, cantidad: {item['cantidad']}, precio: {precio}")
+                
+                # Verificar stock antes de crear el detalle
+                cantidad = item['cantidad']
+                if producto.stock_actual < cantidad:
+                    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                        return JsonResponse({
+                            'success': False,
+                            'message': f'Stock insuficiente para {producto.nombre}. Stock disponible: {producto.stock_actual}, necesario: {cantidad}'
+                        })
+                    messages.error(request, f'Stock insuficiente para {producto.nombre}. Stock disponible: {producto.stock_actual}, necesario: {cantidad}')
+                    return redirect('ventas')
+                
+                print(f"DEBUG - Creando detalle: {producto.nombre}, cantidad: {cantidad}, precio: {precio}")
                 detalle = DetalleVenta.objects.create(
                     venta=venta,
                     producto=producto,
-                    cantidad=item['cantidad'],
+                    cantidad=cantidad,
                     precio_unitario=precio,
-                    subtotal=precio * item['cantidad'],
+                    subtotal=precio * cantidad,
                     estado='ACTIVO'
                 )
                 total_venta += detalle.subtotal
-                # NO restar stock aquí - se restará cuando se confirme el envío
+                # Restar stock inmediatamente al crear la salida
+                producto.stock_actual -= cantidad
+                producto.save()
             venta.total_venta = total_venta
             venta.asignar_numero_venta()
             venta.save()
@@ -535,12 +549,11 @@ def eliminar_venta(request, id):
         try:
             venta = get_object_or_404(Venta, id_venta=id)
             with transaction.atomic():
-                # Devolver el stock solo si la venta estaba ENVIADA (el stock fue restado)
-                if venta.estado == 'ENVIADO':
-                    for detalle in venta.detalles.all():
-                        producto = detalle.producto
-                        producto.stock_actual += detalle.cantidad
-                        producto.save()
+                # Devolver el stock porque ya se restó al crear la salida
+                for detalle in venta.detalles.all():
+                    producto = detalle.producto
+                    producto.stock_actual += detalle.cantidad
+                    producto.save()
 
                 # Eliminar reembolsos asociados primero
                 venta.reembolsos.all().delete()
@@ -578,18 +591,17 @@ def restaurar_venta(request, id):
                 # Restaurar la venta
                 venta.restore()
 
-                # Restar el stock solo si la venta estaba ENVIADA (el stock fue restado antes de eliminar)
-                if venta.estado == 'ENVIADO':
-                    for detalle in venta.detalles.all():
-                        producto = detalle.producto
-                        # Verificar stock disponible
-                        if producto.stock_actual < detalle.cantidad:
-                            return JsonResponse({
-                                'success': False,
-                                'message': f'Stock insuficiente para {producto.nombre}. Stock disponible: {producto.stock_actual}, necesario: {detalle.cantidad}'
-                            })
-                        producto.stock_actual -= detalle.cantidad
-                        producto.save()
+                # Restar el stock porque se devolvió cuando se eliminó la venta
+                for detalle in venta.detalles.all():
+                    producto = detalle.producto
+                    # Verificar stock disponible
+                    if producto.stock_actual < detalle.cantidad:
+                        return JsonResponse({
+                            'success': False,
+                            'message': f'Stock insuficiente para {producto.nombre}. Stock disponible: {producto.stock_actual}, necesario: {detalle.cantidad}'
+                        })
+                    producto.stock_actual -= detalle.cantidad
+                    producto.save()
 
             return JsonResponse({
                 'success': True,
@@ -670,10 +682,9 @@ def editar_venta(request, id):
                     cantidad_reembolso = cantidad_original - nueva_cantidad
 
                     if cantidad_reembolso > 0:  # Hay reembolso
-                        # Actualizar stock solo si la venta está ENVIADA
-                        if venta.estado == 'ENVIADO':
-                            detalle.producto.stock_actual += cantidad_reembolso
-                            detalle.producto.save()
+                        # Devolver stock porque ya se restó al crear la salida
+                        detalle.producto.stock_actual += cantidad_reembolso
+                        detalle.producto.save()
                         # Calcular monto reembolsado
                         monto_reembolso = cantidad_reembolso * detalle.precio_unitario
                         total_reembolso += monto_reembolso
@@ -693,13 +704,12 @@ def editar_venta(request, id):
 
                     elif nueva_cantidad > cantidad_original:  # Aumentar cantidad
                         diferencia_agregar = nueva_cantidad - cantidad_original
-                        # Actualizar stock solo si la venta está ENVIADA
-                        if venta.estado == 'ENVIADO':
-                            if detalle.producto.stock_actual < diferencia_agregar:
-                                messages.error(request, f'Stock insuficiente para {detalle.producto.nombre}. Stock disponible: {detalle.producto.stock_actual}, necesitas: {diferencia_agregar}')
-                                return redirect('ventas')
-                            detalle.producto.stock_actual -= diferencia_agregar
-                            detalle.producto.save()
+                        # Restar stock porque ya se restó al crear la salida
+                        if detalle.producto.stock_actual < diferencia_agregar:
+                            messages.error(request, f'Stock insuficiente para {detalle.producto.nombre}. Stock disponible: {detalle.producto.stock_actual}, necesitas: {diferencia_agregar}')
+                            return redirect('ventas')
+                        detalle.producto.stock_actual -= diferencia_agregar
+                        detalle.producto.save()
                         # Actualizar detalle
                         detalle.cantidad = nueva_cantidad
                         detalle.subtotal = nueva_cantidad * detalle.precio_unitario
@@ -793,30 +803,22 @@ def editar_venta_ajax(request, id):
         detalles = list(venta.detalles.select_related('producto').all())
         if len(cantidades) != len(detalles):
             return JsonResponse({'success': False, 'error': 'Cantidad de productos no coincide.'})
-        # Solo validar y actualizar stock si la venta está ENVIADA
-        if venta.estado == 'ENVIADO':
-            # Validar stock
-            for idx, detalle in enumerate(detalles):
-                nueva_cantidad = int(cantidades[idx])
-                producto = detalle.producto
-                stock_disponible = producto.stock_actual + detalle.cantidad
-                if nueva_cantidad > stock_disponible:
-                    return JsonResponse({'success': False, 'error': f'Stock insuficiente para {producto.nombre}.'})
-            # Actualizar detalles y stock
-            for idx, detalle in enumerate(detalles):
-                nueva_cantidad = int(cantidades[idx])
-                producto = detalle.producto
-                producto.stock_actual += detalle.cantidad  # devolver stock anterior
-                producto.stock_actual -= nueva_cantidad    # restar nuevo
-                producto.save()
-                detalle.cantidad = nueva_cantidad
-                detalle.save()
-        else:
-            # Si no está ENVIADA, solo actualizar las cantidades sin tocar el stock
-            for idx, detalle in enumerate(detalles):
-                nueva_cantidad = int(cantidades[idx])
-                detalle.cantidad = nueva_cantidad
-                detalle.save()
+        # Validar stock
+        for idx, detalle in enumerate(detalles):
+            nueva_cantidad = int(cantidades[idx])
+            producto = detalle.producto
+            stock_disponible = producto.stock_actual + detalle.cantidad
+            if nueva_cantidad > stock_disponible:
+                return JsonResponse({'success': False, 'error': f'Stock insuficiente para {producto.nombre}.'})
+        # Actualizar detalles y stock (el stock ya se restó al crear la salida)
+        for idx, detalle in enumerate(detalles):
+            nueva_cantidad = int(cantidades[idx])
+            producto = detalle.producto
+            producto.stock_actual += detalle.cantidad  # devolver stock anterior
+            producto.stock_actual -= nueva_cantidad    # restar nuevo
+            producto.save()
+            detalle.cantidad = nueva_cantidad
+            detalle.save()
         venta.observaciones = observaciones
         if fecha:
             venta.fecha = fecha
@@ -883,21 +885,7 @@ def confirmar_entrega(request, id):
         # Actualizar el estado basado en fecha_entrega
         venta.actualizar_estado()
         
-        # Restar stock cuando se confirma el envío
-        if venta.estado == 'ENVIADO':
-            for detalle in venta.detalles.all():
-                producto = detalle.producto
-                # Verificar que hay stock suficiente
-                if producto.stock_actual < detalle.cantidad:
-                    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-                        return JsonResponse({
-                            'success': False,
-                            'message': f'Stock insuficiente para {producto.nombre}. Stock disponible: {producto.stock_actual}, necesario: {detalle.cantidad}'
-                        })
-                    messages.error(request, f'Stock insuficiente para {producto.nombre}. Stock disponible: {producto.stock_actual}, necesario: {detalle.cantidad}')
-                    return redirect('ventas')
-                producto.stock_actual -= detalle.cantidad
-                producto.save()
+        # El stock ya se restó al crear la salida, no es necesario restarlo aquí
         
         numero_salida = venta.numero_venta if venta.numero_venta else venta.id_venta
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
@@ -951,459 +939,6 @@ def autocomplete_sucursales(request):
         })
     
     return JsonResponse({'results': results})
-
-def listar_reembolsos(request):
-    mostrar = int(request.GET.get('mostrar', 10))
-    fecha_inicio = request.GET.get('fecha_inicio')
-    fecha_fin = request.GET.get('fecha_fin')
-    venta_numero = request.GET.get('venta')
-    search_query = request.GET.get('search', '').strip()
-    filter_estados = request.GET.getlist('filter_estado')
-
-    reembolsos_qs = Reembolso.objects.select_related('venta', 'usuario').prefetch_related('detalles__producto').order_by('-fecha_hora')
-    
-    # Filtros opcionales
-    if fecha_inicio:
-        fecha_inicio_parsed = parse_date(fecha_inicio)
-        if fecha_inicio_parsed:
-            # Incluir desde el inicio del día
-            fecha_inicio_datetime = timezone.make_aware(datetime.combine(fecha_inicio_parsed, time.min))
-            reembolsos_qs = reembolsos_qs.filter(fecha_hora__gte=fecha_inicio_datetime)
-    if fecha_fin:
-        fecha_fin_parsed = parse_date(fecha_fin)
-        if fecha_fin_parsed:
-            # Incluir hasta el final del día
-            fecha_fin_datetime = timezone.make_aware(datetime.combine(fecha_fin_parsed, time.max))
-            reembolsos_qs = reembolsos_qs.filter(fecha_hora__lte=fecha_fin_datetime)
-    if venta_numero and venta_numero not in ('', None, 'None'):
-        try:
-            venta_numero_int = int(venta_numero)
-            reembolsos_qs = reembolsos_qs.filter(venta__numero_venta=venta_numero_int)
-        except ValueError:
-            pass
-    if filter_estados:
-        reembolsos_qs = reembolsos_qs.filter(venta__estado__in=filter_estados)
-    if search_query:
-        # Buscar por número de venta
-        try:
-            # Intentar buscar como número
-            numero_venta = int(search_query)
-            reembolsos_qs = reembolsos_qs.filter(
-                Q(venta__numero_venta=numero_venta) | Q(venta__id_venta=numero_venta)
-            )
-        except ValueError:
-            # Si no es un número, buscar como string en número de venta
-            reembolsos_qs = reembolsos_qs.filter(
-                Q(venta__numero_venta__icontains=search_query)
-            )
-
-    # Paginación
-    page_number = request.GET.get('page', 1)
-    paginator = Paginator(reembolsos_qs, mostrar)
-    page_obj = paginator.get_page(page_number)
-
-    total_reembolsado = reembolsos_qs.aggregate(total=models.Sum('total_devuelto'))['total'] or 0
-
-    context = {
-        'reembolsos': page_obj.object_list,
-        'page_obj': page_obj,
-        'paginator': paginator,
-        'total_reembolsado': total_reembolsado,
-        'mostrar': mostrar,
-        'filter_estados': filter_estados,
-        'filtros': {
-            'fecha_inicio': fecha_inicio,
-            'fecha_fin': fecha_fin,
-            'venta_id': venta_numero,
-        }
-    }
-    
-    # Si es una petición AJAX, devolver solo el contenido de la tabla
-    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-        return render(request, 'venta/partials/table_content_reembolsos.html', context)
-    
-    return render(request, 'venta/lista_reembolsos.html', context)
-
-def exportar_reembolsos_excel(request):
-    # Obtener los mismos filtros que en listar_reembolsos
-    reembolsos = Reembolso.objects.select_related('venta', 'usuario').prefetch_related('detalles__producto').order_by('-fecha_hora')
-    fecha_inicio = request.GET.get('fecha_inicio')
-    fecha_fin = request.GET.get('fecha_fin')
-    venta_numero = request.GET.get('venta')
-
-    if fecha_inicio:
-        reembolsos = reembolsos.filter(fecha_hora__date__gte=fecha_inicio)
-    if fecha_fin:
-        reembolsos = reembolsos.filter(fecha_hora__date__lte=fecha_fin)
-    if venta_numero and venta_numero not in ('', None, 'None'):
-        try:
-            venta_numero_int = int(venta_numero)
-            reembolsos = reembolsos.filter(venta__numero_venta=venta_numero_int)
-        except ValueError:
-            pass
-
-    # Crear el archivo Excel
-    output = BytesIO()
-    workbook = xlsxwriter.Workbook(output)
-    worksheet = workbook.add_worksheet()
-
-    # Formatos
-    header_format = workbook.add_format({
-        'bold': True,
-        'bg_color': '#D9E1F2',
-        'border': 1
-    })
-    money_format = workbook.add_format({
-        'num_format': '$#,##0',
-        'border': 1
-    })
-    date_format = workbook.add_format({
-        'num_format': 'yyyy-mm-dd hh:mm',
-        'border': 1
-    })
-    border_format = workbook.add_format({'border': 1})
-
-    # Escribir encabezados
-    headers = ['Fecha', 'ID Venta', 'ID Reembolso', 'Productos', 'Cantidad', 'Total Devuelto', 'Usuario', 'Observaciones']
-    for col, header in enumerate(headers):
-        worksheet.write(0, col, header, header_format)
-
-    # Escribir datos
-    row = 1
-    for reembolso in reembolsos:
-        for detalle in reembolso.detalles.all():
-            worksheet.write(row, 0, reembolso.fecha_hora, date_format)
-            numero_venta = reembolso.venta.numero_venta if reembolso.venta.numero_venta else reembolso.venta.id_venta
-            numero_reembolso = reembolso.numero_reembolso if reembolso.numero_reembolso else reembolso.id_reembolso
-            worksheet.write(row, 1, numero_venta, border_format)
-            worksheet.write(row, 2, numero_reembolso, border_format)
-            worksheet.write(row, 3, detalle.producto.nombre, border_format)
-            worksheet.write(row, 4, detalle.cantidad, border_format)
-            worksheet.write(row, 5, float(detalle.monto), money_format)
-            worksheet.write(row, 6, reembolso.usuario.nombre_usuario if reembolso.usuario else '', border_format)
-            worksheet.write(row, 7, reembolso.observaciones or '', border_format)
-            row += 1
-
-    # Ajustar ancho de columnas
-    worksheet.set_column('A:A', 20)
-    worksheet.set_column('B:B', 10)
-    worksheet.set_column('C:C', 12)
-    worksheet.set_column('D:D', 30)
-    worksheet.set_column('E:E', 10)
-    worksheet.set_column('F:F', 15)
-    worksheet.set_column('G:G', 15)
-    worksheet.set_column('H:H', 40)
-
-    # Escribir total
-    total = reembolsos.aggregate(total=models.Sum('total_devuelto'))['total'] or 0
-    worksheet.write(row, 4, 'Total:', header_format)
-    worksheet.write(row, 5, float(total), money_format)
-
-    workbook.close()
-    output.seek(0)
-
-    # Preparar la respuesta
-    response = HttpResponse(
-        output.read(),
-        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-    )
-    response['Content-Disposition'] = f'attachment; filename=reembolsos_{datetime.now().strftime("%Y%m%d_%H%M")}.xlsx'
-    return response
-
-def exportar_reembolsos_pdf(request):
-    # Obtener los mismos filtros que en listar_reembolsos
-    reembolsos = Reembolso.objects.select_related('venta', 'usuario').prefetch_related('detalles__producto').order_by('-fecha_hora')
-    fecha_inicio = request.GET.get('fecha_inicio')
-    fecha_fin = request.GET.get('fecha_fin')
-    venta_numero = request.GET.get('venta')
-
-    if fecha_inicio:
-        reembolsos = reembolsos.filter(fecha_hora__date__gte=fecha_inicio)
-    if fecha_fin:
-        reembolsos = reembolsos.filter(fecha_hora__date__lte=fecha_fin)
-    if venta_numero and venta_numero not in ('', None, 'None'):
-        try:
-            venta_numero_int = int(venta_numero)
-            reembolsos = reembolsos.filter(venta__numero_venta=venta_numero_int)
-        except ValueError:
-            pass
-
-    # Crear el PDF
-    buffer = BytesIO()
-    doc = SimpleDocTemplate(buffer, pagesize=letter)
-    elements = []
-    styles = getSampleStyleSheet()
-
-    # Título
-    elements.append(Paragraph("Reporte de Reembolsos", styles['Title']))
-    elements.append(Paragraph(f"Generado el {datetime.now().strftime('%Y-%m-%d %H:%M')}", styles['Normal']))
-    elements.append(Paragraph("<br/><br/>", styles['Normal']))
-
-    # Datos de la tabla
-    data = [['Fecha', 'ID Venta', 'ID Reembolso', 'Producto', 'Cantidad', 'Total', 'Usuario', 'Observaciones']]
-    for reembolso in reembolsos:
-        for detalle in reembolso.detalles.all():
-            data.append([
-                reembolso.fecha_hora.strftime('%Y-%m-%d %H:%M'),
-                str(reembolso.venta.numero_venta if reembolso.venta.numero_venta else reembolso.venta.id_venta),
-                str(reembolso.numero_reembolso if reembolso.numero_reembolso else reembolso.id_reembolso),
-                detalle.producto.nombre,
-                str(detalle.cantidad),
-                f"${detalle.monto:,.0f}",
-                reembolso.usuario.nombre_usuario if reembolso.usuario else '',
-                reembolso.observaciones or ''
-            ])
-
-    # Crear la tabla
-    table = Table(data)
-    table.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
-        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
-        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-        ('FONTSIZE', (0, 0), (-1, 0), 12),
-        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-        ('BACKGROUND', (0, 1), (-1, -1), colors.white),
-        ('TEXTCOLOR', (0, 1), (-1, -1), colors.black),
-        ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
-        ('FONTSIZE', (0, 1), (-1, -1), 10),
-        ('GRID', (0, 0), (-1, -1), 1, colors.black),
-        ('ALIGN', (3, 1), (4, -1), 'RIGHT'),
-    ]))
-    elements.append(table)
-
-    # Total
-    total = reembolsos.aggregate(total=models.Sum('total_devuelto'))['total'] or 0
-    elements.append(Paragraph(f"<br/>Total Reembolsado: ${total:,.0f}", styles['Heading2']))
-
-    # Generar PDF
-    doc.build(elements)
-    buffer.seek(0)
-
-    # Preparar la respuesta
-    response = HttpResponse(buffer.read(), content_type='application/pdf')
-    response['Content-Disposition'] = f'attachment; filename=reembolsos_{datetime.now().strftime("%Y%m%d_%H%M")}.pdf'
-    return response
-
-@require_POST
-def eliminar_reembolso(request, id_reembolso):
-    try:
-        reembolso = get_object_or_404(Reembolso, id_reembolso=id_reembolso)
-
-        with transaction.atomic():
-            # Obtener la venta asociada
-            venta = reembolso.venta
-
-            # Asegurar que la venta tenga un número de venta asignado
-            if not venta.numero_venta:
-                venta.asignar_numero_venta()
-
-            # Guardar datos del reembolso antes de eliminar para poder restaurarlo
-            reembolso_data = {
-                'id_reembolso': reembolso.id_reembolso,
-                'numero_reembolso': reembolso.numero_reembolso,
-                'fecha_hora': reembolso.fecha_hora.isoformat(),
-                'total_devuelto': float(reembolso.total_devuelto),
-                'observaciones': reembolso.observaciones,
-                'venta_id': venta.id_venta,
-                'usuario_id': reembolso.usuario.id_usuario if reembolso.usuario else None,
-                'detalles': []
-            }
-
-            # Guardar detalles del reembolso
-            for detalle_reembolso in reembolso.detalles.all():
-                reembolso_data['detalles'].append({
-                    'producto_id': detalle_reembolso.producto.id_producto,
-                    'cantidad': detalle_reembolso.cantidad,
-                    'monto': float(detalle_reembolso.monto)
-                })
-
-            # Devolver las cantidades reembolsadas a la venta original
-            for detalle_reembolso in reembolso.detalles.all():
-                producto = detalle_reembolso.producto
-                cantidad_reembolsada = detalle_reembolso.cantidad
-
-                # Buscar el detalle de venta correspondiente
-                try:
-                    detalle_venta = venta.detalles.get(producto=producto)
-                    # Aumentar la cantidad en la venta original
-                    detalle_venta.cantidad += cantidad_reembolsada
-                    detalle_venta.subtotal = detalle_venta.cantidad * detalle_venta.precio_unitario
-                    detalle_venta.save()
-
-                    # Actualizar el estado del detalle de venta
-                    detalle_venta.actualizar_estado()
-
-                    # Reducir el stock (porque se devuelve a la venta)
-                    producto.stock_actual -= cantidad_reembolsada
-                    producto.save()
-
-                except DetalleVenta.DoesNotExist:
-                    # Si no existe el detalle de venta, crear uno nuevo
-                    DetalleVenta.objects.create(
-                        venta=venta,
-                        producto=producto,
-                        cantidad=cantidad_reembolsada,
-                        precio_unitario=producto.precio_unitario,
-                        subtotal=cantidad_reembolsada * producto.precio_unitario
-                    )
-
-                    # Reducir el stock
-                    producto.stock_actual -= cantidad_reembolsada
-                    producto.save()
-
-            # Guardar el número de reembolso antes de eliminar
-            numero_reembolso_mostrar = reembolso.numero_reembolso if reembolso.numero_reembolso else reembolso.id_reembolso
-
-            # Eliminar el reembolso
-            reembolso.delete()
-
-            # Actualizar el total de la venta
-            venta.actualizar_total()
-
-            # Forzar la actualización del estado de la venta
-            venta.actualizar_estado()
-
-            # Recargar la venta para obtener el estado actualizado
-            venta.refresh_from_db()
-
-            # Guardar datos en sessionStorage para poder restaurar
-            request.session['reembolso_eliminado'] = reembolso_data
-
-            # Usar el número de venta actual en el mensaje
-            numero_venta_mostrar = venta.numero_venta if venta.numero_venta else venta.id_venta
-
-            return JsonResponse({
-                'success': True,
-                'message': f'Reembolso #{numero_reembolso_mostrar} cancelado correctamente. Las cantidades han sido devueltas a la salida #{numero_venta_mostrar}.',
-                'reembolso_id': id_reembolso,
-                'venta_estado': venta.estado,
-                'venta_id': venta.id_venta
-            })
-
-    except Exception as e:
-        return JsonResponse({
-            'success': False,
-            'message': f'Error al cancelar el reembolso: {str(e)}'
-        })
-
-    return JsonResponse({
-        'success': False,
-        'message': 'Método no permitido.'
-    })
-
-@require_POST
-def restaurar_reembolso(request, id_reembolso):
-    try:
-        # Obtener datos del reembolso eliminado de la sesión
-        reembolso_data = request.session.get('reembolso_eliminado')
-        if not reembolso_data:
-            return JsonResponse({
-                'success': False,
-                'message': 'No se encontraron datos del reembolso para restaurar.'
-            })
-
-        with transaction.atomic():
-            # Obtener la venta
-            venta = get_object_or_404(Venta, id_venta=reembolso_data['venta_id'])
-
-            # Obtener el usuario
-            usuario = None
-            if reembolso_data['usuario_id']:
-                usuario = get_object_or_404(Usuario, id_usuario=reembolso_data['usuario_id'])
-
-            # Crear el reembolso
-            reembolso = Reembolso.objects.create(
-                numero_reembolso=reembolso_data['numero_reembolso'],
-                fecha_hora=reembolso_data['fecha_hora'],
-                total_devuelto=reembolso_data['total_devuelto'],
-                observaciones=reembolso_data['observaciones'],
-                venta=venta,
-                usuario=usuario
-            )
-
-            # Crear los detalles del reembolso
-            for detalle_data in reembolso_data['detalles']:
-                producto = get_object_or_404(Producto, id_producto=detalle_data['producto_id'])
-                ReembolsoDetalle.objects.create(
-                    reembolso=reembolso,
-                    producto=producto,
-                    cantidad=detalle_data['cantidad'],
-                    monto=detalle_data['monto']
-                )
-
-                # Buscar el detalle de venta correspondiente
-                try:
-                    detalle_venta = venta.detalles.get(producto=producto)
-                    # Reducir la cantidad en la venta original
-                    detalle_venta.cantidad -= detalle_data['cantidad']
-                    detalle_venta.subtotal = detalle_venta.cantidad * detalle_venta.precio_unitario
-                    detalle_venta.save()
-
-                    # Actualizar el estado del detalle de venta
-                    detalle_venta.actualizar_estado()
-
-                    # Aumentar el stock (porque se quita de la venta)
-                    producto.stock_actual += detalle_data['cantidad']
-                    producto.save()
-
-                except DetalleVenta.DoesNotExist:
-                    # Si no existe el detalle de venta, no hacer nada
-                    pass
-
-            # Actualizar el total de la venta
-            venta.actualizar_total()
-
-            # Forzar la actualización del estado de la venta
-            venta.actualizar_estado()
-
-            # Recargar la venta para obtener el estado actualizado
-            venta.refresh_from_db()
-
-            # Limpiar datos de la sesión
-            del request.session['reembolso_eliminado']
-
-            numero_reembolso_mostrar = reembolso.numero_reembolso if reembolso.numero_reembolso else reembolso.id_reembolso
-
-            # Obtener datos del reembolso restaurado para actualizar la tabla
-            reembolso_data = {
-                'id_reembolso': reembolso.id_reembolso,
-                'numero_reembolso': numero_reembolso_mostrar,
-                'fecha_hora': reembolso.fecha_hora.strftime('%d/%m/%Y %H:%M'),
-                'total_devuelto': float(reembolso.total_devuelto),
-                'observaciones': reembolso.observaciones or '',
-                'usuario_nombre': reembolso.usuario.nombre_usuario if reembolso.usuario else 'Sin usuario',
-                'venta_id': venta.id_venta,
-                'venta_numero': venta.numero_venta if venta.numero_venta else venta.id_venta,
-                'detalles': []
-            }
-
-            # Obtener detalles del reembolso
-            for detalle in reembolso.detalles.all():
-                reembolso_data['detalles'].append({
-                    'producto_nombre': detalle.producto.nombre,
-                    'cantidad': detalle.cantidad,
-                    'precio_unitario': float(detalle.producto.precio_unitario),
-                    'monto': float(detalle.monto)
-                })
-
-            return JsonResponse({
-                'success': True,
-                'message': f'Reembolso #{numero_reembolso_mostrar} restaurado correctamente.',
-                'reembolso_data': reembolso_data,
-                'venta_estado': venta.estado
-            })
-
-    except Exception as e:
-        return JsonResponse({
-            'success': False,
-            'message': f'Error al restaurar el reembolso: {str(e)}'
-        })
-
-    return JsonResponse({
-        'success': False,
-        'message': 'Método no permitido.'
-    })
 
 @require_GET
 def obtener_estado_venta(request, id_venta):
@@ -1565,36 +1100,6 @@ def boleta_venta(request, id_venta):
     buffer.seek(0)
     return FileResponse(buffer, as_attachment=False, filename=f'boleta_venta_{numero_venta_mostrar}.pdf', content_type='application/pdf')
 
-@require_http_methods(["GET", "POST"])
-def configurar_boleta(request):
-    config = ConfiguracionBoleta.objects.first()
-    if request.method == "POST":
-        nombre = request.POST.get("nombre", "Mi Negocio")
-        direccion = request.POST.get("direccion", "Dirección del negocio")
-        fono = request.POST.get("fono", "Teléfono de contacto")
-        rut = request.POST.get("rut", "RUT/NIT: 00.000.000-0")
-        correo = request.POST.get("correo", "")
-        sitio_web = request.POST.get("sitio_web", "")
-        mensaje_pie = request.POST.get("mensaje_pie", "¡Gracias por su compra!")
-        logo = request.FILES.get("logo")
-        if not config:
-            config = ConfiguracionBoleta()
-        config.nombre = nombre
-        config.direccion = direccion
-        config.fono = fono
-        config.rut = rut
-        config.correo = correo
-        config.sitio_web = sitio_web
-        config.mensaje_pie = mensaje_pie
-        if logo:
-            config.logo = logo
-        config.save()
-        return redirect(reverse('ventas'))
-    nombre_usuario = request.session.get('usuario_nombre', 'Invitado')
-    return render(request, 'venta/configurar_boleta.html', {
-        "config": config,
-        "nombre_usuario": nombre_usuario
-    })
 
 def eliminar_historial_ventas(request):
     # Verificar si el usuario está autenticado usando el sistema personalizado

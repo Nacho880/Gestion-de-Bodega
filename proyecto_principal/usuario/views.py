@@ -6,11 +6,55 @@ from django.core.mail import send_mail
 from django.conf import settings
 from django.core.validators import validate_email
 from django.core.exceptions import ValidationError
+from django.contrib.auth.hashers import make_password
 from .models import Usuario
 from .forms import UsuarioCreationForm
+from home.models import Sucursal
 import random
 import traceback
 import re
+
+def es_primer_usuario(usuario_id):
+    """
+    Verifica si el usuario es el primer usuario del sistema (el que tiene el menor id_usuario).
+    """
+    try:
+        primer_usuario = Usuario.objects.order_by('id_usuario').first()
+        if primer_usuario and primer_usuario.id_usuario == usuario_id:
+            return True
+    except:
+        pass
+    return False
+
+def es_dueño(usuario_id):
+    """
+    Verifica si el usuario es dueño (tiene es_dueño=True).
+    El dueño tiene los permisos más altos.
+    """
+    try:
+        usuario = Usuario.objects.get(id_usuario=usuario_id)
+        if usuario.es_dueño:
+            return True
+    except:
+        pass
+    return False
+
+def es_admin(usuario_id):
+    """
+    Verifica si el usuario es administrador (tiene es_admin=True, es el primer usuario, o es dueño).
+    """
+    try:
+        # El dueño tiene todos los permisos de admin
+        if es_dueño(usuario_id):
+            return True
+        
+        usuario = Usuario.objects.get(id_usuario=usuario_id)
+        # Si es el primer usuario o tiene es_admin=True
+        if es_primer_usuario(usuario_id) or usuario.es_admin:
+            return True
+    except:
+        pass
+    return False
 
 def validar_password(password):
     """
@@ -242,6 +286,12 @@ def lista_perfiles(request):
     if not request.session.get('usuario_id'):
         return redirect('login')
     
+    # Verificar que el usuario sea admin (dueño, primer usuario o tiene es_admin=True)
+    usuario_id_sesion = request.session.get('usuario_id')
+    if not es_admin(usuario_id_sesion):
+        messages.error(request, 'No tienes permisos para acceder a esta sección.')
+        return redirect('main')
+    
     from django.db.models import Q
     from django.core.paginator import Paginator
     
@@ -282,6 +332,14 @@ def lista_perfiles(request):
     page_number = request.GET.get('page', 1)
     page_obj = paginator.get_page(page_number)
     
+    # Obtener los IDs de los administradores y dueños
+    primer_usuario = Usuario.objects.order_by('id_usuario').first()
+    primer_usuario_id = primer_usuario.id_usuario if primer_usuario else None
+    admins_ids = list(Usuario.objects.filter(es_admin=True).values_list('id_usuario', flat=True))
+    dueños_ids = list(Usuario.objects.filter(es_dueño=True).values_list('id_usuario', flat=True))
+    if primer_usuario_id:
+        admins_ids.append(primer_usuario_id)
+    
     # Si es una petición AJAX, devolver solo el contenido de la tabla
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         return render(request, 'usuario/perfiles/partials/table_content.html', {
@@ -290,9 +348,15 @@ def lista_perfiles(request):
             'search_query': search_query,
             'sort_field': sort_field,
             'order': order,
+            'admins_ids': admins_ids,
+            'dueños_ids': dueños_ids,
+            'usuario_actual_es_dueño': es_dueño(usuario_id_sesion),
         })
     
     usuario_id_sesion = request.session.get('usuario_id')
+    
+    # Obtener todas las sucursales activas
+    sucursales = Sucursal.objects.all().order_by('nombre')
     
     return render(request, 'usuario/perfiles/lista_perfiles.html', {
         'usuarios': page_obj,
@@ -302,11 +366,23 @@ def lista_perfiles(request):
         'search_query': search_query,
         'sort_field': sort_field,
         'order': order,
+        'admins_ids': admins_ids,
+        'dueños_ids': dueños_ids,
+        'usuario_actual_es_dueño': es_dueño(usuario_id_sesion),
+        'sucursales': sucursales,
     })
 
 def nuevo_perfil(request):
     if not request.session.get('usuario_id'):
         return redirect('login')
+    
+    # Verificar que el usuario sea admin
+    usuario_id_sesion = request.session.get('usuario_id')
+    if not es_admin(usuario_id_sesion):
+        return JsonResponse({
+            'success': False,
+            'message': 'No tienes permisos para realizar esta acción.'
+        })
     
     if request.method == 'POST':
         nombre = request.POST.get('username', '').strip()
@@ -349,6 +425,26 @@ def nuevo_perfil(request):
                 messages.error(request, password_error)
                 return redirect('lista_perfiles')
 
+        # Obtener sucursal y roles (solo si es dueño) - antes de las validaciones
+        usuario_id_sesion = request.session.get('usuario_id')
+        es_dueño_usuario = es_dueño(usuario_id_sesion)
+        
+        # Obtener sucursal si se proporciona (opcional)
+        sucursal_id = request.POST.get('sucursal', '').strip()
+        sucursal_obj = None
+        if sucursal_id and sucursal_id != '0':
+            try:
+                sucursal_obj = Sucursal.objects.get(id_sucursal=int(sucursal_id), eliminado=False)
+            except (Sucursal.DoesNotExist, ValueError):
+                pass
+        
+        # Roles solo si es dueño
+        es_admin_rol = False
+        es_dueño_rol = False
+        if es_dueño_usuario:
+            es_admin_rol = request.POST.get('es_admin', '') == 'on'
+            es_dueño_rol = request.POST.get('es_dueño', '') == 'on'
+        
         # Verificar si el nombre de usuario ya existe (incluyendo usuarios eliminados) - insensible a mayúsculas
         usuario_existente = Usuario.all_objects.filter(nombre_usuario__iexact=nombre).first()
         if usuario_existente:
@@ -356,6 +452,10 @@ def nuevo_perfil(request):
                 # Si el usuario está eliminado, lo restauramos y actualizamos sus datos
                 usuario_existente.restore()
                 usuario_existente.correo = correo
+                usuario_existente.sucursal = sucursal_obj
+                if es_dueño_usuario:
+                    usuario_existente.es_admin = es_admin_rol
+                    usuario_existente.es_dueño = es_dueño_rol
                 usuario_existente.set_password(password)
                 usuario_existente.save()
                 
@@ -392,6 +492,10 @@ def nuevo_perfil(request):
                 # Si el correo está eliminado, lo restauramos y actualizamos sus datos
                 correo_existente.restore()
                 correo_existente.nombre_usuario = nombre
+                correo_existente.sucursal = sucursal_obj
+                if es_dueño_usuario:
+                    correo_existente.es_admin = es_admin_rol
+                    correo_existente.es_dueño = es_dueño_rol
                 correo_existente.set_password(password)
                 correo_existente.save()
                 
@@ -433,6 +537,26 @@ def nuevo_perfil(request):
             messages.error(request, 'El correo electrónico no tiene un formato válido.')
             return redirect('lista_perfiles')
 
+        # Obtener sucursal y roles (solo si es dueño)
+        usuario_id_sesion = request.session.get('usuario_id')
+        es_dueño_usuario = es_dueño(usuario_id_sesion)
+        
+        # Obtener sucursal si se proporciona (opcional)
+        sucursal_id = request.POST.get('sucursal', '').strip()
+        sucursal_obj = None
+        if sucursal_id and sucursal_id != '0':
+            try:
+                sucursal_obj = Sucursal.objects.get(id_sucursal=int(sucursal_id), eliminado=False)
+            except (Sucursal.DoesNotExist, ValueError):
+                pass
+        
+        # Roles solo si es dueño
+        es_admin_rol = False
+        es_dueño_rol = False
+        if es_dueño_usuario:
+            es_admin_rol = request.POST.get('es_admin', '') == 'on'
+            es_dueño_rol = request.POST.get('es_dueño', '') == 'on'
+        
         # Generar código de verificación
         codigo = str(random.randint(100000, 999999))
         
@@ -440,7 +564,10 @@ def nuevo_perfil(request):
         request.session['nuevo_perfil_datos'] = {
             'nombre': nombre,
             'correo': correo,
-            'password': password
+            'password': password,
+            'sucursal_id': sucursal_obj.id_sucursal if sucursal_obj else None,
+            'es_admin': es_admin_rol if es_dueño_usuario else False,
+            'es_dueño': es_dueño_rol if es_dueño_usuario else False
         }
         request.session['nuevo_perfil_codigo'] = codigo
         request.session.modified = True
@@ -482,6 +609,18 @@ def verificar_nuevo_perfil(request):
     """
     if not request.session.get('usuario_id'):
         return redirect('login')
+    
+    # Verificar que el usuario sea el primer usuario
+    usuario_id_sesion = request.session.get('usuario_id')
+    if not es_primer_usuario(usuario_id_sesion):
+        is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+        if is_ajax:
+            return JsonResponse({
+                'success': False,
+                'message': 'No tienes permisos para realizar esta acción.'
+            })
+        messages.error(request, 'No tienes permisos para realizar esta acción.')
+        return redirect('main')
     
     # Verificar si es una petición AJAX
     is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
@@ -532,10 +671,21 @@ def verificar_nuevo_perfil(request):
                     messages.error(request, 'El correo ya está registrado.')
                     return redirect('lista_perfiles')
                 
+                # Obtener sucursal si existe (opcional)
+                sucursal_obj = None
+                if datos_perfil.get('sucursal_id') and datos_perfil['sucursal_id'] != 0:
+                    try:
+                        sucursal_obj = Sucursal.objects.get(id_sucursal=datos_perfil['sucursal_id'], eliminado=False)
+                    except Sucursal.DoesNotExist:
+                        pass
+                
                 # Crear el usuario
                 usuario = Usuario.objects.create(
                     nombre_usuario=datos_perfil['nombre'],
-                    correo=datos_perfil['correo']
+                    correo=datos_perfil['correo'],
+                    sucursal=sucursal_obj,
+                    es_admin=datos_perfil.get('es_admin', False),
+                    es_dueño=datos_perfil.get('es_dueño', False)
                 )
                 usuario.set_password(datos_perfil['password'])
                 usuario.save()
@@ -585,8 +735,17 @@ def verificar_nuevo_perfil(request):
 def verificar_editar_perfil(request):
     """
     Vista para verificar el código enviado al correo al editar un perfil y cambiar la contraseña.
+    Solo para el primer usuario que edita otros perfiles.
     """
     if not request.session.get('usuario_id'):
+        return JsonResponse({
+            'success': False,
+            'message': 'No tienes permisos para realizar esta acción.'
+        })
+    
+    # Verificar que el usuario sea admin
+    usuario_id_sesion = request.session.get('usuario_id')
+    if not es_admin(usuario_id_sesion):
         return JsonResponse({
             'success': False,
             'message': 'No tienes permisos para realizar esta acción.'
@@ -639,6 +798,14 @@ def eliminar_perfil(request, id_usuario):
             'message': 'No tienes permisos para realizar esta acción.'
         })
     
+    # Verificar que el usuario sea admin
+    usuario_id_sesion = request.session.get('usuario_id')
+    if not es_admin(usuario_id_sesion):
+        return JsonResponse({
+            'success': False,
+            'message': 'No tienes permisos para realizar esta acción.'
+        })
+    
     if request.method == 'POST':
         try:
             usuario = get_object_or_404(Usuario, id_usuario=id_usuario)
@@ -658,6 +825,18 @@ def eliminar_perfil(request, id_usuario):
                     'success': False,
                     'message': 'No puedes borrar tu propio perfil mientras estás logueado.'
                 })
+            
+            es_usuario_actual_dueño = es_dueño(usuario_actual_id)
+            
+            # Si no es dueño, solo puede borrar usuarios normales (no admins ni dueños)
+            if not es_usuario_actual_dueño:
+                if usuario.es_dueño or usuario.es_admin or es_primer_usuario(usuario.id_usuario):
+                    return JsonResponse({
+                        'success': False,
+                        'message': 'Los administradores solo pueden eliminar usuarios del sistema.'
+                    })
+            
+            # El dueño puede borrar a todos (excepto a sí mismo, ya validado arriba)
             
             # Usar soft delete en lugar de eliminación física
             usuario.soft_delete()
@@ -683,9 +862,148 @@ def eliminar_perfil(request, id_usuario):
         'message': 'Método no permitido.'
     })
 
+def cambiar_admin(request, id_usuario):
+    """
+    Vista para hacer admin o quitar admin a un usuario.
+    Solo el dueño puede hacer esto.
+    """
+    if not request.session.get('usuario_id'):
+        return JsonResponse({
+            'success': False,
+            'message': 'No tienes permisos para realizar esta acción.'
+        })
+    
+    # Solo el dueño puede cambiar permisos de admin
+    usuario_id_sesion = request.session.get('usuario_id')
+    if not es_dueño(usuario_id_sesion):
+        return JsonResponse({
+            'success': False,
+            'message': 'Solo el dueño puede cambiar permisos de administrador.'
+        })
+    
+    if request.method == 'POST':
+        try:
+            usuario = get_object_or_404(Usuario, id_usuario=id_usuario)
+            
+            # No permitir cambiar admin al dueño
+            if usuario.es_dueño:
+                return JsonResponse({
+                    'success': False,
+                    'message': 'No se pueden cambiar los permisos del dueño.'
+                })
+            
+            # Cambiar el estado de admin
+            usuario.es_admin = not usuario.es_admin
+            usuario.save()
+            
+            accion = 'agregado como' if usuario.es_admin else 'removido como'
+            return JsonResponse({
+                'success': True,
+                'message': f'{usuario.nombre_usuario} ha sido {accion} administrador.',
+                'es_admin': usuario.es_admin
+            })
+            
+        except Usuario.DoesNotExist:
+            return JsonResponse({
+                'success': False,
+                'message': 'El perfil no existe.'
+            })
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'message': f'Error al cambiar permisos: {str(e)}'
+            })
+    
+    return JsonResponse({
+        'success': False,
+        'message': 'Método no permitido.'
+    })
+
+def cambiar_dueño(request, id_usuario):
+    """
+    Vista para hacer dueño o quitar dueño a un usuario.
+    Solo el dueño puede hacer esto.
+    """
+    if not request.session.get('usuario_id'):
+        return JsonResponse({
+            'success': False,
+            'message': 'No tienes permisos para realizar esta acción.'
+        })
+    
+    # Solo el dueño puede cambiar permisos de dueño
+    usuario_id_sesion = request.session.get('usuario_id')
+    if not es_dueño(usuario_id_sesion):
+        return JsonResponse({
+            'success': False,
+            'message': 'Solo el dueño puede cambiar permisos de dueño.'
+        })
+    
+    if request.method == 'POST':
+        try:
+            usuario = get_object_or_404(Usuario, id_usuario=id_usuario)
+            
+            # No permitir quitar dueño a sí mismo
+            if usuario.id_usuario == usuario_id_sesion:
+                return JsonResponse({
+                    'success': False,
+                    'message': 'No puedes quitar tus propios permisos de dueño.'
+                })
+            
+            # Si se está haciendo dueño, quitar admin automáticamente (el dueño ya tiene esos permisos)
+            if not usuario.es_dueño:
+                usuario.es_dueño = True
+                usuario.es_admin = False  # El dueño no necesita ser admin
+                usuario.save()
+                return JsonResponse({
+                    'success': True,
+                    'message': f'{usuario.nombre_usuario} ha sido asignado como dueño.',
+                    'es_dueño': usuario.es_dueño
+                })
+            else:
+                # Quitar dueño - verificar que no sea el último dueño
+                total_dueños = Usuario.objects.filter(es_dueño=True, eliminado=False).count()
+                if total_dueños <= 1:
+                    return JsonResponse({
+                        'success': False,
+                        'message': 'No se puede quitar el rol de dueño. El sistema requiere al menos un dueño activo.'
+                    })
+                
+                # Quitar dueño
+                usuario.es_dueño = False
+                usuario.save()
+                return JsonResponse({
+                    'success': True,
+                    'message': f'{usuario.nombre_usuario} ya no es dueño.',
+                    'es_dueño': usuario.es_dueño
+                })
+            
+        except Usuario.DoesNotExist:
+            return JsonResponse({
+                'success': False,
+                'message': 'El perfil no existe.'
+            })
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'message': f'Error al cambiar permisos: {str(e)}'
+            })
+    
+    return JsonResponse({
+        'success': False,
+        'message': 'Método no permitido.'
+    })
+
 def restaurar_perfil(request, id_usuario):
     # Verificar autenticación
     if not request.session.get('usuario_id'):
+        return JsonResponse({
+            'success': False,
+            'message': 'No tienes permisos para realizar esta acción.'
+        })
+    
+    # Verificar que el usuario sea admin
+    usuario_id_sesion = request.session.get('usuario_id')
+    if not es_admin(usuario_id_sesion):
         return JsonResponse({
             'success': False,
             'message': 'No tienes permisos para realizar esta acción.'
@@ -740,6 +1058,17 @@ def editar_perfil_ajax(request, id_usuario):
             'success': False,
             'message': 'No tienes permisos para realizar esta acción.'
         })
+    
+    # Verificar que el usuario sea admin (dueño o administrador)
+    usuario_id_sesion = request.session.get('usuario_id')
+    if not es_admin(usuario_id_sesion):
+        return JsonResponse({
+            'success': False,
+            'message': 'No tienes permisos para realizar esta acción.'
+        })
+    
+    # Verificar si es dueño (para asignar roles)
+    es_dueño_usuario = es_dueño(usuario_id_sesion)
     
     if request.method == 'POST':
         try:
@@ -811,9 +1140,54 @@ def editar_perfil_ajax(request, id_usuario):
                     'message': 'El correo electrónico ya está registrado.'
                 })
 
+            # Guardar estado original antes de cambios para validaciones
+            era_dueño_original = usuario.es_dueño
+            
+            # Obtener sucursal si se proporciona (opcional)
+            sucursal_id = request.POST.get('sucursal', '').strip()
+            sucursal_obj = None
+            if sucursal_id and sucursal_id != '0':
+                try:
+                    sucursal_obj = Sucursal.objects.get(id_sucursal=int(sucursal_id), eliminado=False)
+                except (Sucursal.DoesNotExist, ValueError):
+                    pass
+            
             # Actualizar datos básicos
             usuario.nombre_usuario = nombre
             usuario.correo = correo
+            usuario.sucursal = sucursal_obj
+            
+            # Actualizar roles solo si es dueño
+            if es_dueño_usuario:
+                es_admin_rol = request.POST.get('es_admin', '') == 'on'
+                es_dueño_rol = request.POST.get('es_dueño', '') == 'on'
+                
+                # Validaciones para roles antes de cambiar
+                # Validación: no puede quitar dueño a sí mismo
+                if usuario.id_usuario == usuario_id_sesion and era_dueño_original and not es_dueño_rol:
+                    return JsonResponse({
+                        'success': False,
+                        'message': 'No puedes quitar tus propios permisos de dueño.'
+                    })
+                
+                # Validación: no puede quitar el último dueño
+                if era_dueño_original and not es_dueño_rol:
+                    total_dueños = Usuario.objects.filter(es_dueño=True, eliminado=False).exclude(id_usuario=id_usuario).count()
+                    if total_dueños == 0:
+                        return JsonResponse({
+                            'success': False,
+                            'message': 'No se puede quitar el rol de dueño. El sistema requiere al menos un dueño activo.'
+                        })
+                
+                # Actualizar roles
+                if es_dueño_rol:
+                    # Si se está haciendo dueño, no necesita ser admin
+                    usuario.es_dueño = True
+                    usuario.es_admin = False  # El dueño no necesita ser admin
+                else:
+                    # Si no es dueño, puede ser admin o usuario normal
+                    usuario.es_dueño = False
+                    usuario.es_admin = es_admin_rol
             
             # Actualizar contraseña solo si se proporciona una nueva
             if password and confirm_password:
@@ -848,9 +1222,19 @@ def editar_perfil_ajax(request, id_usuario):
             # Si no se cambia la contraseña, actualizar directamente
             usuario.save()
             
+            # Devolver datos actualizados para actualizar la tabla
             return JsonResponse({
                 'success': True,
-                'message': 'Perfil actualizado correctamente.'
+                'message': 'Perfil actualizado correctamente.',
+                'usuario': {
+                    'id': usuario.id_usuario,
+                    'nombre': usuario.nombre_usuario,
+                    'correo': usuario.correo,
+                    'sucursal_id': usuario.sucursal.id_sucursal if usuario.sucursal else None,
+                    'sucursal_nombre': str(usuario.sucursal) if usuario.sucursal else None,
+                    'es_admin': usuario.es_admin,
+                    'es_dueño': usuario.es_dueño
+                }
             })
             
         except Usuario.DoesNotExist:
@@ -1025,10 +1409,11 @@ def verificar_primer_usuario(request):
         
         if codigo_ingresado == codigo_correcto:
             try:
-                # Crear el usuario
+                # Crear el usuario (el primer usuario es automáticamente dueño)
                 usuario = Usuario(
                     nombre_usuario=datos_usuario['nombre'],
-                    correo=datos_usuario['correo']
+                    correo=datos_usuario['correo'],
+                    es_dueño=True  # El primer usuario es dueño
                 )
                 usuario.set_password(datos_usuario['password'])
                 usuario.save()
@@ -1066,6 +1451,225 @@ def verificar_primer_usuario(request):
     
     return render(request, 'usuario/verificar_primer_usuario.html', {
         'correo': datos_usuario['correo']
+    })
+
+def configuracion_perfil(request):
+    """
+    Vista para que cada usuario pueda editar su propio perfil.
+    """
+    if not request.session.get('usuario_id'):
+        return redirect('login')
+    
+    usuario_id_sesion = request.session.get('usuario_id')
+    usuario = get_object_or_404(Usuario, id_usuario=usuario_id_sesion)
+    nombre_usuario = request.session.get('usuario_nombre', 'Invitado')
+    
+    # Verificar si es una petición AJAX
+    is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+    
+    if request.method == 'POST':
+        # Verificar si se está solicitando enviar el código de verificación (después de aceptar contraseña)
+        if request.POST.get('enviar_codigo') == 'true':
+            correo_verificacion = request.POST.get('correo', '').strip()
+            password = request.POST.get('password', '').strip()
+            confirm_password = request.POST.get('password2', '').strip()
+            
+            if not correo_verificacion:
+                correo_verificacion = usuario.correo
+            
+            if not correo_verificacion:
+                return JsonResponse({
+                    'success': False,
+                    'message': 'Se requiere un correo electrónico para cambiar la contraseña.'
+                })
+            
+            # Validar contraseñas antes de enviar código
+            if not password or not confirm_password:
+                return JsonResponse({
+                    'success': False,
+                    'message': 'Debes ingresar la nueva contraseña y su confirmación.'
+                })
+            
+            if password != confirm_password:
+                return JsonResponse({
+                    'success': False,
+                    'message': 'Las contraseñas no coinciden.'
+                })
+            
+            # Validar requisitos de contraseña
+            password_valida, password_error = validar_password(password)
+            if not password_valida:
+                return JsonResponse({
+                    'success': False,
+                    'message': password_error
+                })
+            
+            # Generar código de verificación de 6 dígitos
+            codigo = str(random.randint(100000, 999999))
+            
+            # Guardar contraseña temporalmente en la sesión (hasheada)
+            request.session['config_perfil_password'] = make_password(password)
+            request.session['config_perfil_codigo'] = codigo
+            request.session.modified = True
+            request.session.save()
+            
+            # Enviar correo con el código
+            try:
+                send_mail(
+                    'Código de verificación - Cambiar contraseña',
+                    f'Tu código de verificación es: {codigo}\n\nEste código es válido por 10 minutos.',
+                    settings.EMAIL_HOST_USER,
+                    [correo_verificacion]
+                )
+                return JsonResponse({
+                    'success': True,
+                    'message': f'Se ha enviado un código de verificación a {correo_verificacion}.',
+                    'needs_verification': True,
+                    'correo': correo_verificacion
+                })
+            except Exception as e:
+                return JsonResponse({
+                    'success': False,
+                    'message': f'Error al enviar el correo de verificación: {str(e)}'
+                })
+        
+        nombre = request.POST.get('nombre_usuario', '').strip()
+        correo = request.POST.get('correo', '').strip()
+        password = request.POST.get('password', '').strip()
+        confirm_password = request.POST.get('password2', '').strip()
+        cambiar_password = request.POST.get('cambiar_password', 'false') == 'true'
+
+        if not nombre:
+            if is_ajax:
+                return JsonResponse({
+                    'success': False,
+                    'message': 'El nombre de usuario es obligatorio.'
+                })
+            messages.error(request, 'El nombre de usuario es obligatorio.')
+            return render(request, 'usuario/configuracion_perfil.html', {
+                'usuario': usuario,
+                'nombre_usuario': nombre_usuario
+            })
+
+        # Verificar si el nombre de usuario ya existe (excluyendo el usuario actual) - insensible a mayúsculas
+        if Usuario.objects.filter(nombre_usuario__iexact=nombre).exclude(id_usuario=usuario_id_sesion).exists():
+            if is_ajax:
+                return JsonResponse({
+                    'success': False,
+                    'message': 'El nombre de usuario ya existe.'
+                })
+            messages.error(request, 'El nombre de usuario ya existe.')
+            return render(request, 'usuario/configuracion_perfil.html', {
+                'usuario': usuario,
+                'nombre_usuario': nombre_usuario
+            })
+
+        # Verificar si el correo ya existe (excluyendo el usuario actual)
+        if correo and Usuario.objects.filter(correo=correo).exclude(id_usuario=usuario_id_sesion).exists():
+            if is_ajax:
+                return JsonResponse({
+                    'success': False,
+                    'message': 'El correo electrónico ya está registrado.'
+                })
+            messages.error(request, 'El correo electrónico ya está registrado.')
+            return render(request, 'usuario/configuracion_perfil.html', {
+                'usuario': usuario,
+                'nombre_usuario': nombre_usuario
+            })
+
+        # Actualizar datos básicos
+        usuario.nombre_usuario = nombre
+        usuario.correo = correo
+        
+        # Actualizar contraseña solo si se solicita y el código está verificado
+        if cambiar_password:
+            # Verificar que el código esté verificado
+            if not request.session.get('config_perfil_verificado'):
+                return JsonResponse({
+                    'success': False,
+                    'message': 'Debes verificar el código de verificación antes de cambiar la contraseña.'
+                })
+            
+            # Obtener la contraseña de la sesión (ya validada y hasheada)
+            password_hasheada = request.session.get('config_perfil_password')
+            if not password_hasheada:
+                return JsonResponse({
+                    'success': False,
+                    'message': 'Error: no se encontró la contraseña en la sesión. Por favor, intenta nuevamente.'
+                })
+            
+            # Actualizar contraseña usando la que se guardó en sesión
+            usuario.contraseña = password_hasheada
+            
+            # Limpiar datos de verificación de la sesión
+            request.session.pop('config_perfil_verificado', None)
+            request.session.pop('config_perfil_codigo', None)
+            request.session.pop('config_perfil_password', None)
+        
+        # Guardar cambios
+        usuario.save()
+        
+        # Actualizar la sesión con los nuevos datos
+        request.session['usuario_nombre'] = usuario.nombre_usuario
+        request.session['correo_usuario'] = usuario.correo
+        
+        if is_ajax:
+            return JsonResponse({
+                'success': True,
+                'message': 'Perfil actualizado correctamente.'
+            })
+        messages.success(request, 'Perfil actualizado correctamente.')
+        return redirect('configuracion_perfil')
+    
+    return render(request, 'usuario/configuracion_perfil.html', {
+        'usuario': usuario,
+        'nombre_usuario': nombre_usuario
+    })
+
+def verificar_config_perfil(request):
+    """
+    Vista para verificar el código enviado al correo al cambiar la contraseña en configuración.
+    """
+    if not request.session.get('usuario_id'):
+        return JsonResponse({
+            'success': False,
+            'message': 'No tienes permisos para realizar esta acción.'
+        })
+    
+    # Verificar si es una petición AJAX
+    is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+    
+    # Verificar que exista código en la sesión
+    codigo_correcto = request.session.get('config_perfil_codigo')
+    
+    if not codigo_correcto:
+        return JsonResponse({
+            'success': False,
+            'message': 'No hay código de verificación pendiente. Por favor, marca "Cambiar contraseña" nuevamente.'
+        })
+    
+    if request.method == 'POST':
+        codigo_ingresado = request.POST.get('codigo', '').strip()
+        
+        if codigo_ingresado == codigo_correcto:
+            # Guardar en sesión que el código está verificado
+            request.session['config_perfil_verificado'] = True
+            request.session.modified = True
+            request.session.save()
+            
+            return JsonResponse({
+                'success': True,
+                'message': 'Código verificado correctamente.'
+            })
+        else:
+            return JsonResponse({
+                'success': False,
+                'message': 'El código ingresado es incorrecto.'
+            })
+    
+    return JsonResponse({
+        'success': False,
+        'message': 'Método no permitido'
     })
 
 

@@ -959,15 +959,6 @@
   color: #2575fc;
 }
 
-/* Observaciones separadas visualmente */
-.accordion-button .obs-label {
-  color: #888;
-  font-weight: 500;
-  margin-left: 1.5rem;
-  font-size: 1rem;
-  border-left: 2px solid #e0e7ef;
-  padding-left: 1rem;
-}
 
 /* Mejorar la tabla de detalles - igual que compras */
 .accordion-body .table {
@@ -990,12 +981,6 @@
     gap: 0.3rem;
     font-size: 1rem;
     padding: 0.8rem 0.7rem;
-  }
-  .accordion-button .obs-label {
-    margin-left: 0;
-    border-left: none;
-    padding-left: 0;
-    font-size: 0.95rem;
   }
   .accordion-button span {
     min-width: auto !important;
@@ -1340,10 +1325,6 @@
     box-sizing: border-box !important;
   }
   
-  /* Limitar observaciones largas en el botón */
-  .venta-main .accordion-button .obs-label {
-    max-width: 200px !important;
-  }
   
   /* Limitar observaciones dentro del card de información */
   .venta-main .accordion-body .card-body small {
@@ -2021,7 +2002,6 @@
   
   /* Botones del modal footer en móvil - ocupar todo el ancho y apilarse */
   #addManualModal .modal-footer,
-  #undoDeleteModal .modal-footer,
   #editVentaModal .modal-footer {
     padding: 1rem !important;
     flex-direction: column;
@@ -2029,7 +2009,6 @@
   }
   
   #addManualModal .modal-footer .btn,
-  #undoDeleteModal .modal-footer .btn,
   #editVentaModal .modal-footer .btn {
     width: 100%;
     margin: 0;

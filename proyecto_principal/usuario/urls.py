@@ -18,5 +18,11 @@ urlpatterns = [
     path('perfiles/verificar-editar/', views.verificar_editar_perfil, name='verificar_editar_perfil'),
     path('perfiles/eliminar/<int:id_usuario>/', views.eliminar_perfil, name='eliminar_perfil'),
     path('perfiles/restaurar/<int:id_usuario>/', views.restaurar_perfil, name='restaurar_perfil'),
+    path('perfiles/cambiar-admin/<int:id_usuario>/', views.cambiar_admin, name='cambiar_admin'),
+    path('perfiles/cambiar-dueño/<int:id_usuario>/', views.cambiar_dueño, name='cambiar_dueño'),
+    
+    # Ruta para configuración de perfil personal
+    path('configuracion/', views.configuracion_perfil, name='configuracion_perfil'),
+    path('configuracion/verificar/', views.verificar_config_perfil, name='verificar_config_perfil'),
 
 ]

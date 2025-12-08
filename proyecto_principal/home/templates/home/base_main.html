@@ -112,8 +112,14 @@ textarea.form-control:focus {
   <a href="{% url 'estadisticas' %}" class="nav-link {% if request.resolver_match.url_name == 'estadisticas' %}active{% endif %}">
     <i class="bi bi-graph-up"></i> Estadísticas
   </a>
+  {% if es_admin_user %}
   <a href="{% url 'lista_perfiles' %}" class="nav-link {% if request.resolver_match.url_name == 'lista_perfiles' %}active{% endif %}">
     <i class="bi bi-people"></i> Perfiles
+  </a>
+  {% endif %}
+  <div class="mt-auto"></div>
+  <a href="{% url 'configuracion_perfil' %}" class="nav-link {% if request.resolver_match.url_name == 'configuracion_perfil' %}active{% endif %}">
+    <i class="bi bi-gear"></i> Configuración
   </a>
 </nav>
 

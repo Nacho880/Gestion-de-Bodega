@@ -13,6 +13,9 @@ class Usuario(models.Model):
     correo = models.EmailField(max_length=254, unique=True)
     eliminado = models.BooleanField(default=False)
     fecha_eliminacion = models.DateTimeField(null=True, blank=True)
+    es_admin = models.BooleanField(default=False)
+    es_dueño = models.BooleanField(default=False)
+    sucursal = models.ForeignKey('home.Sucursal', on_delete=models.SET_NULL, null=True, blank=True, related_name='usuarios', help_text="Sucursal donde trabaja el usuario")
 
     def set_password(self, raw_password):
         self.contraseña = make_password(raw_password)
