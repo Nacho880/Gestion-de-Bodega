@@ -1,0 +1,265 @@
+{% load humanize %}
+{% load static %}
+
+<!-- Action Bar -->
+<div class="action-bar d-flex align-items-center justify-content-between mb-3">
+  <div class="d-flex align-items-center gap-2">
+    <button
+      type="button"
+      class="btn btn-outline-primary"
+      id="filterBtn"
+      title="Filtrar por fecha"
+    >
+      <i class="bi bi-sliders me-1"></i>
+      <span>Filtros</span>
+      <span class="ms-1" id="filterCount">(0)</span>
+    </button>
+
+    <form method="get" action="" class="d-flex align-items-center gap-2" onsubmit="return false;">
+      {% if request.GET.fecha_inicio %}
+        <input type="hidden" name="fecha_inicio" value="{{ request.GET.fecha_inicio }}">
+      {% endif %}
+      {% if request.GET.fecha_fin %}
+        <input type="hidden" name="fecha_fin" value="{{ request.GET.fecha_fin }}">
+      {% endif %}
+      {% if request.GET.venta %}
+        <input type="hidden" name="venta" value="{{ request.GET.venta }}">
+      {% endif %}
+      <input
+        type="text"
+        class="form-control"
+        name="search"
+        placeholder="Buscar por # Venta..."
+        aria-label="Buscar reembolso"
+        id="searchReembolsos"
+        value="{{ request.GET.search|default_if_none:'' }}"
+        style="max-width: 300px;"
+      />
+    </form>
+  </div>
+</div>
+
+<!-- Información de página y selector de elementos por página -->
+{% if page_obj %}
+<div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-3">
+  <div class="d-flex align-items-center gap-3">
+    <div class="table-info">
+      <span class="text-muted">
+        Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }} | 
+        Total {{ page_obj.paginator.count }} reembolso(s)
+      </span>
+    </div>
+    <div class="d-flex align-items-center gap-2">
+      <label class="mb-0 table-info"><span class="text-muted">Mostrar:</span></label>
+      <form method="get" class="d-inline">
+        {% if request.GET.search %}
+          <input type="hidden" name="search" value="{{ request.GET.search }}">
+        {% endif %}
+        {% if request.GET.fecha_inicio %}
+          <input type="hidden" name="fecha_inicio" value="{{ request.GET.fecha_inicio }}">
+        {% endif %}
+        {% if request.GET.fecha_fin %}
+          <input type="hidden" name="fecha_fin" value="{{ request.GET.fecha_fin }}">
+        {% endif %}
+        {% if request.GET.venta %}
+          <input type="hidden" name="venta" value="{{ request.GET.venta }}">
+        {% endif %}
+        {% for estado in filter_estados %}
+          <input type="hidden" name="filter_estado" value="{{ estado }}">
+        {% endfor %}
+        <select name="mostrar" class="form-select form-select-sm" style="width: auto;">
+          <option value="5" {% if mostrar == 5 %}selected{% endif %}>5</option>
+          <option value="10" {% if mostrar == 10 %}selected{% endif %}>10</option>
+          <option value="20" {% if mostrar == 20 %}selected{% endif %}>20</option>
+          <option value="50" {% if mostrar == 50 %}selected{% endif %}>50</option>
+        </select>
+      </form>
+    </div>
+  </div>
+  
+  <!-- Controles de paginación -->
+  <ul class="pagination justify-content-center mb-0">
+    {% if page_obj.has_previous %}
+      <li class="page-item">
+        <a class="page-link" href="?page={{ page_obj.previous_page_number }}&mostrar={{ mostrar }}{% if request.GET.fecha_inicio %}&fecha_inicio={{ request.GET.fecha_inicio }}{% endif %}{% if request.GET.fecha_fin %}&fecha_fin={{ request.GET.fecha_fin }}{% endif %}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.venta %}&venta={{ request.GET.venta }}{% endif %}{% for estado in filter_estados %}&filter_estado={{ estado }}{% endfor %}" aria-label="Página anterior">
+          <i class="bi bi-chevron-left" aria-hidden="true"></i>
+        </a>
+      </li>
+    {% else %}
+      <li class="page-item disabled">
+        <span class="page-link">
+          <i class="bi bi-chevron-left" aria-hidden="true"></i>
+        </span>
+      </li>
+    {% endif %}
+
+    {% for num in page_obj.paginator.page_range %}
+      {% if num >= page_obj.number|add:'-2' and num <= page_obj.number|add:'2' %}
+        {% if page_obj.number == num %}
+          <li class="page-item active" aria-current="page">
+            <span class="page-link">{{ num }}</span>
+          </li>
+        {% else %}
+          <li class="page-item">
+            <a class="page-link" href="?page={{ num }}&mostrar={{ mostrar }}{% if request.GET.fecha_inicio %}&fecha_inicio={{ request.GET.fecha_inicio }}{% endif %}{% if request.GET.fecha_fin %}&fecha_fin={{ request.GET.fecha_fin }}{% endif %}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.venta %}&venta={{ request.GET.venta }}{% endif %}{% for estado in filter_estados %}&filter_estado={{ estado }}{% endfor %}">{{ num }}</a>
+          </li>
+        {% endif %}
+      {% endif %}
+    {% endfor %}
+
+    {% if page_obj.has_next %}
+      <li class="page-item">
+        <a class="page-link" href="?page={{ page_obj.next_page_number }}&mostrar={{ mostrar }}{% if request.GET.fecha_inicio %}&fecha_inicio={{ request.GET.fecha_inicio }}{% endif %}{% if request.GET.fecha_fin %}&fecha_fin={{ request.GET.fecha_fin }}{% endif %}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.venta %}&venta={{ request.GET.venta }}{% endif %}{% for estado in filter_estados %}&filter_estado={{ estado }}{% endfor %}" aria-label="Página siguiente">
+          <i class="bi bi-chevron-right" aria-hidden="true"></i>
+        </a>
+      </li>
+    {% else %}
+      <li class="page-item disabled">
+        <span class="page-link">
+          <i class="bi bi-chevron-right" aria-hidden="true"></i>
+        </span>
+      </li>
+    {% endif %}
+  </ul>
+</div>
+{% endif %}
+
+{% if reembolsos %}
+  <div class="accordion" id="reembolsosAccordion">
+    {% for reembolso in reembolsos %}
+    <div class="accordion-item mb-2">
+      <h2 class="accordion-header" id="heading{{ reembolso.id_reembolso }}">
+        <div class="d-flex align-items-center justify-content-between w-100">
+          <button class="accordion-button collapsed flex-grow-1 d-flex align-items-center justify-content-between gap-4" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ reembolso.id_reembolso }}" aria-expanded="false" aria-controls="collapse{{ reembolso.id_reembolso }}">
+            <span class="fw-bold" style="min-width: 170px;"><i class="bi bi-arrow-return-left"></i>Reembolso #{{ reembolso.numero_reembolso|default:reembolso.id_reembolso }}</span>
+            <span style="min-width: 120px;"><i class="bi bi-calendar3"></i> {{ reembolso.fecha_hora|date:'d/m/Y' }}</span>
+            <span style="min-width: 140px;"><i class="bi bi-cash-coin"></i> ${{ reembolso.total_devuelto|floatformat:0|intcomma }}</span>
+            <span style="min-width: 240px; width: 240px;">
+              <span class="badge badge-estado {% if reembolso.venta.estado == 'COMPLETADA' %}bg-success{% elif reembolso.venta.estado == 'PARCIALMENTE_REEMBOLSADA' %}bg-warning{% elif reembolso.venta.estado == 'REEMBOLSADA' %}bg-danger{% elif reembolso.venta.estado == 'ANULADA' %}bg-secondary{% else %}bg-secondary{% endif %}">
+                {% if reembolso.venta.estado == 'COMPLETADA' %}COMPLETADA{% elif reembolso.venta.estado == 'PARCIALMENTE_REEMBOLSADA' %}PARCIALMENTE REEMBOLSADA{% elif reembolso.venta.estado == 'REEMBOLSADA' %}REEMBOLSADA{% elif reembolso.venta.estado == 'ANULADA' %}ANULADA{% else %}{{ reembolso.venta.estado|upper }}{% endif %}
+              </span>
+            </span>
+          </button>
+          <div class="btn-group me-4">
+            <button 
+              type="button" 
+              class="btn btn-danger btn-sm" 
+              title="Cancelar reembolso" 
+              data-bs-toggle="modal" 
+              data-bs-target="#cancelarReembolsoModal" 
+              data-id="{{ reembolso.id_reembolso }}" 
+              data-venta="{{ reembolso.venta.numero_venta|default:reembolso.venta.id_venta }}" 
+              data-numero="{{ reembolso.numero_reembolso|default:reembolso.id_reembolso }}"
+            >
+              <i class="bi bi-x-circle"></i>
+            </button>
+          </div>
+        </div>
+      </h2>
+      <div id="collapse{{ reembolso.id_reembolso }}" class="accordion-collapse collapse" aria-labelledby="heading{{ reembolso.id_reembolso }}" data-bs-parent="#reembolsosAccordion">
+        <div class="accordion-body px-4 py-4">
+          <div class="row">
+            <div class="col-12 col-md-8">
+              <h6 class="fw-bold text-primary mb-3"><i class="bi bi-box-seam me-2"></i>Productos reembolsados</h6>
+              <div class="table-responsive">
+                      <table class="table mb-0">
+                  <thead>
+                    <tr>
+                      <th class="text-left">Producto</th>
+                      <th class="text-left">Código SKU</th>
+                      <th class="text-center">Cantidad</th>
+                      <th class="text-center">Precio unitario</th>
+                      <th class="text-center">Subtotal</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for det in reembolso.detalles.all %}
+                    <tr>
+                      <td class="text-left">
+                        {% if det.producto.nombre and det.producto.nombre != '---' and det.producto.nombre != '—' and det.producto.nombre != '' %}
+                          {{ det.producto.nombre }}
+                        {% else %}
+                          <span class="text-muted fst-italic">Sin nombre</span>
+                        {% endif %}
+                      </td>
+                      <td class="text-left">
+                        {% with cod=det.producto.codigo_set.first %}
+                          {% if cod %}{{ cod.codigo }}{% else %}<span class="text-muted fst-italic">Sin código</span>{% endif %}
+                        {% endwith %}
+                      </td>
+                      <td class="text-center"><span class="badge bg-secondary rounded-pill">{{ det.cantidad }} {% if det.cantidad == 1 %}unidad{% else %}unid.{% endif %}</span></td>
+                      <td class="text-center">${{ det.producto.precio_unitario|floatformat:0|intcomma }}</td>
+                      <td class="text-center">${{ det.monto|floatformat:0|intcomma }}</td>
+                    </tr>
+                    {% endfor %}
+                  </tbody>
+                  <tfoot>
+                    <tr>
+                      <th colspan="4" class="text-end">Total reembolso:</th>
+                      <th class="text-center">${{ reembolso.total_devuelto|floatformat:0|intcomma }}</th>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            </div>
+            <div class="col-12 col-md-4">
+              <h6 class="fw-bold text-primary mb-3"><i class="bi bi-info-circle me-2"></i>Información del reembolso</h6>
+              <div class="card bg-light">
+                <div class="card-body px-4 py-3 text-dark">
+                  <div class="mb-3">
+                    <strong>Venta original:</strong><br>
+                    <a href="{% url 'editar_venta' reembolso.venta.id_venta %}" class="text-decoration-none" style="color: #212529 !important;">
+                      <i class="bi bi-receipt me-1" style="color: #212529 !important;"></i><span style="color: #212529 !important;">Venta #{{ reembolso.venta.numero_venta|default:reembolso.venta.id_venta }}</span>
+                    </a>
+                  </div>
+                  <div class="mb-3 text-dark">
+                    <strong>Fecha de reembolso:</strong><br>
+                    <i class="bi bi-calendar3 me-1 text-dark"></i><span class="text-dark">{{ reembolso.fecha_hora|date:'d/m/Y H:i' }}</span>
+                  </div>
+                  <div class="mb-3 text-dark">
+                    <strong>Usuario:</strong><br>
+                    <i class="bi bi-person me-1 text-dark"></i>
+                    {% if reembolso.usuario.nombre_usuario and reembolso.usuario.nombre_usuario != '---' and reembolso.usuario.nombre_usuario != '—' and reembolso.usuario.nombre_usuario != '' %}
+                      <span class="text-dark">{{ reembolso.usuario.nombre_usuario }}</span>
+                    {% else %}
+                      <span class="text-dark fst-italic">Sin usuario</span>
+                    {% endif %}
+                  </div>
+                  <div class="mb-3 text-dark">
+                    <strong>Estado de la venta:</strong><br>
+                    <span class="badge 
+                      {% if reembolso.venta.estado == 'COMPLETADA' %}bg-success
+                      {% elif reembolso.venta.estado == 'PARCIALMENTE_REEMBOLSADA' %}bg-warning
+                      {% elif reembolso.venta.estado == 'REEMBOLSADA' %}bg-danger
+                      {% elif reembolso.venta.estado == 'ANULADA' %}bg-secondary
+                      {% else %}bg-secondary{% endif %}">
+                      {% if reembolso.venta.estado == 'COMPLETADA' %}COMPLETADA
+                      {% elif reembolso.venta.estado == 'PARCIALMENTE_REEMBOLSADA' %}PARCIALMENTE REEMBOLSADA
+                      {% elif reembolso.venta.estado == 'REEMBOLSADA' %}REEMBOLSADA
+                      {% elif reembolso.venta.estado == 'ANULADA' %}ANULADA
+                      {% else %}{{ reembolso.venta.estado|upper }}{% endif %}
+                    </span>
+                  </div>
+                  <div class="mb-0 text-dark">
+                    <strong>Observaciones:</strong><br>
+                    <small class="text-dark">
+                      {% if reembolso.observaciones and reembolso.observaciones != '---' and reembolso.observaciones != '—' and reembolso.observaciones != '' %}
+                        {{ reembolso.observaciones }}
+                      {% else %}
+                        Sin observaciones
+                      {% endif %}
+                    </small>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+{% else %}
+  <div class="alert alert-info mb-0">No hay reembolsos registrados.</div>
+{% endif %}
+

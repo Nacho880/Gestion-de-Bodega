@@ -1,0 +1,333 @@
+{% load table_tags %}
+{% load static %}
+
+<!-- Información de página y selector de elementos por página - ARRIBA DE LA TABLA -->
+{% if page_obj %}
+<div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-3">
+  <div class="d-flex align-items-center gap-3">
+    <div class="table-info">
+      <span class="text-muted">
+        Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }} | 
+        Total {{ page_obj.paginator.count }} sucursal(es)
+      </span>
+    </div>
+    <div class="d-flex align-items-center gap-2">
+      <label class="mb-0 table-info"><span class="text-muted">Mostrar:</span></label>
+      <form method="get" class="d-inline">
+        {% if search_query %}
+          <input type="hidden" name="search" value="{{ search_query }}">
+        {% endif %}
+        {% if sort_field %}
+          <input type="hidden" name="sort" value="{{ sort_field }}">
+        {% endif %}
+        {% if order %}
+          <input type="hidden" name="order" value="{{ order }}">
+        {% endif %}
+        {% for tipo in filter_tipos %}
+          <input type="hidden" name="filter_tipo" value="{{ tipo }}">
+        {% endfor %}
+        {% for pais in filter_paises %}
+          <input type="hidden" name="filter_pais" value="{{ pais }}">
+        {% endfor %}
+        {% for ciudad in filter_ciudades %}
+          <input type="hidden" name="filter_ciudad" value="{{ ciudad }}">
+        {% endfor %}
+        {% for comuna in filter_comunas %}
+          <input type="hidden" name="filter_comuna" value="{{ comuna }}">
+        {% endfor %}
+        <select name="per_page" class="form-select form-select-sm" style="width: auto;">
+          <option value="5" {% if request.GET.per_page == '5' or not request.GET.per_page %}selected{% endif %}>5</option>
+          <option value="10" {% if request.GET.per_page == '10' or not request.GET.per_page %}selected{% endif %}>10</option>
+          <option value="25" {% if request.GET.per_page == '25' %}selected{% endif %}>25</option>
+          <option value="50" {% if request.GET.per_page == '50' %}selected{% endif %}>50</option>
+        </select>
+      </form>
+    </div>
+  </div>
+  
+  <!-- Controles de paginación -->
+  <ul class="pagination justify-content-center mb-0">
+    {% if page_obj.has_previous %}
+      <li class="page-item">
+        <a class="page-link" href="{% build_table_url request page=page_obj.previous_page_number %}" aria-label="Página anterior">
+          <i class="bi bi-chevron-left" aria-hidden="true"></i>
+        </a>
+      </li>
+    {% else %}
+      <li class="page-item disabled">
+        <span class="page-link">
+          <i class="bi bi-chevron-left" aria-hidden="true"></i>
+        </span>
+      </li>
+    {% endif %}
+
+    {% if page_obj.number == 1 %}
+      {# Si estamos en la primera página, mostrar 1, 2, 3 #}
+      {% for num in page_obj.paginator.page_range %}
+        {% if num >= 1 and num <= 3 %}
+          {% if page_obj.number == num %}
+            <li class="page-item active" aria-current="page">
+              <span class="page-link">{{ num }}</span>
+            </li>
+          {% else %}
+            <li class="page-item">
+              <a class="page-link" href="{% build_table_url request page=num %}">{{ num }}</a>
+            </li>
+          {% endif %}
+        {% endif %}
+      {% endfor %}
+    {% elif page_obj.number == page_obj.paginator.num_pages %}
+      {# Si estamos en la última página, mostrar las 2 anteriores y la última #}
+      {% for num in page_obj.paginator.page_range %}
+        {% if num >= page_obj.number|add:'-2' and num <= page_obj.number %}
+          {% if page_obj.number == num %}
+            <li class="page-item active" aria-current="page">
+              <span class="page-link">{{ num }}</span>
+            </li>
+          {% else %}
+            <li class="page-item">
+              <a class="page-link" href="{% build_table_url request page=num %}">{{ num }}</a>
+            </li>
+          {% endif %}
+        {% endif %}
+      {% endfor %}
+    {% else %}
+      {# En el medio, mostrar anterior, actual, siguiente (siempre 3 con actual en medio) #}
+      {% for num in page_obj.paginator.page_range %}
+        {% if num >= page_obj.number|add:'-1' and num <= page_obj.number|add:'1' %}
+          {% if page_obj.number == num %}
+            <li class="page-item active" aria-current="page">
+              <span class="page-link">{{ num }}</span>
+            </li>
+          {% else %}
+            <li class="page-item">
+              <a class="page-link" href="{% build_table_url request page=num %}">{{ num }}</a>
+            </li>
+          {% endif %}
+        {% endif %}
+      {% endfor %}
+    {% endif %}
+
+    {% if page_obj.has_next %}
+      <li class="page-item">
+        <a class="page-link" href="{% build_table_url request page=page_obj.next_page_number %}" aria-label="Página siguiente">
+          <i class="bi bi-chevron-right" aria-hidden="true"></i>
+        </a>
+      </li>
+    {% else %}
+      <li class="page-item disabled">
+        <span class="page-link">
+          <i class="bi bi-chevron-right" aria-hidden="true"></i>
+        </span>
+      </li>
+    {% endif %}
+  </ul>
+</div>
+{% endif %}
+
+<!-- Tabla -->
+<div class="card shadow-lg border-0 mb-4">
+  <div class="card-header bg-gradient text-white fw-bold" style="background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);">
+    <i class="bi bi-shop me-2"></i>Lista de Sucursales
+  </div>
+  <div class="card-body px-4 py-4">
+    <div class="table-responsive">
+      <table id="tablaSucursales" class="unified-table">
+        <thead>
+          <tr>
+            <th class="text-left sortable" 
+                data-sort="nombre"
+                style="cursor: pointer;">
+              Nombre
+              <span class="sort-icon">
+                {% if sort_field == 'nombre' %}
+                  {% if order == 'asc' %}
+                    <span class="sorting sorting_asc"></span>
+                  {% else %}
+                    <span class="sorting sorting_desc"></span>
+                  {% endif %}
+                {% else %}
+                  <span class="sorting"></span>
+                {% endif %}
+              </span>
+            </th>
+            <th class="text-left sortable" 
+                data-sort="tipo"
+                style="cursor: pointer;">
+              Tipo
+              <span class="sort-icon">
+                {% if sort_field == 'tipo' %}
+                  {% if order == 'asc' %}
+                    <span class="sorting sorting_asc"></span>
+                  {% else %}
+                    <span class="sorting sorting_desc"></span>
+                  {% endif %}
+                {% else %}
+                  <span class="sorting"></span>
+                {% endif %}
+              </span>
+            </th>
+            <th class="text-left">
+              Teléfono
+            </th>
+            <th class="text-left">
+              Correo
+            </th>
+            <th class="text-left">Dirección</th>
+            <th class="text-left sortable" 
+                data-sort="pais"
+                style="cursor: pointer;">
+              País
+              <span class="sort-icon">
+                {% if sort_field == 'pais' %}
+                  {% if order == 'asc' %}
+                    <span class="sorting sorting_asc"></span>
+                  {% else %}
+                    <span class="sorting sorting_desc"></span>
+                  {% endif %}
+                {% else %}
+                  <span class="sorting"></span>
+                {% endif %}
+              </span>
+            </th>
+            <th class="text-left sortable" 
+                data-sort="ciudad"
+                style="cursor: pointer;">
+              Ciudad
+              <span class="sort-icon">
+                {% if sort_field == 'ciudad' %}
+                  {% if order == 'asc' %}
+                    <span class="sorting sorting_asc"></span>
+                  {% else %}
+                    <span class="sorting sorting_desc"></span>
+                  {% endif %}
+                {% else %}
+                  <span class="sorting"></span>
+                {% endif %}
+              </span>
+            </th>
+            <th class="text-left sortable" 
+                data-sort="comuna"
+                style="cursor: pointer;">
+              Comuna
+              <span class="sort-icon">
+                {% if sort_field == 'comuna' %}
+                  {% if order == 'asc' %}
+                    <span class="sorting sorting_asc"></span>
+                  {% else %}
+                    <span class="sorting sorting_desc"></span>
+                  {% endif %}
+                {% else %}
+                  <span class="sorting"></span>
+                {% endif %}
+              </span>
+            </th>
+            <th class="text-center">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for sucursal in sucursales %}
+            <tr data-sucursal-id="{{ sucursal.id_sucursal }}" style="cursor: pointer;" class="sucursal-row">
+              <td class="text-left">
+                {% if sucursal.nombre %}
+                  {{ sucursal.nombre }}
+                {% else %}
+                  <span class="text-muted fst-italic">Sin nombre</span>
+                {% endif %}
+              </td>
+              <td class="text-center">
+                {% if sucursal.tipo %}
+                  {% if sucursal.tipo == 'TIENDA' %}
+                    <span class="badge bg-info text-white">TIENDA</span>
+                  {% elif sucursal.tipo == 'BODEGA' %}
+                    <span class="badge bg-secondary text-white">BODEGA</span>
+                  {% else %}
+                    {{ sucursal.tipo }}
+                  {% endif %}
+                {% else %}
+                  <span class="text-muted fst-italic">Sin tipo</span>
+                {% endif %}
+              </td>
+              <td class="text-left">
+                {% if sucursal.telefono %}
+                  {{ sucursal.telefono_completo }}
+                {% else %}
+                  <span class="text-muted fst-italic">Sin teléfono</span>
+                {% endif %}
+              </td>
+              <td class="text-left">
+                {% if sucursal.correo %}
+                  {{ sucursal.correo }}
+                {% else %}
+                  <span class="text-muted fst-italic">Sin correo</span>
+                {% endif %}
+              </td>
+              <td class="text-left">
+                {% if sucursal.direccion %}
+                  {{ sucursal.direccion }}
+                {% else %}
+                  <span class="text-muted fst-italic">Sin dirección</span>
+                {% endif %}
+              </td>
+              <td class="text-left">
+                {% if sucursal.pais %}
+                  {{ sucursal.pais }}
+                {% else %}
+                  <span class="text-muted fst-italic">Sin país</span>
+                {% endif %}
+              </td>
+              <td class="text-left">
+                {% if sucursal.ciudad %}
+                  {{ sucursal.ciudad }}
+                {% else %}
+                  <span class="text-muted fst-italic">Sin ciudad</span>
+                {% endif %}
+              </td>
+              <td class="text-left">
+                {% if sucursal.comuna %}
+                  {{ sucursal.comuna }}
+                {% else %}
+                  <span class="text-muted fst-italic">Sin comuna</span>
+                {% endif %}
+              </td>
+              <td class="text-center" style="white-space: nowrap;" onclick="event.stopPropagation();">
+                <div class="btn-group" role="group">
+                  <button 
+                    type="button" 
+                    class="btn btn-warning btn-sm" 
+                    data-bs-toggle="modal" 
+                    data-bs-target="#editSucursalModal" 
+                    data-id="{{ sucursal.id_sucursal }}" 
+                    data-nombre="{{ sucursal.nombre|escapejs }}" 
+                    data-tipo="{{ sucursal.tipo|default:'TIENDA' }}" 
+                    data-prefijo-telefono="{{ sucursal.prefijo_telefono|default:'+56' }}" 
+                    data-telefono="{{ sucursal.telefono|default:'' }}" 
+                    data-correo="{{ sucursal.correo|default:'' }}" 
+                    data-direccion="{{ sucursal.direccion|default:'' }}" 
+                    data-pais="{{ sucursal.pais|default:'' }}" 
+                    data-ciudad="{{ sucursal.ciudad|default:'' }}" 
+                    data-comuna="{{ sucursal.comuna|default:'' }}" 
+                    title="Editar sucursal"
+                  >
+                    <i class="bi bi-pencil"></i>
+                  </button>
+                  <button 
+                    type="button" 
+                    class="btn btn-danger btn-sm" 
+                    data-bs-toggle="modal" 
+                    data-bs-target="#deleteSucursalModal" 
+                    data-id="{{ sucursal.id_sucursal }}" 
+                    data-nombre="{{ sucursal.nombre|escapejs }}" 
+                    title="Eliminar sucursal"
+                  >
+                    <i class="bi bi-trash"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

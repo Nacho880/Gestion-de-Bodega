@@ -1,0 +1,185 @@
+{% extends "usuario/base_login.html" %}
+
+{% block title %}Actualizar contraseña{% endblock %}
+{% block heading %}Actualizar contraseña{% endblock %}
+
+{% block messages %}{% endblock %}
+
+{% block form_fields %}
+  <div class="mb-3">
+    <label for="password" class="form-label">Nueva contraseña</label>
+    <input type="password" class="form-control" id="password" name="password" required placeholder="Contraseña123" autocomplete="off" />
+    <div id="password-help" class="form-text">
+      <i class="bi bi-shield-lock me-1"></i>
+      Mínimo 8 caracteres, al menos una mayúscula y un número
+    </div>
+    <div id="password-requirements" class="mt-2">
+      <small id="req-length" class="d-block text-muted">
+        <i class="bi bi-circle me-1"></i> Mínimo 8 caracteres
+      </small>
+      <small id="req-uppercase" class="d-block text-muted">
+        <i class="bi bi-circle me-1"></i> Al menos una letra mayúscula
+      </small>
+      <small id="req-number" class="d-block text-muted">
+        <i class="bi bi-circle me-1"></i> Al menos un número
+      </small>
+    </div>
+  </div>
+  <div class="mb-3">
+    <label for="password2" class="form-label">Confirmar nueva contraseña</label>
+    <input type="password" class="form-control" id="password2" name="password2" required placeholder="Contraseña123" autocomplete="off" />
+    <div id="password2-help" class="form-text">
+      <i class="bi bi-check-circle me-1"></i>
+      Debe coincidir con la contraseña
+    </div>
+    <div id="password-match" class="mt-1" style="display: none;">
+      <small class="text-danger">
+        <i class="bi bi-x-circle me-1"></i> Las contraseñas no coinciden
+      </small>
+    </div>
+  </div>
+  <div class="form-check mb-3">
+    <input class="form-check-input" type="checkbox" id="showPassword" />
+    <label class="form-check-label" for="showPassword">
+      Mostrar contraseñas
+    </label>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const passwordInput = document.getElementById('password');
+      const password2Input = document.getElementById('password2');
+      const showPasswordCheckbox = document.getElementById('showPassword');
+      const reqLength = document.getElementById('req-length');
+      const reqUppercase = document.getElementById('req-uppercase');
+      const reqNumber = document.getElementById('req-number');
+      const passwordMatch = document.getElementById('password-match');
+      const passwordHelp = document.getElementById('password-help');
+      const password2Help = document.getElementById('password2-help');
+      const form = document.getElementById('login-form');
+      const submitButton = document.querySelector('button[type="submit"]');
+
+      // Mostrar/ocultar contraseñas
+      showPasswordCheckbox.addEventListener('change', function() {
+        const type = this.checked ? 'text' : 'password';
+        passwordInput.type = type;
+        password2Input.type = type;
+      });
+
+      // Función para actualizar requisitos (verde si válido, gris si no)
+      function updateRequirement(element, isValid) {
+        if (isValid) {
+          element.classList.remove('text-muted', 'text-danger');
+          element.classList.add('text-success');
+          element.querySelector('i').className = 'bi bi-check-circle-fill me-1';
+        } else {
+          element.classList.remove('text-success', 'text-danger');
+          element.classList.add('text-muted');
+          element.querySelector('i').className = 'bi bi-circle me-1';
+        }
+      }
+
+      // Función para marcar requisito como error (rojo)
+      function markRequirementError(element) {
+        element.classList.remove('text-muted', 'text-success');
+        element.classList.add('text-danger');
+        element.querySelector('i').className = 'bi bi-x-circle-fill me-1';
+      }
+
+      // Validar requisitos mientras se escribe
+      passwordInput.addEventListener('input', function() {
+        const password = passwordInput.value;
+        updateRequirement(reqLength, password.length >= 8);
+        updateRequirement(reqUppercase, /[A-Z]/.test(password));
+        updateRequirement(reqNumber, /[0-9]/.test(password));
+        
+        // Limpiar error de coincidencia si había
+        if (password2Input.classList.contains('is-invalid')) {
+          passwordMatch.style.display = 'none';
+          password2Input.classList.remove('is-invalid');
+        }
+      });
+
+      // Limpiar error de confirmar contraseña al escribir
+      password2Input.addEventListener('input', function() {
+        passwordMatch.style.display = 'none';
+        password2Input.classList.remove('is-invalid');
+        if (password2Help) password2Help.style.display = 'block';
+      });
+
+      // Manejar envío del formulario con AJAX
+      form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const password = passwordInput.value;
+        const password2 = password2Input.value;
+        
+        // Validar campos vacíos
+        if (!password || !password2) {
+          return;
+        }
+        
+        // Validar requisitos de contraseña
+        const lengthValid = password.length >= 8;
+        const upperValid = /[A-Z]/.test(password);
+        const numberValid = /[0-9]/.test(password);
+        
+        if (!lengthValid) markRequirementError(reqLength);
+        if (!upperValid) markRequirementError(reqUppercase);
+        if (!numberValid) markRequirementError(reqNumber);
+        
+        if (!lengthValid || !upperValid || !numberValid) {
+          return;
+        }
+        
+        // Validar que coincidan
+        if (password !== password2) {
+          passwordMatch.style.display = 'block';
+          password2Input.classList.add('is-invalid');
+          if (password2Help) password2Help.style.display = 'none';
+          return;
+        }
+        
+        // Deshabilitar botón mientras se envía
+        submitButton.disabled = true;
+        
+        // Enviar formulario con AJAX
+        const formData = new FormData(form);
+        
+        fetch(form.action || window.location.href, {
+          method: 'POST',
+          body: formData,
+          headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+          }
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            if (data.redirect) {
+              window.location.href = data.redirect;
+            }
+          } else {
+            passwordMatch.querySelector('small').innerHTML = '<i class="bi bi-x-circle me-1"></i> ' + (data.message || 'Error al actualizar');
+            passwordMatch.style.display = 'block';
+            password2Input.classList.add('is-invalid');
+            if (password2Help) password2Help.style.display = 'none';
+            submitButton.disabled = false;
+          }
+        })
+        .catch(error => {
+          passwordMatch.querySelector('small').innerHTML = '<i class="bi bi-x-circle me-1"></i> Error de conexión. Intenta nuevamente.';
+          passwordMatch.style.display = 'block';
+          password2Input.classList.add('is-invalid');
+          if (password2Help) password2Help.style.display = 'none';
+          submitButton.disabled = false;
+        });
+      });
+    });
+  </script>
+{% endblock %}
+{% block button_text %}Actualizar contraseña{% endblock %}
+{% block bottom_text %}
+  ¿Recuerdas tu contraseña?
+  <a href="{% url 'login' %}" class="fw-semibold text-primary ms-1">Iniciar sesión</a>
+{% endblock %}

@@ -1,0 +1,293 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{% block title %}Inventario{% endblock %}</title>
+
+  <link rel="icon" href="{% static 'img/logo.png' %}" type="image/png" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+  <link href="{% static 'home/css/styles.css' %}?v=1.3" rel="stylesheet" />
+  <link href="{% static 'home/css/unified-table.css' %}?v=1.0" rel="stylesheet" />
+  <link href="{% static 'home/css/datatable-improvements.css' %}?v=1.0" rel="stylesheet" />
+  <link href="{% static 'home/css/mobile-consolidated.css' %}" rel="stylesheet" />
+  <link href="{% static 'home/css/dark-mode-enhancements.css' %}?v=1.0" rel="stylesheet" />
+  <style>
+  /* Ajustar backdrop de modales para no cubrir el sidebar y topbar */
+  .modal-backdrop {
+    position: fixed !important;
+    top: 64px !important;
+    left: 280px !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    width: calc(100vw - 280px) !important;
+    height: calc(100vh - 64px) !important;
+  }
+  
+  /* En móviles, el backdrop cubre toda la pantalla */
+  @media (max-width: 768px) {
+    .modal-backdrop {
+      top: 64px !important;
+      left: 0 !important;
+      width: 100vw !important;
+      height: calc(100vh - 64px) !important;
+    }
+  }
+  </style>
+  {% block extra_css %}{% endblock %}
+  
+  <script>
+  // Establecer tema inmediatamente para evitar flash
+  (function() {
+    const savedTheme = localStorage.getItem('theme') || 'light';
+    document.documentElement.setAttribute('data-theme', savedTheme);
+    document.documentElement.style.colorScheme = savedTheme;
+  })();
+  </script>
+  <style>
+input.form-control.is-invalid,
+input.form-control.is-invalid:focus,
+input.form-control.rounded-pill.is-invalid,
+input.form-control.rounded-pill.is-invalid:focus {
+  border: 3px solid #dc3545 !important;
+  background-color: #fff0f3 !important;
+  box-shadow: 0 0 0 0.2rem rgba(220,53,69,.25) !important;
+  outline: 2px solid #dc3545 !important;
+  outline-offset: -2px !important;
+}
+/* Quitar el borde azul y fondo azul de los inputs en focus en todos los contextos */
+.modal .form-control:focus,
+.modal input.form-control:focus,
+.modal textarea.form-control:focus,
+.form-control:focus,
+input.form-control:focus,
+textarea.form-control:focus {
+  border-color: #ced4da !important;
+  box-shadow: none !important;
+  background-color: #fff !important;
+  outline: none !important;
+}
+</style>
+</head>
+<body>
+
+<!-- Overlay para cerrar sidebar en móvil -->
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+<nav class="sidebar d-flex flex-column" id="sidebar">
+  <h3 class="text-center mb-4">Inventario</h3>
+  <a href="{% url 'main' %}" class="nav-link {% if request.resolver_match.url_name == 'main' %}active{% endif %}">
+    <i class="bi bi-house"></i> Inicio
+  </a>
+  <a href="{% url 'categorias' %}" class="nav-link {% if request.resolver_match.url_name == 'categorias' %}active{% endif %}">
+    <i class="bi bi-tags"></i> Categorías
+  </a>
+  <a href="{% url 'productos' %}" class="nav-link {% if request.resolver_match.url_name == 'productos' %}active{% endif %}">
+    <i class="bi bi-box-seam"></i> Productos
+  </a>
+  <a href="{% url 'proveedores' %}" class="nav-link {% if request.resolver_match.url_name == 'proveedores' %}active{% endif %}">
+    <i class="bi bi-truck"></i> Proveedores
+  </a>
+  <a href="{% url 'sucursales' %}" class="nav-link {% if request.resolver_match.url_name == 'sucursales' %}active{% endif %}">
+    <i class="bi bi-shop"></i> Sucursales
+  </a>
+  <a href="{% url 'compras' %}" class="nav-link {% if request.resolver_match.url_name == 'compras' %}active{% endif %}">
+    <i class="bi bi-box-arrow-in-right"></i> Entradas
+  </a>
+  <a href="{% url 'ventas' %}" class="nav-link {% if request.resolver_match.url_name == 'ventas' %}active{% endif %}">
+    <i class="bi bi-box-arrow-right"></i> Salidas
+  </a>
+  <a href="{% url 'estadisticas' %}" class="nav-link {% if request.resolver_match.url_name == 'estadisticas' %}active{% endif %}">
+    <i class="bi bi-graph-up"></i> Estadísticas
+  </a>
+  <a href="{% url 'lista_perfiles' %}" class="nav-link {% if request.resolver_match.url_name == 'lista_perfiles' %}active{% endif %}">
+    <i class="bi bi-people"></i> Perfiles
+  </a>
+</nav>
+
+<header class="topbar d-flex align-items-center justify-content-between">
+  <div class="d-flex align-items-center gap-2">
+    <!-- Botón de menú móvil, solo visible en móvil -->
+    <button class="mobile-menu-toggle d-block d-md-none me-2" id="mobileMenuToggle" aria-label="Abrir menú">
+      <i class="bi bi-list"></i>
+    </button>
+    {% block topbar_user %}
+    Bienvenido, {{ nombre_usuario }}
+    {% endblock %}
+  </div>
+  <div class="d-flex align-items-center gap-2">
+    <button id="themeToggle" class="btn btn-outline-secondary btn-sm" title="Cambiar tema">
+      <i class="bi bi-sun-fill" id="themeIcon"></i>
+    </button>
+    <a href="{% url 'logout' %}" class="btn btn-outline-secondary btn-sm">Cerrar sesión</a>
+  </div>
+</header>
+
+<main class="content">
+  {# Bloque de mensajes globales eliminado para evitar mensajes globales en toda la interfaz #}
+  {% block content %}{% endblock %}
+</main>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  function toggleGlobalMessages() {
+    const globalMessages = document.getElementById('global-messages');
+    const addModal = document.getElementById('addProveedorModal');
+    const editModal = document.getElementById('editProveedorModal');
+    const proveedorModalOpen = (addModal && addModal.classList.contains('show')) ||
+                               (editModal && editModal.classList.contains('show'));
+    if (globalMessages) {
+      globalMessages.style.display = proveedorModalOpen ? 'none' : '';
+    }
+  }
+  // Escuchar eventos de apertura/cierre de modales de proveedor
+  ['shown.bs.modal', 'hidden.bs.modal'].forEach(eventName => {
+    document.addEventListener(eventName, function(e) {
+      if (e.target.id === 'addProveedorModal' || e.target.id === 'editProveedorModal') {
+        toggleGlobalMessages();
+      }
+    });
+  });
+  // Por si el modal ya está abierto al cargar
+  toggleGlobalMessages();
+});
+</script>
+
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+{% block extra_scripts %}
+<script src="{% static 'home/js/base_main.js' %}?v=1.6"></script>
+<script src="{% static 'home/js/unified-table.js' %}?v=1.0"></script>
+{% endblock %}
+
+<script>
+// Funcionalidad del cambio de tema
+document.addEventListener('DOMContentLoaded', function() {
+  const themeToggle = document.getElementById('themeToggle');
+  const themeIcon = document.getElementById('themeIcon');
+  
+  // Función para obtener el tema actual
+  function getCurrentTheme() {
+    return localStorage.getItem('theme') || 'light';
+  }
+  
+  // Función para establecer el tema
+  function setTheme(theme) {
+    // Establecer el atributo data-theme en el elemento html
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('theme', theme);
+    
+    // Actualizar el ícono
+    if (theme === 'dark') {
+      themeIcon.className = 'bi bi-moon-fill';
+      themeToggle.title = 'Cambiar a modo claro';
+    } else {
+      themeIcon.className = 'bi bi-sun-fill';
+      themeToggle.title = 'Cambiar a modo oscuro';
+    }
+    
+    // Forzar la actualización de estilos
+    document.documentElement.style.colorScheme = theme;
+  }
+  
+  // Función para alternar el tema
+  function toggleTheme() {
+    const currentTheme = getCurrentTheme();
+    const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+    setTheme(newTheme);
+    
+    // Log para debug
+    console.log('Tema cambiado a:', newTheme);
+  }
+  
+  // Establecer el tema inicial inmediatamente
+  const savedTheme = getCurrentTheme();
+  setTheme(savedTheme);
+  
+  // Event listener para el botón de cambio de tema
+  themeToggle.addEventListener('click', toggleTheme);
+  
+  // Detectar preferencia del sistema si no hay tema guardado
+  if (!localStorage.getItem('theme')) {
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    setTheme(prefersDark ? 'dark' : 'light');
+  }
+  
+  // Log inicial para debug
+  console.log('Tema inicial:', savedTheme);
+});
+</script>
+
+<script>
+// Auto-ocultar solo mensajes de eliminación/restauración después de 10 segundos
+document.addEventListener('DOMContentLoaded', function() {
+  try {
+    // Solo seleccionar mensajes que contengan el botón "Deshacer" (mensajes de eliminación/restauración)
+    const alerts = document.querySelectorAll('.alert');
+    alerts.forEach(function(alert) {
+      // Verificar si el mensaje contiene el botón "Deshacer"
+      const undoButton = alert.querySelector('#btnDeshacerEliminacion');
+      if (undoButton) {
+        setTimeout(function() {
+          try {
+            // Verificar si el elemento aún existe
+            if (alert && alert.parentNode) {
+              // Usar Bootstrap para cerrar el alert con animación
+              if (typeof bootstrap !== 'undefined' && bootstrap.Alert) {
+                const bsAlert = new bootstrap.Alert(alert);
+                bsAlert.close();
+              } else {
+                // Fallback: ocultar manualmente si Bootstrap no está disponible
+                alert.style.opacity = '0';
+                setTimeout(function() {
+                  if (alert.parentNode) {
+                    alert.parentNode.removeChild(alert);
+                  }
+                }, 300);
+              }
+            }
+          } catch (error) {
+            console.log('Error al cerrar alert:', error);
+            // Fallback simple: ocultar el elemento
+            if (alert && alert.parentNode) {
+              alert.style.display = 'none';
+            }
+          }
+        }, 10000); // 10 segundos solo para mensajes de eliminación/restauración
+      }
+    });
+  } catch (error) {
+    console.log('Error en auto-ocultar mensajes:', error);
+  }
+});
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  var btn = document.getElementById('mobileMenuToggle');
+  var sidebar = document.getElementById('sidebar');
+  var overlay = document.getElementById('sidebarOverlay');
+  if (btn && sidebar && overlay) {
+    btn.addEventListener('click', function() {
+      sidebar.classList.toggle('mobile-open');
+      overlay.classList.toggle('active');
+    });
+    overlay.addEventListener('click', function() {
+      sidebar.classList.remove('mobile-open');
+      overlay.classList.remove('active');
+    });
+  }
+});
+</script>
+</body>
+</html>
+
+
+

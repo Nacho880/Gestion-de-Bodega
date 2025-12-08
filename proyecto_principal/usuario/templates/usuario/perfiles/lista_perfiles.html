@@ -1,0 +1,2793 @@
+{% extends 'home/base_main.html' %}
+{% load static %}
+{% load table_tags %}
+
+{% block title %}Perfiles - Inventario{% endblock %}
+
+{% load table_tags %}
+
+{% block content %}
+<h1 class="fw-bold mb-0 mt-6 mb-2">Perfiles</h1>
+
+<div class="action-bar d-flex align-items-center justify-content-between mb-3">
+  <div class="d-flex align-items-center gap-2">
+    <button
+      type="button"
+      class="btn btn-primary"
+      data-bs-toggle="modal"
+      data-bs-target="#addPerfilModal"
+      title="Agregar perfil"
+    >
+      <i class="bi bi-plus-circle"></i>
+    </button>
+
+    <form method="get" class="d-flex align-items-center gap-2">
+      {% if request.GET.sort %}
+        <input type="hidden" name="sort" value="{{ request.GET.sort }}">
+      {% endif %}
+      {% if request.GET.order %}
+        <input type="hidden" name="order" value="{{ request.GET.order }}">
+      {% endif %}
+      {% if request.GET.per_page %}
+        <input type="hidden" name="per_page" value="{{ request.GET.per_page }}">
+      {% endif %}
+    <input
+      type="text"
+        name="search"
+      class="form-control"
+      placeholder="Buscar perfiles..."
+        value="{{ request.GET.search|default:'' }}"
+      style="max-width: 300px;"
+    />
+    </form>
+  </div>
+</div>
+
+<div id="table-wrapper" class="unified-table-wrapper">
+{% if usuarios %}
+    {% include 'usuario/perfiles/partials/table_content.html' %}
+{% else %}
+  <div class="card shadow-lg border-0">
+    <div class="card-body text-center px-4 py-4">
+      <div class="alert alert-info mb-0">No hay perfiles registrados.</div>
+    </div>
+  </div>
+{% endif %}
+</div>
+
+<!-- Modal de confirmación de eliminación (solo uno, reutilizable) -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content border-0 shadow-lg rounded-4">
+      <div class="modal-header bg-danger text-white rounded-top-4">
+        <h5 class="modal-title fw-bold"><i class="bi bi-trash me-2"></i> Confirmar Eliminación</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body px-4 py-3">
+        <div id="modalContentNormal" style="display: none;">
+          <p>¿Está seguro que desea eliminar el perfil de <strong id="nombreUsuarioEliminar"></strong>?</p>
+        </div>
+        <div id="modalContentError" style="display: none;">
+          <div class="alert alert-warning mb-0">
+            <i class="bi bi-exclamation-triangle me-2"></i>
+            <strong>No se puede eliminar el último perfil</strong>
+            <p class="mb-0 mt-2">El sistema requiere al menos un perfil activo para funcionar correctamente.</p>
+          </div>
+        </div>
+        <div id="modalContentSessionError" style="display: none;">
+          <div class="alert alert-warning mb-0">
+            <i class="bi bi-exclamation-triangle me-2"></i>
+            <strong>No se puede eliminar tu propio perfil</strong>
+            <p class="mb-0 mt-2">No puedes eliminar el perfil con el que estás actualmente en sesión. Si deseas eliminarlo, primero inicia sesión con otro perfil.</p>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer px-4 pb-4">
+        <button type="button" class="btn btn-danger btn-sm rounded px-3 fw-semibold" id="btnConfirmarEliminar" style="display: none;">Eliminar</button>
+        <button type="button" class="btn btn-outline-secondary btn-sm rounded px-3" data-bs-dismiss="modal">Cerrar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Editar Perfil -->
+<div class="modal fade" id="editPerfilModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content border-0 shadow-lg rounded-4">
+      <form method="post" id="editPerfilForm">
+        {% csrf_token %}
+        <div class="modal-header bg-warning text-dark rounded-top-4">
+          <h5 class="modal-title fw-bold"><i class="bi bi-pencil me-2"></i> Editar Perfil</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body px-4 py-3">
+          <input type="hidden" name="id" id="edit-id" />
+          <div class="mb-3">
+            <label for="edit-nombre" class="form-label fw-semibold">Nombre de Usuario</label>
+            <input type="text" id="edit-nombre" name="nombre_usuario" class="form-control rounded px-3" required 
+                   pattern="^[a-zA-Z0-9_]+$" minlength="3" maxlength="30" 
+                   title="Solo letras, números y guiones bajos" 
+                   placeholder="usuario123" autocomplete="off" />
+            <div id="edit-username-help" class="form-text">
+              <i class="bi bi-info-circle me-1"></i>
+              Entre 3 y 30 caracteres, solo letras, números y guiones bajos
+            </div>
+            <div id="edit-username-error" class="mt-1" style="display: none;">
+              <small class="text-danger">
+                <i class="bi bi-x-circle me-1"></i> <span class="error-text"></span>
+              </small>
+            </div>
+          </div>
+          <div class="mb-3">
+            <label for="edit-correo" class="form-label fw-semibold">Correo Electrónico</label>
+            <input type="email" id="edit-correo" name="correo" class="form-control rounded px-3" 
+                   placeholder="usuario@correo.com" autocomplete="off" />
+            <div id="edit-email-error" class="mt-1" style="display: none;">
+              <small class="text-danger">
+                <i class="bi bi-x-circle me-1"></i> <span class="error-text"></span>
+              </small>
+            </div>
+          </div>
+          <div class="mb-3">
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" id="cambiarPassword">
+              <label class="form-check-label" for="cambiarPassword">
+                <i class="bi bi-key text-primary me-2"></i>
+                Cambiar contraseña
+              </label>
+            </div>
+          </div>
+          
+          <!-- Sección de verificación (oculta inicialmente) -->
+          <div id="edit-verification-section" class="d-none">
+            <div class="alert alert-info mb-3">
+              <i class="bi bi-envelope-check me-2"></i>
+              Se ha enviado un código de verificación a <strong id="edit-verification-email"></strong>
+            </div>
+            <p class="text-muted mb-3">Ingresa el código de 6 dígitos que recibiste en tu correo electrónico para confirmar el cambio de contraseña.</p>
+            <div class="mb-3">
+              <label class="form-label fw-semibold">Código de Verificación</label>
+              <div class="d-flex justify-content-center gap-2 mb-2" id="edit-codigo-container">
+                <input
+                  type="text"
+                  id="edit-codigo-0"
+                  class="form-control text-center fs-3 fw-bold"
+                  maxlength="1"
+                  pattern="[0-9]"
+                  inputmode="numeric"
+                  autocomplete="one-time-code"
+                  style="width: 65px; height: 60px;"
+                  autofocus
+                />
+                <input
+                  type="text"
+                  id="edit-codigo-1"
+                  class="form-control text-center fs-3 fw-bold"
+                  maxlength="1"
+                  pattern="[0-9]"
+                  inputmode="numeric"
+                  autocomplete="one-time-code"
+                  style="width: 65px; height: 60px;"
+                />
+                <input
+                  type="text"
+                  id="edit-codigo-2"
+                  class="form-control text-center fs-3 fw-bold"
+                  maxlength="1"
+                  pattern="[0-9]"
+                  inputmode="numeric"
+                  autocomplete="one-time-code"
+                  style="width: 65px; height: 60px;"
+                />
+                <input
+                  type="text"
+                  id="edit-codigo-3"
+                  class="form-control text-center fs-3 fw-bold"
+                  maxlength="1"
+                  pattern="[0-9]"
+                  inputmode="numeric"
+                  autocomplete="one-time-code"
+                  style="width: 65px; height: 60px;"
+                />
+                <input
+                  type="text"
+                  id="edit-codigo-4"
+                  class="form-control text-center fs-3 fw-bold"
+                  maxlength="1"
+                  pattern="[0-9]"
+                  inputmode="numeric"
+                  autocomplete="one-time-code"
+                  style="width: 65px; height: 60px;"
+                />
+                <input
+                  type="text"
+                  id="edit-codigo-5"
+                  class="form-control text-center fs-3 fw-bold"
+                  maxlength="1"
+                  pattern="[0-9]"
+                  inputmode="numeric"
+                  autocomplete="one-time-code"
+                  style="width: 65px; height: 60px;"
+                />
+              </div>
+              <input type="hidden" id="edit-codigo" name="codigo" />
+              <div id="edit-codigo-help" class="form-text">
+                <i class="bi bi-info-circle me-1"></i>
+                Revisa también tu carpeta de spam si no encuentras el correo.
+              </div>
+              <div id="edit-codigo-error" class="mt-1" style="display: none;">
+                <small class="text-danger">
+                  <i class="bi bi-x-circle me-1"></i> <span class="error-text"></span>
+                </small>
+              </div>
+            </div>
+            <div class="mb-3">
+              <button type="button" id="edit-verificar-btn" class="btn btn-primary btn-sm w-100">
+                Verificar Código
+              </button>
+            </div>
+          </div>
+          
+          <!-- Campos de contraseña (ocultos hasta verificar código) -->
+          <div id="passwordFields" class="d-none">
+            <div class="mb-3">
+              <label for="edit-password" class="form-label fw-semibold">Nueva Contraseña</label>
+              <input type="password" id="edit-password" name="password" class="form-control rounded px-3" minlength="8" maxlength="50" 
+                     placeholder="Contraseña123" autocomplete="off" />
+              <div id="edit-password-help" class="form-text">
+                <i class="bi bi-shield-lock me-1"></i>
+                Mínimo 8 caracteres, al menos una mayúscula y un número
+              </div>
+              <div id="edit-password-requirements" class="mt-2">
+                <small id="edit-req-length" class="d-block text-muted">
+                  <i class="bi bi-circle me-1"></i> Mínimo 8 caracteres
+                </small>
+                <small id="edit-req-uppercase" class="d-block text-muted">
+                  <i class="bi bi-circle me-1"></i> Al menos una letra mayúscula
+                </small>
+                <small id="edit-req-number" class="d-block text-muted">
+                  <i class="bi bi-circle me-1"></i> Al menos un número
+                </small>
+              </div>
+            </div>
+            <div class="mb-3">
+              <label for="edit-password2" class="form-label fw-semibold">Confirmar Nueva Contraseña</label>
+              <input type="password" id="edit-password2" name="password2" class="form-control rounded px-3" 
+                     placeholder="Contraseña123" autocomplete="off" />
+              <div id="edit-password2-help" class="form-text">
+                <i class="bi bi-check-circle me-1"></i>
+                Debe coincidir con la contraseña
+              </div>
+              <div id="edit-password-match" class="mt-1" style="display: none;">
+                <small class="text-danger">
+                  <i class="bi bi-x-circle me-1"></i> Las contraseñas no coinciden
+                </small>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer px-4 pb-4">
+          <button type="submit" id="edit-submit-btn" class="btn btn-warning btn-sm rounded px-3 fw-semibold">Guardar</button>
+          <button type="button" class="btn btn-outline-secondary btn-sm rounded px-3" data-bs-dismiss="modal">Cerrar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Añadir Perfil -->
+<div class="modal fade" id="addPerfilModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content border-0 shadow-lg rounded-4">
+      <form method="post" action="{% url 'nuevo_perfil' %}">
+        {% csrf_token %}
+        <div class="modal-header bg-primary text-white rounded-top-4">
+          <h5 class="modal-title fw-bold"><i class="bi bi-plus-circle me-2"></i> Añadir Perfil</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div id="add-form-section" class="modal-body px-4 py-3">
+          <div class="mb-3">
+            <label for="add-username" class="form-label fw-semibold">Nombre de Usuario</label>
+            <input type="text" id="add-username" name="username" class="form-control rounded px-3" required 
+                   pattern="^[a-zA-Z0-9_]+$" minlength="3" maxlength="30" 
+                   title="Solo letras, números y guiones bajos" 
+                   placeholder="usuario123" autocomplete="off" />
+            <div id="add-username-help" class="form-text">
+              <i class="bi bi-info-circle me-1"></i>
+              Entre 3 y 30 caracteres, solo letras, números y guiones bajos
+            </div>
+            <div id="add-username-error" class="mt-1" style="display: none;">
+              <small class="text-danger">
+                <i class="bi bi-x-circle me-1"></i> <span class="error-text"></span>
+              </small>
+            </div>
+          </div>
+          <div class="mb-3">
+            <label for="add-email" class="form-label fw-semibold">Correo Electrónico</label>
+            <input type="email" id="add-email" name="email" class="form-control rounded px-3" required 
+                   placeholder="usuario@correo.com" autocomplete="off" />
+            <div id="add-email-error" class="mt-1" style="display: none;">
+              <small class="text-danger">
+                <i class="bi bi-x-circle me-1"></i> <span class="error-text"></span>
+              </small>
+            </div>
+          </div>
+          <div class="mb-3">
+            <label for="add-password" class="form-label fw-semibold">Contraseña</label>
+            <input type="password" id="add-password" name="password" class="form-control rounded px-3" required 
+                   minlength="8" maxlength="50" 
+                   placeholder="Contraseña123" autocomplete="off" />
+            <div id="add-password-help" class="form-text">
+              <i class="bi bi-shield-lock me-1"></i>
+              Mínimo 8 caracteres, al menos una mayúscula y un número
+            </div>
+            <div id="add-password-requirements" class="mt-2">
+              <small id="add-req-length" class="d-block text-muted">
+                <i class="bi bi-circle me-1"></i> Mínimo 8 caracteres
+              </small>
+              <small id="add-req-uppercase" class="d-block text-muted">
+                <i class="bi bi-circle me-1"></i> Al menos una letra mayúscula
+              </small>
+              <small id="add-req-number" class="d-block text-muted">
+                <i class="bi bi-circle me-1"></i> Al menos un número
+              </small>
+            </div>
+          </div>
+          <div class="mb-3">
+            <label for="add-password2" class="form-label fw-semibold">Confirmar Contraseña</label>
+            <input type="password" id="add-password2" name="password2" class="form-control rounded px-3" required 
+                   placeholder="Contraseña123" autocomplete="off" />
+            <div id="add-password2-help" class="form-text">
+              <i class="bi bi-check-circle me-1"></i>
+              Debe coincidir con la contraseña
+            </div>
+            <div id="add-password-match" class="mt-1" style="display: none;">
+              <small class="text-danger">
+                <i class="bi bi-x-circle me-1"></i> Las contraseñas no coinciden
+              </small>
+          </div>
+          </div>
+          <div class="mb-3">
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" id="add-mostrarPassword">
+              <label class="form-check-label" for="add-mostrarPassword">
+                Mostrar contraseñas
+              </label>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Sección de verificación (oculta inicialmente) -->
+        <div id="add-verification-section" class="modal-body px-4 py-3" style="display: none;">
+          <div class="alert alert-info mb-3">
+            <i class="bi bi-envelope-check me-2"></i>
+            Se ha enviado un código de verificación a <strong id="add-verification-email"></strong>
+          </div>
+          <p class="text-muted mb-3">Ingresa el código de 6 dígitos que recibiste en tu correo electrónico para confirmar la creación del perfil.</p>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Código de Verificación</label>
+            <div class="d-flex justify-content-center gap-2 mb-2" id="add-codigo-container">
+              <input
+                type="text"
+                id="add-codigo-0"
+                class="form-control text-center fs-3 fw-bold"
+                maxlength="1"
+                pattern="[0-9]"
+                inputmode="numeric"
+                autocomplete="one-time-code"
+                style="width: 65px; height: 60px;"
+                autofocus
+              />
+              <input
+                type="text"
+                id="add-codigo-1"
+                class="form-control text-center fs-3 fw-bold"
+                maxlength="1"
+                pattern="[0-9]"
+                inputmode="numeric"
+                autocomplete="one-time-code"
+                style="width: 65px; height: 60px;"
+              />
+              <input
+                type="text"
+                id="add-codigo-2"
+                class="form-control text-center fs-3 fw-bold"
+                maxlength="1"
+                pattern="[0-9]"
+                inputmode="numeric"
+                autocomplete="one-time-code"
+                style="width: 65px; height: 60px;"
+              />
+              <input
+                type="text"
+                id="add-codigo-3"
+                class="form-control text-center fs-3 fw-bold"
+                maxlength="1"
+                pattern="[0-9]"
+                inputmode="numeric"
+                autocomplete="one-time-code"
+                style="width: 65px; height: 60px;"
+              />
+              <input
+                type="text"
+                id="add-codigo-4"
+                class="form-control text-center fs-3 fw-bold"
+                maxlength="1"
+                pattern="[0-9]"
+                inputmode="numeric"
+                autocomplete="one-time-code"
+                style="width: 65px; height: 60px;"
+              />
+              <input
+                type="text"
+                id="add-codigo-5"
+                class="form-control text-center fs-3 fw-bold"
+                maxlength="1"
+                pattern="[0-9]"
+                inputmode="numeric"
+                autocomplete="one-time-code"
+                style="width: 65px; height: 60px;"
+              />
+            </div>
+            <input type="hidden" id="add-codigo" name="codigo" />
+            <div id="add-codigo-help" class="form-text">
+              <i class="bi bi-info-circle me-1"></i>
+              Revisa también tu carpeta de spam si no encuentras el correo.
+            </div>
+            <div id="add-codigo-error" class="mt-1" style="display: none;">
+              <small class="text-danger">
+                <i class="bi bi-x-circle me-1"></i> <span class="error-text"></span>
+              </small>
+            </div>
+          </div>
+        </div>
+        
+        <div class="modal-footer px-4 pb-4">
+          <button type="submit" id="add-submit-btn" class="btn btn-primary btn-sm rounded px-3 fw-semibold">Confirmar</button>
+          <button type="button" class="btn btn-outline-secondary btn-sm rounded px-3" data-bs-dismiss="modal">Cerrar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{% static 'home/js/unified-table.js' %}"></script>
+<script src="{% static 'home/js/undo-delete.js' %}"></script>
+<script>
+// Override de updateTableContent para desactivar animaciones durante actualización
+(function() {
+    const originalUpdateTableContent = window.updateTableContent;
+    if (originalUpdateTableContent) {
+        window.updateTableContent = function(url, searchValue, cursorPosition, restoreFocus) {
+            // Agregar clase para desactivar transiciones durante la actualización
+            const tableWrapper = document.getElementById('table-wrapper');
+            if (tableWrapper) {
+                tableWrapper.classList.add('updating');
+                tableWrapper.style.scrollBehavior = 'auto';
+            }
+            
+            // Llamar a la función original
+            const result = originalUpdateTableContent(url, searchValue, cursorPosition, restoreFocus);
+            
+            // Remover clase después de la actualización para restaurar hover
+            setTimeout(function() {
+                if (tableWrapper) {
+                    tableWrapper.classList.remove('updating');
+                }
+                
+                // Asegurar que los eventos se reinicialicen después de actualizar
+                if (typeof initializeTableEvents === 'function') {
+                    initializeTableEvents();
+                }
+            }, 300);
+            
+            return result;
+        };
+    }
+})();
+
+// Función helper para actualizar tabla de perfiles que maneja el caso cuando no hay tabla
+function actualizarTablaPerfiles() {
+  // Buscar el contenedor de la tabla
+  let tableWrapper = document.getElementById('table-wrapper') || document.querySelector('.unified-table-wrapper');
+  
+  // Si no existe el contenedor de la tabla, buscar el div con el mensaje "No hay perfiles"
+  if (!tableWrapper) {
+    // Buscar el div que contiene el mensaje de "No hay perfiles registrados"
+    const noDataCard = document.querySelector('.card.shadow-lg.border-0 .alert-info');
+    if (noDataCard) {
+      // Encontrar el contenedor padre (el card)
+      const cardContainer = noDataCard.closest('.card.shadow-lg.border-0');
+      if (cardContainer) {
+        // Crear el contenedor de la tabla
+        tableWrapper = document.createElement('div');
+        tableWrapper.className = 'unified-table-wrapper';
+        tableWrapper.id = 'table-wrapper';
+        // Reemplazar el card con el nuevo contenedor
+        cardContainer.parentNode.replaceChild(tableWrapper, cardContainer);
+      }
+    }
+  }
+  
+  // Usar el sistema unificado de tablas
+  if (typeof refreshTable === 'function') {
+    refreshTable('tablaPerfiles');
+  } else if (typeof updateTableContent === 'function') {
+    updateTableContent(window.location.href);
+  } else {
+    // Fallback: recargar la página completa
+    window.location.reload();
+  }
+}
+</script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Validación en tiempo real del formulario de agregar
+  const addForm = document.querySelector('#addPerfilModal form');
+  const addUsername = document.getElementById('add-username');
+  const addEmail = document.getElementById('add-email');
+  const addPassword = document.getElementById('add-password');
+  const addPassword2 = document.getElementById('add-password2');
+  const addReqLength = document.getElementById('add-req-length');
+  const addReqUppercase = document.getElementById('add-req-uppercase');
+  const addReqNumber = document.getElementById('add-req-number');
+  const addPasswordMatch = document.getElementById('add-password-match');
+  const addEmailError = document.getElementById('add-email-error');
+  const addUsernameError = document.getElementById('add-username-error');
+  
+  // Mapeo de campos a sus textos de ayuda
+  const fieldHelpMap = {
+    'add-username': 'add-username-help',
+    'add-email': null, // No tiene texto de ayuda
+    'add-password': 'add-password-help',
+    'add-password2': 'add-password2-help'
+  };
+  
+  // Función para mostrar error en un campo
+  function showFieldError(fieldInput, errorDiv, message) {
+    if (errorDiv) {
+      errorDiv.querySelector('.error-text').textContent = message;
+      errorDiv.style.display = 'block';
+    }
+    if (fieldInput) {
+      fieldInput.classList.add('is-invalid');
+      
+      // Ocultar texto de ayuda si existe
+      const fieldId = fieldInput.id;
+      const helpId = fieldHelpMap[fieldId];
+      if (helpId) {
+        const helpElement = document.getElementById(helpId);
+        if (helpElement) {
+          helpElement.style.display = 'none';
+        }
+      }
+    }
+  }
+  
+  // Función para limpiar error de un campo
+  function clearFieldError(fieldInput, errorDiv) {
+    if (errorDiv) {
+      errorDiv.style.display = 'none';
+    }
+    if (fieldInput) {
+      fieldInput.classList.remove('is-invalid');
+      
+      // Mostrar texto de ayuda si existe
+      const fieldId = fieldInput.id;
+      const helpId = fieldHelpMap[fieldId];
+      if (helpId) {
+        const helpElement = document.getElementById(helpId);
+        if (helpElement) {
+          helpElement.style.display = 'block';
+        }
+      }
+    }
+  }
+
+  // Función para actualizar requisitos (verde si válido, gris si no)
+  function updateAddRequirement(element, isValid) {
+    if (!element) return;
+    if (isValid) {
+      element.classList.remove('text-muted', 'text-danger');
+      element.classList.add('text-success');
+      element.querySelector('i').className = 'bi bi-check-circle-fill me-1';
+    } else {
+      element.classList.remove('text-success', 'text-danger');
+      element.classList.add('text-muted');
+      element.querySelector('i').className = 'bi bi-circle me-1';
+    }
+  }
+
+  // Función para marcar requisito como error (rojo)
+  function markAddRequirementError(element) {
+    if (!element) return;
+    element.classList.remove('text-muted', 'text-success');
+    element.classList.add('text-danger');
+    element.querySelector('i').className = 'bi bi-x-circle-fill me-1';
+  }
+
+  if (addUsername) {
+    addUsername.addEventListener('input', function() {
+      const value = this.value;
+      const isValid = /^[a-zA-Z0-9_]+$/.test(value);
+      const isLengthValid = value.length >= 3 && value.length <= 30;
+      
+      // Limpiar error visual
+      clearFieldError(addUsername, addUsernameError);
+      
+      if (!isValid) {
+        this.setCustomValidity('Solo se permiten letras, números y guiones bajos');
+      } else if (!isLengthValid) {
+        this.setCustomValidity('El nombre debe tener entre 3 y 30 caracteres');
+      } else {
+        this.setCustomValidity('');
+      }
+    });
+  }
+
+  if (addEmail) {
+    addEmail.addEventListener('input', function() {
+      const value = this.value;
+      const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+      
+      // Limpiar error visual
+      clearFieldError(addEmail, addEmailError);
+      
+      if (!emailRegex.test(value)) {
+        this.setCustomValidity('Ingresa un correo electrónico válido');
+      } else {
+        this.setCustomValidity('');
+      }
+    });
+  }
+
+  // Validar requisitos de contraseña mientras se escribe
+  if (addPassword) {
+    addPassword.addEventListener('input', function() {
+      const password = addPassword.value;
+      updateAddRequirement(addReqLength, password.length >= 8);
+      updateAddRequirement(addReqUppercase, /[A-Z]/.test(password));
+      updateAddRequirement(addReqNumber, /[0-9]/.test(password));
+      
+      // Limpiar error de coincidencia si había
+      if (addPassword2 && addPassword2.classList.contains('is-invalid')) {
+        if (addPasswordMatch) addPasswordMatch.style.display = 'none';
+        addPassword2.classList.remove('is-invalid');
+        // Mostrar texto de ayuda de nuevo
+        const password2Help = document.getElementById('add-password2-help');
+        if (password2Help) password2Help.style.display = 'block';
+      }
+    });
+  }
+
+  // Limpiar error de confirmar contraseña al escribir
+  if (addPassword2) {
+    addPassword2.addEventListener('input', function() {
+      if (addPasswordMatch) addPasswordMatch.style.display = 'none';
+      addPassword2.classList.remove('is-invalid');
+      // Mostrar texto de ayuda de nuevo
+      const password2Help = document.getElementById('add-password2-help');
+      if (password2Help) password2Help.style.display = 'block';
+    });
+  }
+
+  if (addForm) {
+    addForm.addEventListener('submit', function(event) {
+      let hasError = false;
+      const username = addUsername ? addUsername.value.trim() : '';
+      const password = addPassword ? addPassword.value : '';
+      const password2 = addPassword2 ? addPassword2.value : '';
+      const email = addEmail ? addEmail.value.trim() : '';
+
+      // Validar username
+      if (username) {
+        const usernameLength = username.length;
+        const usernameRegex = /^[a-zA-Z0-9_]+$/;
+        
+        if (usernameLength < 3 || usernameLength > 30) {
+          showFieldError(addUsername, addUsernameError, 'El nombre de usuario debe tener entre 3 y 30 caracteres.');
+          hasError = true;
+        } else if (!usernameRegex.test(username)) {
+          showFieldError(addUsername, addUsernameError, 'El nombre de usuario solo puede contener letras, números y guiones bajos.');
+          hasError = true;
+        }
+      }
+
+      // Validar email
+      const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+      if (email && !emailRegex.test(email)) {
+        if (addEmailError) addEmailError.style.display = 'block';
+        if (addEmail) addEmail.classList.add('is-invalid');
+        // Ocultar texto de ayuda si existe
+        const emailHelp = document.getElementById('add-email-help');
+        if (emailHelp) emailHelp.style.display = 'none';
+        hasError = true;
+      }
+
+      // Validar requisitos de contraseña
+      const lengthValid = password.length >= 8;
+      const upperValid = /[A-Z]/.test(password);
+      const numberValid = /[0-9]/.test(password);
+
+      if (!lengthValid) { markAddRequirementError(addReqLength); hasError = true; }
+      if (!upperValid) { markAddRequirementError(addReqUppercase); hasError = true; }
+      if (!numberValid) { markAddRequirementError(addReqNumber); hasError = true; }
+
+      // Validar que las contraseñas coincidan
+      if (password !== password2) {
+        if (addPasswordMatch) addPasswordMatch.style.display = 'block';
+        if (addPassword2) {
+          addPassword2.classList.add('is-invalid');
+          // Ocultar texto de ayuda
+          const password2Help = document.getElementById('add-password2-help');
+          if (password2Help) password2Help.style.display = 'none';
+        }
+        hasError = true;
+      }
+
+      if (hasError) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+    });
+  }
+
+  // Manejar checkbox "mostrar contraseñas"
+  const addMostrarPassword = document.getElementById('add-mostrarPassword');
+  if (addMostrarPassword) {
+    addMostrarPassword.addEventListener('change', function() {
+      const addPassword = document.getElementById('add-password');
+      const addPassword2 = document.getElementById('add-password2');
+      
+      if (addPassword) {
+        addPassword.type = this.checked ? 'text' : 'password';
+        // Asegurar que el placeholder se mantenga
+        if (!addPassword.value) {
+          addPassword.placeholder = 'Contraseña123';
+        }
+      }
+      if (addPassword2) {
+        addPassword2.type = this.checked ? 'text' : 'password';
+        // Asegurar que el placeholder se mantenga
+        if (!addPassword2.value) {
+          addPassword2.placeholder = 'Contraseña123';
+        }
+      }
+    });
+  }
+
+  // Asegurar placeholders cuando se abra el modal
+  const addPerfilModal = document.getElementById('addPerfilModal');
+  if (addPerfilModal) {
+    // Establecer placeholders cuando el modal se está mostrando (antes de que sea visible)
+    addPerfilModal.addEventListener('show.bs.modal', function() {
+      setTimeout(function() {
+        const addPassword = document.getElementById('add-password');
+        const addPassword2 = document.getElementById('add-password2');
+        
+        // Forzar los placeholders de múltiples formas
+        if (addPassword) {
+          addPassword.value = '';
+          addPassword.placeholder = 'Contraseña123';
+          addPassword.setAttribute('placeholder', 'Contraseña123');
+          addPassword.removeAttribute('value');
+        }
+        if (addPassword2) {
+          addPassword2.value = '';
+          addPassword2.placeholder = 'Contraseña123';
+          addPassword2.setAttribute('placeholder', 'Contraseña123');
+          addPassword2.removeAttribute('value');
+        }
+      }, 10);
+    });
+
+    // Asegurar placeholders cuando el modal ya es visible
+    addPerfilModal.addEventListener('shown.bs.modal', function() {
+      const addPassword = document.getElementById('add-password');
+      const addPassword2 = document.getElementById('add-password2');
+      const addMostrarPassword = document.getElementById('add-mostrarPassword');
+      
+      // Siempre establecer los placeholders cuando se abre el modal
+      if (addPassword) {
+        // Forzar placeholder siempre, incluso si hay valor (lo limpiaremos)
+        if (addPassword.value) {
+          addPassword.value = '';
+        }
+        addPassword.placeholder = 'Contraseña123';
+        addPassword.setAttribute('placeholder', 'Contraseña123');
+        // Asegurar que el tipo sea correcto según el checkbox
+        if (addMostrarPassword && addMostrarPassword.checked) {
+          addPassword.type = 'text';
+        } else {
+          addPassword.type = 'password';
+        }
+      }
+      if (addPassword2) {
+        // Forzar placeholder siempre, incluso si hay valor (lo limpiaremos)
+        if (addPassword2.value) {
+          addPassword2.value = '';
+        }
+        addPassword2.placeholder = 'Contraseña123';
+        addPassword2.setAttribute('placeholder', 'Contraseña123');
+        // Asegurar que el tipo sea correcto según el checkbox
+        if (addMostrarPassword && addMostrarPassword.checked) {
+          addPassword2.type = 'text';
+        } else {
+          addPassword2.type = 'password';
+        }
+      }
+    });
+
+    // Limpiar formulario cuando se cierre el modal
+    addPerfilModal.addEventListener('hidden.bs.modal', function() {
+      const form = this.querySelector('form');
+      if (form) {
+        form.reset();
+        form.classList.remove('was-validated');
+        
+        // Limpiar validaciones personalizadas
+        const inputs = form.querySelectorAll('input');
+        inputs.forEach(input => {
+          input.setCustomValidity('');
+        });
+        
+        // Limpiar mensajes de error en el modal
+        const alertDiv = this.querySelector('.modal-alert');
+        if (alertDiv) {
+          alertDiv.remove();
+        }
+        
+        // Restaurar tipo de contraseñas y placeholders
+        const addPassword = document.getElementById('add-password');
+        const addPassword2 = document.getElementById('add-password2');
+        const addMostrarPassword = document.getElementById('add-mostrarPassword');
+        
+        // Restaurar checkbox
+        if (addMostrarPassword) {
+          addMostrarPassword.checked = false;
+        }
+        
+        if (addPassword) {
+          addPassword.type = 'password';
+          addPassword.placeholder = 'Contraseña123';
+          addPassword.value = '';
+          addPassword.classList.remove('is-invalid');
+        }
+        if (addPassword2) {
+          addPassword2.type = 'password';
+          addPassword2.placeholder = 'Contraseña123';
+          addPassword2.value = '';
+          addPassword2.classList.remove('is-invalid');
+        }
+        
+        // Resetear indicadores de requisitos
+        const reqLength = document.getElementById('add-req-length');
+        const reqUppercase = document.getElementById('add-req-uppercase');
+        const reqNumber = document.getElementById('add-req-number');
+        const passwordMatch = document.getElementById('add-password-match');
+        const emailError = document.getElementById('add-email-error');
+        const emailInput = document.getElementById('add-email');
+        const usernameError = document.getElementById('add-username-error');
+        const usernameInput = document.getElementById('add-username');
+        
+        [reqLength, reqUppercase, reqNumber].forEach(el => {
+          if (el) {
+            el.classList.remove('text-success', 'text-danger');
+            el.classList.add('text-muted');
+            el.querySelector('i').className = 'bi bi-circle me-1';
+          }
+        });
+        if (passwordMatch) passwordMatch.style.display = 'none';
+        clearFieldError(emailInput, emailError);
+        clearFieldError(usernameInput, usernameError);
+        
+        // Asegurar que todos los textos de ayuda estén visibles
+        const password2Help = document.getElementById('add-password2-help');
+        if (password2Help) password2Help.style.display = 'block';
+        const password2Input = document.getElementById('add-password2');
+        if (password2Input) password2Input.classList.remove('is-invalid');
+        
+        // Resetear modal al estado inicial (formulario)
+        const formSection = document.getElementById('add-form-section');
+        const verificationSection = document.getElementById('add-verification-section');
+        const submitBtn = document.getElementById('add-submit-btn');
+        
+        if (formSection) formSection.style.display = 'block';
+        if (verificationSection) verificationSection.style.display = 'none';
+        if (submitBtn) submitBtn.innerHTML = 'Confirmar';
+        
+        // Restaurar action del formulario (reutilizar la variable form ya declarada arriba)
+        if (form) form.action = '{% url "nuevo_perfil" %}';
+        
+        // Limpiar campos de código
+        const codigoHidden = document.getElementById('add-codigo');
+        const codigoError = document.getElementById('add-codigo-error');
+        const codigoHelp = document.getElementById('add-codigo-help');
+        
+        // Limpiar todos los bloques
+        for (let i = 0; i < 6; i++) {
+          const input = document.getElementById(`add-codigo-${i}`);
+          if (input) {
+            input.value = '';
+          }
+        }
+        
+        if (codigoHidden) codigoHidden.value = '';
+        if (codigoError) codigoError.style.display = 'none';
+        if (codigoHelp) codigoHelp.style.display = 'block';
+      }
+    });
+  }
+  
+  // Manejar código de verificación con 6 bloques
+  const codigoInputs = [];
+  for (let i = 0; i < 6; i++) {
+    const input = document.getElementById(`add-codigo-${i}`);
+    if (input) {
+      codigoInputs.push(input);
+      
+      // Manejar input de números
+      input.addEventListener('input', function(e) {
+        const value = e.target.value.replace(/[^0-9]/g, '');
+        e.target.value = value;
+        
+        // Actualizar campo hidden con el código completo
+        updateCodigoHidden();
+        
+        // Limpiar errores
+        const codigoError = document.getElementById('add-codigo-error');
+        const codigoHelp = document.getElementById('add-codigo-help');
+        if (codigoError) codigoError.style.display = 'none';
+        if (codigoHelp) codigoHelp.style.display = 'block';
+        
+        // Auto-avance al siguiente campo si hay valor
+        if (value && i < 5) {
+          codigoInputs[i + 1].focus();
+        }
+      });
+      
+      // Manejar tecla Backspace
+      input.addEventListener('keydown', function(e) {
+        if (e.key === 'Backspace' && !e.target.value && i > 0) {
+          codigoInputs[i - 1].focus();
+        }
+      });
+      
+      // Manejar flechas
+      input.addEventListener('keydown', function(e) {
+        if (e.key === 'ArrowLeft' && i > 0) {
+          e.preventDefault();
+          codigoInputs[i - 1].focus();
+        } else if (e.key === 'ArrowRight' && i < 5) {
+          e.preventDefault();
+          codigoInputs[i + 1].focus();
+        }
+      });
+      
+      // Manejar pegar
+      input.addEventListener('paste', function(e) {
+        e.preventDefault();
+        const pastedData = (e.clipboardData || window.clipboardData).getData('text').replace(/[^0-9]/g, '').slice(0, 6);
+        
+        if (pastedData.length > 0) {
+          // Llenar los campos con los datos pegados
+          for (let j = 0; j < pastedData.length && (i + j) < 6; j++) {
+            codigoInputs[i + j].value = pastedData[j];
+          }
+          
+          // Enfocar el siguiente campo vacío o el último
+          const nextEmptyIndex = Math.min(i + pastedData.length, 5);
+          codigoInputs[nextEmptyIndex].focus();
+          
+          // Actualizar campo hidden
+          updateCodigoHidden();
+          
+          // Limpiar errores
+          const codigoError = document.getElementById('add-codigo-error');
+          const codigoHelp = document.getElementById('add-codigo-help');
+          if (codigoError) codigoError.style.display = 'none';
+          if (codigoHelp) codigoHelp.style.display = 'block';
+        }
+      });
+    }
+  }
+  
+  // Función para actualizar el campo hidden con el código completo
+  function updateCodigoHidden() {
+    const codigoCompleto = codigoInputs.map(input => input.value || '').join('');
+    const hiddenInput = document.getElementById('add-codigo');
+    if (hiddenInput) {
+      hiddenInput.value = codigoCompleto;
+    }
+  }
+  
+  // Funcionalidad AJAX para el formulario de agregar perfil
+  const addPerfilForm = document.getElementById('addPerfilModal')?.querySelector('form');
+  
+  if (addPerfilForm) {
+    // Deshabilitar validación HTML5 automática
+    addPerfilForm.setAttribute('novalidate', 'novalidate');
+    
+    addPerfilForm.addEventListener('submit', function(event) {
+      event.preventDefault();
+      event.stopPropagation();
+      
+      // Verificar si estamos en modo verificación
+      const verificationSection = document.getElementById('add-verification-section');
+      const isVerificationMode = verificationSection && verificationSection.style.display !== 'none';
+      
+      if (isVerificationMode) {
+        // Actualizar campo hidden antes de validar
+        updateCodigoHidden();
+        
+        // Manejar verificación de código
+        const codigo = document.getElementById('add-codigo').value.trim();
+        const codigoError = document.getElementById('add-codigo-error');
+        const codigoHelp = document.getElementById('add-codigo-help');
+        
+        // Limpiar errores anteriores
+        if (codigoError) codigoError.style.display = 'none';
+        if (codigoHelp) codigoHelp.style.display = 'block';
+        
+        // Validar código vacío
+        if (!codigo) {
+          if (codigoError) {
+            codigoError.querySelector('.error-text').textContent = 'Ingresa el código de verificación';
+            codigoError.style.display = 'block';
+          }
+          if (codigoHelp) codigoHelp.style.display = 'none';
+          return;
+        }
+        
+        // Validar que sea de 6 dígitos
+        if (!/^\d{6}$/.test(codigo)) {
+          if (codigoError) {
+            codigoError.querySelector('.error-text').textContent = 'El código debe ser de 6 dígitos numéricos';
+            codigoError.style.display = 'block';
+          }
+          if (codigoHelp) codigoHelp.style.display = 'none';
+          return;
+        }
+        
+        // Enviar código de verificación
+        const formData = new FormData();
+        formData.append('codigo', codigo);
+        formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+        
+        const modal = document.getElementById('addPerfilModal');
+        const submitButton = document.getElementById('add-submit-btn');
+        
+        submitButton.disabled = true;
+        const spinner = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>';
+        submitButton.innerHTML = spinner;
+        
+        fetch('{% url "verificar_nuevo_perfil" %}', {
+          method: 'POST',
+          body: formData,
+          headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+          }
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data && data.success) {
+            // Usuario creado exitosamente
+            const modalInstance = bootstrap.Modal.getInstance(modal);
+            if (modalInstance) modalInstance.hide();
+            
+            $('.alert').remove();
+            mostrarMensajeEnPagina(data.message, 'success');
+            
+            // Agregar nueva fila a la tabla
+            if (data.usuario) {
+              const nuevaFila = `
+                <tr id="fila-usuario-${data.usuario.id}">
+                  <td>
+                    <div class="d-flex align-items-center gap-3">
+                      <div class="avatar-circle bg-primary bg-opacity-10 text-primary">
+                        ${data.usuario.nombre.charAt(0).toUpperCase()}
+                      </div>
+                      <div>
+                        <div class="fw-medium">${data.usuario.nombre}</div>
+                        <small class="text-muted">Usuario del sistema</small>
+                      </div>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="d-flex align-items-center gap-2">
+                      <i class="bi bi-envelope text-muted"></i>
+                      <span>${data.usuario.correo || '<span class="text-muted fst-italic">Sin correo</span>'}</span>
+                    </div>
+                  </td>
+                  <td class="text-center">
+                    <div class="btn-group">
+                      <button 
+                        type="button"
+                        class="btn btn-warning btn-sm" 
+                        data-bs-toggle="modal" 
+                        data-bs-target="#editPerfilModal"
+                        data-id="${data.usuario.id}" 
+                        data-nombre="${data.usuario.nombre}"
+                        data-correo="${data.usuario.correo || ''}"
+                        title="Editar perfil">
+                        <i class="bi bi-pencil"></i>
+                      </button>
+                      <button 
+                        type="button"
+                        class="btn btn-danger btn-sm"
+                        data-bs-toggle="modal"
+                        data-bs-target="#deleteModal"
+                        data-id="${data.usuario.id}"
+                        data-nombre="${data.usuario.nombre}"
+                        title="Eliminar perfil">
+                        <i class="bi bi-trash"></i>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              `;
+              
+              actualizarTablaPerfiles();
+            }
+          } else {
+            // Error en la verificación
+            const codigoHelp = document.getElementById('add-codigo-help');
+            if (codigoError) {
+              codigoError.querySelector('.error-text').textContent = data.message || 'Código incorrecto';
+              codigoError.style.display = 'block';
+            }
+            if (codigoHelp) codigoHelp.style.display = 'none';
+            submitButton.disabled = false;
+            submitButton.innerHTML = 'Verificar';
+          }
+        })
+        .catch(error => {
+          const codigoHelp = document.getElementById('add-codigo-help');
+          if (codigoError) {
+            codigoError.querySelector('.error-text').textContent = 'Error de conexión. Intenta nuevamente.';
+            codigoError.style.display = 'block';
+          }
+          if (codigoHelp) codigoHelp.style.display = 'none';
+          submitButton.disabled = false;
+          submitButton.innerHTML = 'Verificar';
+        });
+        
+        return;
+      }
+      
+      // Validaciones manuales del formulario inicial
+      const username = document.getElementById('add-username').value.trim();
+      const email = document.getElementById('add-email').value.trim();
+      const password = document.getElementById('add-password').value;
+      const password2 = document.getElementById('add-password2').value;
+      
+      // Validar campos obligatorios
+      if (!username || !email || !password || !password2) {
+        return;
+      }
+      
+      // Validar longitud del nombre de usuario
+      if (username.length < 3 || username.length > 30) {
+        return;
+      }
+      
+      // Validar formato del nombre de usuario
+      const usernameRegex = /^[a-zA-Z0-9_]+$/;
+      if (!usernameRegex.test(username)) {
+        return;
+      }
+      
+      // Validar formato del email
+      const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+      if (!emailRegex.test(email)) {
+        return;
+      }
+      
+      // Validar longitud de la contraseña
+      if (password.length < 8 || password.length > 20) {
+        return;
+      }
+      
+      // Validar que la contraseña contenga al menos una letra y un número
+      const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d@$!%*#?&]{8,20}$/;
+      if (!passwordRegex.test(password)) {
+        return;
+      }
+      
+      // Validar que las contraseñas coincidan
+      if (password !== password2) {
+        return;
+      }
+      
+      const formData = new FormData(this);
+      const modal = document.getElementById('addPerfilModal');
+      const submitButton = document.getElementById('add-submit-btn');
+      const originalText = submitButton ? submitButton.innerHTML : 'Confirmar';
+      
+      // Deshabilitar botón
+      if (submitButton) {
+        submitButton.disabled = true;
+        const spinner = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>';
+        submitButton.innerHTML = spinner;
+      }
+      
+      fetch(this.action, {
+        method: 'POST',
+        body: formData,
+        headers: {
+          'X-CSRFToken': formData.get('csrfmiddlewaretoken'),
+          'X-Requested-With': 'XMLHttpRequest'
+        }
+      })
+      .then(response => {
+        return response.json().catch(() => null);
+      })
+      .then(data => {
+        if (data && data.success) {
+          // Verificar si necesita verificación
+          if (data.needs_verification) {
+            // Cambiar al estado de verificación
+            const formSection = document.getElementById('add-form-section');
+            const verificationSection = document.getElementById('add-verification-section');
+            const verificationEmail = document.getElementById('add-verification-email');
+            
+            // Ocultar formulario completo y mostrar solo verificación
+            if (formSection) formSection.style.display = 'none';
+            if (verificationSection) verificationSection.style.display = 'block';
+            if (verificationEmail && data.correo) verificationEmail.textContent = data.correo;
+            
+            // Cambiar action del formulario
+            addPerfilForm.action = '{% url "verificar_nuevo_perfil" %}';
+            
+            // Restaurar botón y cambiar texto a "Verificar"
+            const submitBtn = document.getElementById('add-submit-btn');
+            if (submitBtn) {
+              submitBtn.disabled = false;
+              submitBtn.innerHTML = 'Verificar';
+            }
+            
+            // Enfocar el primer bloque de código
+            setTimeout(() => {
+              const firstCodigoInput = document.getElementById('add-codigo-0');
+              if (firstCodigoInput) firstCodigoInput.focus();
+            }, 300);
+            
+            return;
+          }
+          
+          // Operación exitosa (usuario creado)
+          const modalInstance = bootstrap.Modal.getInstance(modal);
+          if (modalInstance) modalInstance.hide();
+          
+          // Eliminar cualquier mensaje existente
+          $('.alert').remove();
+          
+          // Mostrar mensaje de éxito con notificación push
+          mostrarMensajeEnPagina(data.message, 'success');
+          
+          // Agregar nueva fila a la tabla dinámicamente
+          if (data.usuario) {
+            const nuevaFila = `
+              <tr id="fila-usuario-${data.usuario.id}">
+                <td>
+                  <div class="d-flex align-items-center gap-3">
+                    <div class="avatar-circle bg-primary bg-opacity-10 text-primary">
+                      ${data.usuario.nombre.charAt(0).toUpperCase()}
+                    </div>
+                    <div>
+                      <div class="fw-medium">${data.usuario.nombre}</div>
+                      <small class="text-muted">Usuario del sistema</small>
+                    </div>
+                  </div>
+                </td>
+                <td>
+                  <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-envelope text-muted"></i>
+                    <span>${data.usuario.correo || '<span class="text-muted fst-italic">Sin correo</span>'}</span>
+                  </div>
+                </td>
+                <td class="text-center">
+                  <div class="btn-group">
+                    <button 
+                      type="button"
+                      class="btn btn-warning btn-sm" 
+                      data-bs-toggle="modal" 
+                      data-bs-target="#editPerfilModal"
+                      data-id="${data.usuario.id}" 
+                      data-nombre="${data.usuario.nombre}"
+                      data-correo="${data.usuario.correo || ''}"
+                      title="Editar perfil">
+                      <i class="bi bi-pencil"></i>
+                    </button>
+
+                    <button 
+                      type="button"
+                      class="btn btn-danger btn-sm"
+                      data-bs-toggle="modal"
+                      data-bs-target="#deleteModal"
+                      data-id="${data.usuario.id}"
+                      data-nombre="${data.usuario.nombre}"
+                      title="Eliminar perfil"
+                    >
+                      <i class="bi bi-trash"></i>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            `;
+            
+            // Agregar la nueva fila a la tabla usando el sistema unificado
+            actualizarTablaPerfiles();
+          }
+        } else if (data && !data.success) {
+          // Error de validación - mostrar en el campo correspondiente
+          const errorMessage = data.message || 'Error al agregar el perfil';
+          
+          // Obtener referencias a los elementos
+          const usernameInput = document.getElementById('add-username');
+          const emailInput = document.getElementById('add-email');
+          const usernameErrorDiv = document.getElementById('add-username-error');
+          const emailErrorDiv = document.getElementById('add-email-error');
+          
+          // Detectar si es error de username duplicado
+          if (errorMessage.includes('nombre de usuario') && errorMessage.includes('ya existe')) {
+            showFieldError(usernameInput, usernameErrorDiv, errorMessage);
+          }
+          // Detectar si es error de email duplicado
+          else if (errorMessage.includes('correo') && (errorMessage.includes('ya está registrado') || errorMessage.includes('ya existe'))) {
+            showFieldError(emailInput, emailErrorDiv, errorMessage);
+          }
+          // Otros errores se pueden mostrar en un campo genérico o simplemente no mostrar
+        } else {
+          // Error general
+          console.error('Error al agregar perfil:', data);
+        }
+      })
+      .catch(error => {
+        console.error('Error en agregar perfil:', error);
+        // Los errores de validación ya se muestran con las barras
+      })
+      .finally(() => {
+        // Restaurar botón solo si no estamos en modo verificación
+        const submitBtn = document.getElementById('add-submit-btn');
+        const verificationSection = document.getElementById('add-verification-section');
+        const isVerificationMode = verificationSection && verificationSection.style.display !== 'none';
+        
+        if (submitBtn) {
+          if (!isVerificationMode) {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalText;
+          } else {
+            // Si estamos en modo verificación, solo habilitar el botón
+            submitBtn.disabled = false;
+          }
+        }
+      });
+    });
+  }
+  
+});
+</script>
+<style>
+/* Desactivar scroll-behavior para evitar movimiento durante actualizaciones AJAX */
+#table-wrapper {
+  scroll-behavior: auto !important;
+}
+
+#table-wrapper .unified-table,
+#table-wrapper .table-responsive {
+  scroll-behavior: auto !important;
+}
+
+/* Clase temporal para desactivar transiciones durante actualización AJAX */
+#table-wrapper.updating {
+  transition: none !important;
+  animation: none !important;
+}
+
+#table-wrapper.updating * {
+  transition: none !important;
+  animation: none !important;
+}
+</style>
+
+<style>
+  .icon-circle {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .icon-circle i {
+    font-size: 1.5rem;
+  }
+
+  .avatar-circle {
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 1.1rem;
+    flex-shrink: 0;
+  }
+
+  .search-group {
+    max-width: 400px;
+    border-radius: 0.5rem;
+    overflow: hidden;
+  }
+
+  .search-group .input-group-text {
+    padding: 0.75rem 1rem;
+  }
+
+  .search-group .form-control {
+    padding: 0.75rem 1rem;
+  }
+
+  .search-group i {
+    font-size: 1.1rem;
+  }
+
+  .table > :not(caption) > * > * {
+    padding: 1rem;
+  }
+
+  .modal-content {
+    border: none;
+    border-radius: 1rem;
+  }
+
+  .table thead th {
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.85rem;
+    letter-spacing: 0.5px;
+  }
+
+  .table tbody tr {
+    transition: all 0.2s ease;
+  }
+
+  .table tbody tr:hover {
+    background-color: rgba(0, 0, 0, 0.02);
+  }
+
+
+  .card-header.bg-gradient {
+    background: #fff !important;
+    color: #222 !important;
+    font-weight: 600;
+    font-size: 1.08rem;
+    padding: 1rem 1.5rem;
+    border-radius: 0.75rem 0.75rem 0 0;
+    border-bottom: 1.5px solid #e5e7eb;
+    letter-spacing: 0.01em;
+    box-shadow: none;
+  }
+
+  /* Deshabilitar estilos de validación HTML5 */
+  #addPerfilModal input:valid,
+  #addPerfilModal input:invalid,
+  #addPerfilModal input:required,
+  #addPerfilModal input:optional {
+    box-shadow: none !important;
+    border-color: #ced4da !important;
+  }
+
+  #addPerfilModal input:focus {
+    border-color: #86b7fe !important;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25) !important;
+  }
+
+  #addPerfilModal input:focus:valid,
+  #addPerfilModal input:focus:invalid {
+    border-color: #86b7fe !important;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25) !important;
+  }
+
+  /* Compactar botones de acción en la tabla de perfiles */
+  /* Ancho fijo para la columna de acciones - igual que categoría */
+  #tablaPerfiles th:last-child,
+  #tablaPerfiles td:last-child {
+    width: 180px !important;
+    min-width: 180px !important;
+    max-width: 180px !important;
+    padding: 0.5rem !important;
+  }
+
+  /* Asegurar que los botones se ajusten bien */
+  #tablaPerfiles td:last-child .btn-group {
+    display: flex;
+    width: 100%;
+    justify-content: center;
+  }
+
+  #tablaPerfiles td:last-child .btn-group .btn {
+    width: 60px !important;
+    min-width: 60px !important;
+    max-width: 60px !important;
+    padding: 0.25rem 0.5rem;
+    flex-shrink: 0;
+  }
+
+  /* Compactar botones de acción solo en perfiles */
+  #tablaPerfiles .btn-group {
+    display: inline-flex;
+    vertical-align: middle;
+  }
+
+  #tablaPerfiles .btn-group .btn {
+    margin-right: 0 !important;
+    margin-left: 0 !important;
+    border-radius: 0 !important;
+    white-space: nowrap;
+    overflow: visible;
+  }
+
+  #tablaPerfiles .btn-group .btn:first-child {
+    border-top-left-radius: 0.5rem !important;
+    border-bottom-left-radius: 0.5rem !important;
+  }
+
+  #tablaPerfiles .btn-group .btn:last-child {
+    border-top-right-radius: 0.5rem !important;
+    border-bottom-right-radius: 0.5rem !important;
+  }
+
+  /* Estilos para DataTables mejorados */
+  .dataTables_wrapper .dataTables_length select {
+    border-radius: 0.375rem;
+    border: 1px solid #ced4da;
+    padding: 0.375rem 0.75rem;
+    font-size: 0.875rem;
+  }
+
+  .dataTables_wrapper .dataTables_filter input {
+    border-radius: 0.375rem;
+    border: 1px solid #ced4da;
+    padding: 0.375rem 0.75rem;
+    font-size: 0.875rem;
+  }
+
+  .dataTables_wrapper .dataTables_filter input:focus {
+    border-color: #86b7fe;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+  }
+
+  .dataTables_wrapper .paginate_button {
+    border-radius: 0.375rem !important;
+    border: 1px solid #dee2e6 !important;
+    margin: 0 2px !important;
+    transition: all 0.2s ease !important;
+  }
+
+  .dataTables_wrapper .paginate_button:hover {
+    background-color: #e9ecef !important;
+    border-color: #adb5bd !important;
+    transform: translateY(-1px);
+  }
+
+  .dataTables_wrapper .paginate_button.current {
+    background-color: #0d6efd !important;
+    border-color: #0d6efd !important;
+    color: white !important;
+  }
+
+  .dataTables_wrapper .paginate_button.disabled {
+    opacity: 0.5 !important;
+    cursor: not-allowed !important;
+  }
+
+  .dataTables_wrapper .dataTables_info {
+    font-size: 0.875rem;
+    color: #6c757d;
+  }
+
+  .dataTables_wrapper .dataTables_paginate {
+    margin-top: 1rem;
+  }
+
+  /* Estilos para dispositivos táctiles */
+  .paginate_button.touch-active {
+    transform: scale(0.95);
+  }
+
+  /* Mejoras para responsividad */
+  @media (max-width: 768px) {
+    .dataTables_wrapper .dataTables_length,
+    .dataTables_wrapper .dataTables_filter {
+      text-align: center;
+      margin-bottom: 1rem;
+    }
+    
+    .dataTables_wrapper .dataTables_paginate {
+      justify-content: center !important;
+    }
+    
+    /* Botones del modal footer en móvil - ocupar todo el ancho y apilarse */
+    #deleteModal .modal-footer,
+    #editPerfilModal .modal-footer,
+    #addPerfilModal .modal-footer {
+      padding: 1rem !important;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    
+    #deleteModal .modal-footer .btn,
+    #editPerfilModal .modal-footer .btn,
+    #addPerfilModal .modal-footer .btn {
+      width: 100%;
+      margin: 0;
+    }
+  }
+</style>
+<script>
+  $(document).ready(function () {
+    // Inicializar tooltips
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.map(function (tooltipTriggerEl) {
+      return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+
+    // DataTables ya no se usa, el sistema unificado maneja la tabla
+    // window.tabla ya no es necesario
+
+    // La búsqueda se maneja mediante el sistema unificado (unified-table.js)
+    // No es necesario el código de búsqueda personalizada de DataTables
+
+
+
+    // Variables para el modal de eliminación
+    let idUsuarioEliminar = null;
+    let filaUsuario = null;
+
+    // Abrir modal y guardar id
+    $(document).on('click', 'button[data-bs-target="#deleteModal"]', function () {
+      idUsuarioEliminar = $(this).data('id');
+      filaUsuario = $(this).closest('tr');
+      const nombre = $(this).data('nombre');
+      const usuarioIdSesion = {{ usuario_id_sesion|default:"null" }};
+      
+      // Verificar si es el perfil en sesión
+      if (usuarioIdSesion && idUsuarioEliminar == usuarioIdSesion) {
+        // Es el perfil en sesión, mostrar modal con mensaje de error
+        $('#modalContentNormal').hide();
+        $('#modalContentError').hide();
+        $('#modalContentSessionError').show();
+        $('#btnConfirmarEliminar').hide();
+        $('#deleteModal').modal('show');
+        return;
+      }
+      
+      // Verificar si es el último perfil antes de abrir el modal
+      const totalFilas = $('#tablaPerfiles tbody tr').length;
+      
+      if (totalFilas <= 1) {
+        // Es el último perfil, mostrar modal con mensaje de error
+        $('#modalContentNormal').hide();
+        $('#modalContentSessionError').hide();
+        $('#modalContentError').show();
+        $('#btnConfirmarEliminar').hide();
+        $('#deleteModal').modal('show');
+        return;
+      }
+      
+      // Si no es el último perfil ni el de sesión, mostrar modal normal
+      $('#modalContentError').hide();
+      $('#modalContentSessionError').hide();
+      $('#modalContentNormal').show();
+      $('#btnConfirmarEliminar').show();
+      $('#nombreUsuarioEliminar').text(nombre);
+    });
+
+    // Resetear modal cuando se cierre
+    $('#deleteModal').on('hidden.bs.modal', function () {
+      $('#modalContentNormal').hide();
+      $('#modalContentError').hide();
+      $('#modalContentSessionError').hide();
+      $('#btnConfirmarEliminar').hide();
+    });
+
+    // Confirmar eliminación por AJAX
+    $('#btnConfirmarEliminar').on('click', function () {
+      if (!idUsuarioEliminar) return;
+      
+      console.log('Intentando eliminar usuario ID:', idUsuarioEliminar);
+      
+      $.ajax({
+        url: `/perfiles/eliminar/${idUsuarioEliminar}/`,
+        type: 'POST',
+        data: {
+          'csrfmiddlewaretoken': '{{ csrf_token }}'
+        },
+        success: function (data) {
+          console.log('Respuesta exitosa:', data);
+          // Cerrar modal
+          $('#deleteModal').modal('hide');
+          
+          // Guardar datos del usuario eliminado en sessionStorage para poder restaurarlo
+          const usuarioEliminado = {
+            id: idUsuarioEliminar,
+            nombre: $('#nombreUsuarioEliminar').text(),
+            filaHtml: filaUsuario.prop('outerHTML'),
+            timestamp: new Date().getTime()
+          };
+          sessionStorage.setItem('usuarioEliminado', JSON.stringify(usuarioEliminado));
+          
+          // Eliminar fila de la tabla (DOM directo, el sistema unificado maneja la actualización)
+          filaUsuario.fadeOut(300, function() {
+            $(this).remove();
+          });
+          
+          // Eliminar cualquier mensaje existente
+          $('.alert').remove();
+          
+          // Mostrar mensaje de éxito con opción de deshacer usando notificación push
+          mostrarMensajeConDeshacer('Perfil eliminado exitosamente.', idUsuarioEliminar);
+        },
+        error: function (xhr, status, error) {
+          console.log('Error en AJAX:', xhr.responseText);
+          console.log('Status:', status);
+          console.log('Error:', error);
+          
+          let mensaje = 'Error al eliminar el perfil.';
+          
+          try {
+            const response = JSON.parse(xhr.responseText);
+            if (response.message) {
+              mensaje = response.message;
+              
+              // Si es error de perfil en sesión, mostrar en el modal
+              if (mensaje.includes('propio perfil') || mensaje.includes('logueado')) {
+                $('#modalContentNormal').hide();
+                $('#modalContentError').hide();
+                $('#modalContentSessionError').show();
+                $('#btnConfirmarEliminar').hide();
+                $('#deleteModal').modal('show');
+                return;
+              }
+              
+              // Si es error de último perfil, mostrar en el modal
+              if (mensaje.includes('último perfil')) {
+                $('#modalContentNormal').hide();
+                $('#modalContentSessionError').hide();
+                $('#modalContentError').show();
+                $('#btnConfirmarEliminar').hide();
+                $('#deleteModal').modal('show');
+                return;
+              }
+            }
+          } catch (e) {
+            console.log('No se pudo parsear la respuesta JSON');
+          }
+          
+          // Para otros errores, cerrar modal y mostrar mensaje
+          $('#deleteModal').modal('hide');
+          mostrarMensajeEnPagina(mensaje, 'danger');
+        }
+      });
+      
+            // Evento para el botón de deshacer eliminación
+      $(document).on('click', '#btnDeshacerEliminacion', function() {
+        const usuarioEliminadoStr = sessionStorage.getItem('usuarioEliminado');
+        if (!usuarioEliminadoStr) return;
+        
+        const usuarioEliminado = JSON.parse(usuarioEliminadoStr);
+        
+        // Verificar que no hayan pasado más de 5 minutos (300000 ms)
+        const tiempoTranscurrido = new Date().getTime() - usuarioEliminado.timestamp;
+        if (tiempoTranscurrido > 300000) {
+          alert('El tiempo para deshacer ha expirado (5 minutos).');
+          sessionStorage.removeItem('usuarioEliminado');
+          $('.alert-danger').first().fadeOut();
+          return;
+        }
+        
+        console.log('Intentando restaurar usuario ID:', usuarioEliminado.id);
+        
+        // Hacer petición AJAX para restaurar el usuario en la base de datos
+        $.ajax({
+          url: `/perfiles/restaurar/${usuarioEliminado.id}/`,
+          type: 'POST',
+          data: {
+            'csrfmiddlewaretoken': '{{ csrf_token }}'
+          },
+          success: function (data) {
+            console.log('Respuesta exitosa de restauración:', data);
+            
+            // Ocultar el mensaje de eliminación
+            $('.alert-danger').first().fadeOut();
+            
+            // Restaurar la fila en la tabla usando el sistema unificado
+            if (typeof refreshTable === 'function') {
+              actualizarTablaPerfiles();
+            } else {
+              // Fallback: recargar la página
+              window.location.reload();
+            }
+            
+            // Eliminar cualquier mensaje existente
+            $('.alert').remove();
+            
+            // Mostrar mensaje de restauración exitosa con notificación push
+            mostrarMensajeEnPagina('Perfil restaurado correctamente.', 'success');
+            
+            // Limpiar datos del sessionStorage
+            sessionStorage.removeItem('usuarioEliminado');
+          },
+          error: function (xhr, status, error) {
+            console.log('Error en AJAX de restauración:', xhr.responseText);
+            
+            let mensaje = 'Error al restaurar el perfil.';
+            
+            try {
+              const response = JSON.parse(xhr.responseText);
+              if (response.message) {
+                mensaje = response.message;
+              }
+            } catch (e) {
+              console.log('No se pudo parsear la respuesta JSON');
+            }
+            
+            // Eliminar cualquier mensaje existente
+            $('.alert').remove();
+            
+            // Mostrar mensaje de error con notificación push
+            mostrarMensajeEnPagina(mensaje, 'danger');
+          }
+        });
+      });
+    });
+
+    // Funcionalidad del modal de editar perfil
+    let idUsuarioEditar = null;
+    
+    // Funciones para mostrar/ocultar errores en el modal de editar
+    function showEditFieldError(inputId, errorId, helpId, message) {
+      const input = document.getElementById(inputId);
+      const error = document.getElementById(errorId);
+      const help = document.getElementById(helpId);
+      
+      if (input) input.classList.add('is-invalid');
+      if (error) {
+        error.querySelector('.error-text').textContent = message;
+        error.style.display = 'block';
+      }
+      if (help) help.style.display = 'none';
+    }
+    
+    function clearEditFieldError(inputId, errorId, helpId) {
+      const input = document.getElementById(inputId);
+      const error = document.getElementById(errorId);
+      const help = document.getElementById(helpId);
+      
+      if (input) input.classList.remove('is-invalid');
+      if (error) error.style.display = 'none';
+      if (help) help.style.display = 'block';
+    }
+
+    // Abrir modal de editar y cargar datos
+    $(document).on('click', 'button[data-bs-target="#editPerfilModal"]', function () {
+      idUsuarioEditar = $(this).data('id');
+      const nombre = $(this).data('nombre');
+      const correo = $(this).data('correo');
+      
+      $('#edit-id').val(idUsuarioEditar);
+      $('#edit-nombre').val(nombre);
+      $('#edit-correo').val(correo);
+      
+      // Limpiar campos de contraseña
+      $('#edit-password').val('');
+      $('#edit-password2').val('');
+      $('#cambiarPassword').prop('checked', false);
+        $('#passwordFields').addClass('d-none');
+        $('#edit-password').prop('required', false);
+        $('#edit-password2').prop('required', false);
+      
+      // Resetear estado de verificación
+      $('#edit-verification-section').addClass('d-none');
+      $('#edit-submit-btn').html('Guardar');
+      
+      // Resetear indicadores de requisitos
+      const reqLength = document.getElementById('edit-req-length');
+      const reqUppercase = document.getElementById('edit-req-uppercase');
+      const reqNumber = document.getElementById('edit-req-number');
+      const passwordMatch = document.getElementById('edit-password-match');
+      const passwordHelp = document.getElementById('edit-password-help');
+      const password2Help = document.getElementById('edit-password2-help');
+      
+      [reqLength, reqUppercase, reqNumber].forEach(el => {
+        if (el) {
+          el.classList.remove('text-success', 'text-danger');
+          el.classList.add('text-muted');
+          el.querySelector('i').className = 'bi bi-circle me-1';
+        }
+      });
+      if (passwordMatch) passwordMatch.style.display = 'none';
+      if (passwordHelp) passwordHelp.style.display = 'block';
+      if (password2Help) password2Help.style.display = 'block';
+      $('#edit-password').removeClass('is-invalid');
+      $('#edit-password2').removeClass('is-invalid');
+      
+      // Limpiar campos de código
+      for (let i = 0; i < 6; i++) {
+        const input = document.getElementById(`edit-codigo-${i}`);
+        if (input) input.value = '';
+      }
+      const codigoHidden = document.getElementById('edit-codigo');
+      if (codigoHidden) codigoHidden.value = '';
+      const codigoError = document.getElementById('edit-codigo-error');
+      const codigoHelp = document.getElementById('edit-codigo-help');
+      if (codigoError) codigoError.style.display = 'none';
+      if (codigoHelp) codigoHelp.style.display = 'block';
+      
+      // Limpiar errores de nombre de usuario y correo
+      clearEditFieldError('edit-nombre', 'edit-username-error', 'edit-username-help');
+      clearEditFieldError('edit-correo', 'edit-email-error', null);
+    });
+    
+    // Limpiar errores al escribir en nombre de usuario
+    const editNombreInput = document.getElementById('edit-nombre');
+    if (editNombreInput) {
+      editNombreInput.addEventListener('input', function() {
+        clearEditFieldError('edit-nombre', 'edit-username-error', 'edit-username-help');
+      });
+    }
+    
+    // Limpiar errores al escribir en correo
+    const editCorreoInput = document.getElementById('edit-correo');
+    if (editCorreoInput) {
+      editCorreoInput.addEventListener('input', function() {
+        clearEditFieldError('edit-correo', 'edit-email-error', null);
+      });
+    }
+
+    // Mostrar/ocultar campos de contraseña
+    $('#cambiarPassword').on('change', function() {
+      if (this.checked) {
+        // Obtener el correo del usuario
+        const correo = $('#edit-correo').val();
+        
+        if (!correo) {
+          mostrarMensajeEnPagina('Se requiere un correo electrónico para cambiar la contraseña.', 'danger');
+          $(this).prop('checked', false);
+          return;
+        }
+        
+        // Enviar código de verificación
+        const formData = new FormData();
+        formData.append('enviar_codigo', 'true');
+        formData.append('correo', correo);
+        formData.append('csrfmiddlewaretoken', $('[name=csrfmiddlewaretoken]').val());
+      
+      $.ajax({
+        url: `/perfiles/editar/${idUsuarioEditar}/ajax/`,
+        type: 'POST',
+        data: formData,
+        processData: false,
+        contentType: false,
+        success: function(data) {
+            if (data.success && data.needs_verification) {
+              // Mostrar sección de verificación
+              $('#edit-verification-section').removeClass('d-none');
+              $('#edit-verification-email').text(data.correo || correo);
+              
+              // Enfocar el primer bloque de código
+              setTimeout(() => {
+                const firstCodigoInput = document.getElementById('edit-codigo-0');
+                if (firstCodigoInput) firstCodigoInput.focus();
+              }, 300);
+            } else {
+              mostrarMensajeEnPagina(data.message || 'Error al enviar el código de verificación.', 'danger');
+              $('#cambiarPassword').prop('checked', false);
+            }
+        },
+        error: function(xhr, status, error) {
+            let mensaje = 'Error al enviar el código de verificación.';
+          try {
+            const response = JSON.parse(xhr.responseText);
+            if (response.message) {
+              mensaje = response.message;
+            }
+            } catch (e) {}
+            mostrarMensajeEnPagina(mensaje, 'danger');
+            $('#cambiarPassword').prop('checked', false);
+          }
+        });
+      } else {
+        // Ocultar todo
+        $('#passwordFields').addClass('d-none');
+        $('#edit-verification-section').addClass('d-none');
+        $('#edit-password').prop('required', false);
+        $('#edit-password2').prop('required', false);
+        $('#edit-password').val('');
+        $('#edit-password2').val('');
+        
+        // Limpiar campos de código
+        for (let i = 0; i < 6; i++) {
+          const input = document.getElementById(`edit-codigo-${i}`);
+          if (input) input.value = '';
+        }
+        const codigoHidden = document.getElementById('edit-codigo');
+        if (codigoHidden) codigoHidden.value = '';
+        const codigoError = document.getElementById('edit-codigo-error');
+        const codigoHelp = document.getElementById('edit-codigo-help');
+        if (codigoError) codigoError.style.display = 'none';
+        if (codigoHelp) codigoHelp.style.display = 'block';
+      }
+    });
+    
+    // Manejar código de verificación con 6 bloques para editar
+    const editCodigoInputs = [];
+    for (let i = 0; i < 6; i++) {
+      const input = document.getElementById(`edit-codigo-${i}`);
+      if (input) {
+        editCodigoInputs.push(input);
+        
+        // Manejar input de números
+        input.addEventListener('input', function(e) {
+          const value = e.target.value.replace(/[^0-9]/g, '');
+          e.target.value = value;
+          
+          // Actualizar campo hidden con el código completo
+          updateEditCodigoHidden();
+          
+          // Limpiar errores
+          const codigoError = document.getElementById('edit-codigo-error');
+          const codigoHelp = document.getElementById('edit-codigo-help');
+          if (codigoError) codigoError.style.display = 'none';
+          if (codigoHelp) codigoHelp.style.display = 'block';
+          
+          // Auto-avance al siguiente campo si hay valor
+          if (value && i < 5) {
+            editCodigoInputs[i + 1].focus();
+          }
+        });
+        
+        // Manejar tecla Backspace
+        input.addEventListener('keydown', function(e) {
+          if (e.key === 'Backspace' && !e.target.value && i > 0) {
+            editCodigoInputs[i - 1].focus();
+          }
+        });
+        
+        // Manejar flechas
+        input.addEventListener('keydown', function(e) {
+          if (e.key === 'ArrowLeft' && i > 0) {
+            e.preventDefault();
+            editCodigoInputs[i - 1].focus();
+          } else if (e.key === 'ArrowRight' && i < 5) {
+            e.preventDefault();
+            editCodigoInputs[i + 1].focus();
+          }
+        });
+        
+        // Manejar pegar
+        input.addEventListener('paste', function(e) {
+          e.preventDefault();
+          const pastedData = (e.clipboardData || window.clipboardData).getData('text').replace(/[^0-9]/g, '').slice(0, 6);
+          
+          if (pastedData.length > 0) {
+            // Llenar los campos con los datos pegados
+            for (let j = 0; j < pastedData.length && (i + j) < 6; j++) {
+              editCodigoInputs[i + j].value = pastedData[j];
+            }
+            
+            // Enfocar el siguiente campo vacío o el último
+            const nextEmptyIndex = Math.min(i + pastedData.length, 5);
+            editCodigoInputs[nextEmptyIndex].focus();
+            
+            // Actualizar campo hidden
+            updateEditCodigoHidden();
+            
+            // Limpiar errores
+            const codigoError = document.getElementById('edit-codigo-error');
+            const codigoHelp = document.getElementById('edit-codigo-help');
+            if (codigoError) codigoError.style.display = 'none';
+            if (codigoHelp) codigoHelp.style.display = 'block';
+          }
+        });
+      }
+    }
+    
+    // Función para actualizar el campo hidden con el código completo
+    function updateEditCodigoHidden() {
+      const codigoCompleto = editCodigoInputs.map(input => input.value || '').join('');
+      const hiddenInput = document.getElementById('edit-codigo');
+      if (hiddenInput) {
+        hiddenInput.value = codigoCompleto;
+      }
+    }
+    
+    // Función para inicializar validación de contraseña
+    function initEditPasswordValidation() {
+      const passwordInput = document.getElementById('edit-password');
+      const password2Input = document.getElementById('edit-password2');
+      const reqLength = document.getElementById('edit-req-length');
+      const reqUppercase = document.getElementById('edit-req-uppercase');
+      const reqNumber = document.getElementById('edit-req-number');
+      const passwordMatch = document.getElementById('edit-password-match');
+      const passwordHelp = document.getElementById('edit-password-help');
+      const password2Help = document.getElementById('edit-password2-help');
+      
+      if (!passwordInput || !password2Input) return;
+      
+      // Función para actualizar requisitos (verde si válido, gris si no)
+      function updateRequirement(element, isValid) {
+        if (!element) return;
+        if (isValid) {
+          element.classList.remove('text-muted', 'text-danger');
+          element.classList.add('text-success');
+          element.querySelector('i').className = 'bi bi-check-circle-fill me-1';
+        } else {
+          element.classList.remove('text-success', 'text-danger');
+          element.classList.add('text-muted');
+          element.querySelector('i').className = 'bi bi-circle me-1';
+        }
+      }
+      
+      // Validar requisitos mientras se escribe la contraseña
+      passwordInput.addEventListener('input', function() {
+        const password = passwordInput.value;
+        updateRequirement(reqLength, password.length >= 8);
+        updateRequirement(reqUppercase, /[A-Z]/.test(password));
+        updateRequirement(reqNumber, /[0-9]/.test(password));
+        
+        // Limpiar error de coincidencia si había
+        if (password2Input.classList.contains('is-invalid')) {
+          passwordMatch.style.display = 'none';
+          password2Input.classList.remove('is-invalid');
+          if (password2Help) password2Help.style.display = 'block';
+        }
+      });
+      
+      // Limpiar error de confirmar contraseña al escribir
+      password2Input.addEventListener('input', function() {
+        passwordMatch.style.display = 'none';
+        password2Input.classList.remove('is-invalid');
+        if (password2Help) password2Help.style.display = 'block';
+      });
+    }
+    
+    // Manejar botón "Verificar Código"
+    $('#edit-verificar-btn').on('click', function() {
+      updateEditCodigoHidden();
+      const codigo = $('#edit-codigo').val().trim();
+      const codigoError = $('#edit-codigo-error');
+      const codigoHelp = $('#edit-codigo-help');
+      
+      // Limpiar errores anteriores
+      codigoError.hide();
+      codigoHelp.show();
+      
+      // Validar código vacío
+      if (!codigo) {
+        codigoError.find('.error-text').text('Ingresa el código de verificación');
+        codigoError.show();
+        codigoHelp.hide();
+          return;
+        }
+        
+      // Validar que sea de 6 dígitos
+      if (!/^\d{6}$/.test(codigo)) {
+        codigoError.find('.error-text').text('El código debe ser de 6 dígitos numéricos');
+        codigoError.show();
+        codigoHelp.hide();
+          return;
+        }
+        
+      // Enviar código de verificación
+      const formData = new FormData();
+      formData.append('codigo', codigo);
+      formData.append('id_usuario', idUsuarioEditar);
+      formData.append('csrfmiddlewaretoken', $('[name=csrfmiddlewaretoken]').val());
+      
+      const verifyBtn = $(this);
+      verifyBtn.prop('disabled', true);
+      const originalText = verifyBtn.html();
+      verifyBtn.html('<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Verificando...');
+      
+      $.ajax({
+        url: `/perfiles/verificar-editar/`,
+        type: 'POST',
+        data: formData,
+        processData: false,
+        contentType: false,
+        success: function(data) {
+          if (data.success) {
+            // Ocultar sección de verificación y mostrar campos de contraseña
+            $('#edit-verification-section').addClass('d-none');
+            $('#passwordFields').removeClass('d-none');
+            $('#edit-password').prop('required', true);
+            $('#edit-password2').prop('required', true);
+            
+            // Inicializar validación de contraseña
+            initEditPasswordValidation();
+            
+            // Enfocar el primer campo de contraseña
+            setTimeout(() => {
+              $('#edit-password').focus();
+            }, 300);
+          } else {
+            codigoError.find('.error-text').text(data.message || 'Código incorrecto');
+            codigoError.show();
+            codigoHelp.hide();
+            verifyBtn.prop('disabled', false);
+            verifyBtn.html(originalText);
+          }
+        },
+        error: function(xhr, status, error) {
+          codigoError.find('.error-text').text('Error de conexión. Intenta nuevamente.');
+          codigoError.show();
+          codigoHelp.hide();
+          verifyBtn.prop('disabled', false);
+          verifyBtn.html(originalText);
+        }
+      });
+    });
+    
+    // Limpiar modal al cerrar
+    $('#editPerfilModal').on('hidden.bs.modal', function() {
+      // Resetear al estado inicial
+      $('#edit-verification-section').addClass('d-none');
+      $('#passwordFields').addClass('d-none');
+      $('#cambiarPassword').prop('checked', false);
+      $('#edit-submit-btn').html('Guardar');
+      
+      // Limpiar campos de contraseña
+      $('#edit-password').val('');
+      $('#edit-password2').val('');
+      $('#edit-password').prop('required', false);
+      $('#edit-password2').prop('required', false);
+      
+      // Resetear indicadores de requisitos
+      const reqLength = document.getElementById('edit-req-length');
+      const reqUppercase = document.getElementById('edit-req-uppercase');
+      const reqNumber = document.getElementById('edit-req-number');
+      const passwordMatch = document.getElementById('edit-password-match');
+      const passwordHelp = document.getElementById('edit-password-help');
+      const password2Help = document.getElementById('edit-password2-help');
+      
+      [reqLength, reqUppercase, reqNumber].forEach(el => {
+        if (el) {
+          el.classList.remove('text-success', 'text-danger');
+          el.classList.add('text-muted');
+          el.querySelector('i').className = 'bi bi-circle me-1';
+        }
+      });
+      if (passwordMatch) passwordMatch.style.display = 'none';
+      if (passwordHelp) passwordHelp.style.display = 'block';
+      if (password2Help) password2Help.style.display = 'block';
+      $('#edit-password').removeClass('is-invalid');
+      $('#edit-password2').removeClass('is-invalid');
+      
+      // Limpiar campos de código
+      for (let i = 0; i < 6; i++) {
+        const input = document.getElementById(`edit-codigo-${i}`);
+        if (input) input.value = '';
+      }
+      const codigoHidden = document.getElementById('edit-codigo');
+      if (codigoHidden) codigoHidden.value = '';
+      const codigoError = document.getElementById('edit-codigo-error');
+      const codigoHelp = document.getElementById('edit-codigo-help');
+      if (codigoError) codigoError.style.display = 'none';
+      if (codigoHelp) codigoHelp.style.display = 'block';
+      
+      // Limpiar errores de nombre de usuario y correo
+      clearEditFieldError('edit-nombre', 'edit-username-error', 'edit-username-help');
+      clearEditFieldError('edit-correo', 'edit-email-error', null);
+    });
+
+    // Enviar formulario de editar perfil
+    $('#editPerfilForm').on('submit', function(e) {
+      e.preventDefault();
+      
+      if (!idUsuarioEditar) return;
+      
+      // Limpiar errores anteriores
+      clearEditFieldError('edit-nombre', 'edit-username-error', 'edit-username-help');
+      clearEditFieldError('edit-correo', 'edit-email-error', null);
+      
+      // Validar nombre de usuario
+      const nombre = $('#edit-nombre').val().trim();
+      if (!nombre) {
+        showEditFieldError('edit-nombre', 'edit-username-error', 'edit-username-help', 'El nombre de usuario es obligatorio.');
+          return;
+        }
+        
+      if (nombre.length < 3 || nombre.length > 30) {
+        showEditFieldError('edit-nombre', 'edit-username-error', 'edit-username-help', 'El nombre de usuario debe tener entre 3 y 30 caracteres.');
+          return;
+        }
+        
+      const usernameRegex = /^[a-zA-Z0-9_]+$/;
+      if (!usernameRegex.test(nombre)) {
+        showEditFieldError('edit-nombre', 'edit-username-error', 'edit-username-help', 'El nombre de usuario solo puede contener letras, números y guiones bajos.');
+          return;
+        }
+        
+      // Validar correo si se proporciona
+      const correo = $('#edit-correo').val().trim();
+      if (correo) {
+        const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+        if (!emailRegex.test(correo)) {
+          showEditFieldError('edit-correo', 'edit-email-error', null, 'El correo electrónico no es válido.');
+          return;
+        }
+      }
+      
+      // Validar contraseña si se está cambiando
+      const cambiarPassword = $('#cambiarPassword').is(':checked');
+      if (cambiarPassword) {
+        const password = $('#edit-password').val();
+        const password2 = $('#edit-password2').val();
+        const passwordMatch = $('#edit-password-match');
+        const password2Help = $('#edit-password2-help');
+        const reqLength = document.getElementById('edit-req-length');
+        const reqUppercase = document.getElementById('edit-req-uppercase');
+        const reqNumber = document.getElementById('edit-req-number');
+        
+        // Validar que las contraseñas coincidan
+        if (password !== password2) {
+          passwordMatch.show();
+          $('#edit-password2').addClass('is-invalid');
+          if (password2Help) password2Help.hide();
+          return;
+        }
+        
+        // Validar requisitos de contraseña
+        const lengthValid = password.length >= 8;
+        const upperValid = /[A-Z]/.test(password);
+        const numberValid = /[0-9]/.test(password);
+        
+        if (!lengthValid || !upperValid || !numberValid) {
+          // Marcar en rojo los que no cumplen
+          if (!lengthValid && reqLength) {
+            reqLength.classList.remove('text-muted', 'text-success');
+            reqLength.classList.add('text-danger');
+            reqLength.querySelector('i').className = 'bi bi-x-circle-fill me-1';
+          }
+          if (!upperValid && reqUppercase) {
+            reqUppercase.classList.remove('text-muted', 'text-success');
+            reqUppercase.classList.add('text-danger');
+            reqUppercase.querySelector('i').className = 'bi bi-x-circle-fill me-1';
+          }
+          if (!numberValid && reqNumber) {
+            reqNumber.classList.remove('text-muted', 'text-success');
+            reqNumber.classList.add('text-danger');
+            reqNumber.querySelector('i').className = 'bi bi-x-circle-fill me-1';
+          }
+          return;
+        }
+      }
+      
+      // Envío normal del formulario
+        const formData = new FormData(this);
+      const submitBtn = $('#edit-submit-btn');
+      const originalText = submitBtn.html();
+      
+      submitBtn.prop('disabled', true);
+      const spinner = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>';
+      submitBtn.html(spinner);
+      
+      $.ajax({
+        url: `/perfiles/editar/${idUsuarioEditar}/ajax/`,
+        type: 'POST',
+        data: formData,
+        processData: false,
+        contentType: false,
+        success: function(data) {
+          if (!data.success) {
+            // Manejar errores del servidor
+            const errorMessage = data.message || 'Error al actualizar el perfil.';
+            
+            // Detectar si es error de nombre de usuario
+            if (errorMessage.includes('nombre de usuario') && (errorMessage.includes('ya existe') || errorMessage.includes('obligatorio'))) {
+              showEditFieldError('edit-nombre', 'edit-username-error', 'edit-username-help', errorMessage);
+              submitBtn.prop('disabled', false);
+              submitBtn.html(originalText);
+              return;
+            }
+            
+            // Detectar si es error de correo
+            if (errorMessage.includes('correo') && (errorMessage.includes('ya está registrado') || errorMessage.includes('ya existe') || errorMessage.includes('válido'))) {
+              showEditFieldError('edit-correo', 'edit-email-error', null, errorMessage);
+              submitBtn.prop('disabled', false);
+              submitBtn.html(originalText);
+              return;
+            }
+            
+            // Otros errores
+            mostrarMensajeEnPagina(errorMessage, 'danger');
+            submitBtn.prop('disabled', false);
+            submitBtn.html(originalText);
+            return;
+          }
+          
+          if (data.needs_verification) {
+            // Cambiar al estado de verificación
+            $('#edit-form-section').hide();
+            $('#edit-verification-section').removeClass('d-none');
+            $('#edit-verification-email').text(data.correo || $('#edit-correo').val());
+            $('#edit-submit-btn').html('Verificar');
+            
+            // Enfocar el primer bloque de código
+            setTimeout(() => {
+              const firstCodigoInput = document.getElementById('edit-codigo-0');
+              if (firstCodigoInput) firstCodigoInput.focus();
+            }, 300);
+            
+            submitBtn.prop('disabled', false);
+            return;
+          }
+          
+          $('#editPerfilModal').modal('hide');
+            
+            // Eliminar cualquier mensaje existente
+            $('.alert').remove();
+            
+            // Mostrar mensaje de éxito con notificación push
+          mostrarMensajeEnPagina('Perfil actualizado correctamente.', 'success');
+          
+          // Actualizar la tabla dinámicamente sin recargar la página
+          actualizarTablaPerfiles();
+        },
+        error: function(xhr, status, error) {
+          let mensaje = 'Error al actualizar el perfil.';
+          
+          try {
+            const response = JSON.parse(xhr.responseText);
+            if (response.message) {
+              mensaje = response.message;
+              
+              // Detectar si es error de nombre de usuario
+              if (mensaje.includes('nombre de usuario') && (mensaje.includes('ya existe') || mensaje.includes('obligatorio'))) {
+                showEditFieldError('edit-nombre', 'edit-username-error', 'edit-username-help', mensaje);
+                submitBtn.prop('disabled', false);
+                submitBtn.html(originalText);
+                return;
+              }
+              
+              // Detectar si es error de correo
+              if (mensaje.includes('correo') && (mensaje.includes('ya está registrado') || mensaje.includes('ya existe') || mensaje.includes('válido'))) {
+                showEditFieldError('edit-correo', 'edit-email-error', null, mensaje);
+                submitBtn.prop('disabled', false);
+                submitBtn.html(originalText);
+                return;
+              }
+            }
+          } catch (e) {
+            console.log('No se pudo parsear la respuesta JSON');
+          }
+          
+          // Si no es un error de campo específico, mostrar mensaje general
+          mostrarMensajeEnPagina(mensaje, 'danger');
+        },
+        complete: function() {
+          // El botón ya se restaura en success/error cuando es necesario
+        }
+        });
+      });
+  });
+</script>
+
+<script>
+// Funciones de notificaciones push (mismo formato que categorías)
+function mostrarMensajeEnPagina(mensaje, tipo) {
+  console.log('Mostrando notificación push:', mensaje, tipo);
+  
+  // Crear el contenedor de notificaciones si no existe
+  let notificationContainer = document.getElementById('notification-container');
+  if (!notificationContainer) {
+    notificationContainer = document.createElement('div');
+    notificationContainer.id = 'notification-container';
+    notificationContainer.style.cssText = `
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      max-width: 350px;
+    `;
+    document.body.appendChild(notificationContainer);
+  }
+  
+  // Crear la notificación (diseño minimalista y pequeño)
+  const notification = document.createElement('div');
+  notification.className = 'notification';
+  notification.style.cssText = `
+    background: ${tipo === 'danger' ? '#f8d7da' : '#d1e7dd'};
+    color: ${tipo === 'danger' ? '#721c24' : '#0f5132'};
+    padding: 10px 14px;
+    border-radius: 6px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    border: 1px solid ${tipo === 'danger' ? '#f5c2c7' : '#badbcc'};
+    transform: translateX(400px);
+    transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    position: relative;
+    overflow: hidden;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-weight: 400;
+    font-size: 13px;
+  `;
+  
+  // Agregar barra de progreso (más sutil)
+  const progressBar = document.createElement('div');
+  progressBar.style.cssText = `
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    height: 2px;
+    background: ${tipo === 'danger' ? 'rgba(114, 28, 36, 0.2)' : 'rgba(15, 81, 50, 0.2)'};
+    width: 100%;
+    transform: scaleX(1);
+    transform-origin: left;
+    transition: transform 3s linear;
+  `;
+  
+  notification.appendChild(progressBar);
+  
+  // Contenido de la notificación (minimalista)
+  notification.innerHTML += `
+    <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+      <div style="flex: 1;">
+        <div style="font-size: 13px; font-weight: 400; text-align: center; line-height: 1.4;">
+          ${mensaje}
+        </div>
+      </div>
+      <button onclick="this.parentElement.parentElement.remove()" 
+              style="background: none; border: none; color: ${tipo === 'danger' ? '#721c24' : '#0f5132'}; font-size: 16px; cursor: pointer; padding: 0; opacity: 0.5; transition: opacity 0.2s; flex-shrink: 0; line-height: 1;">
+        ×
+      </button>
+    </div>
+  `;
+  
+  // Agregar la notificación al contenedor
+  notificationContainer.appendChild(notification);
+  
+  // Animar entrada
+  setTimeout(() => {
+    notification.style.transform = 'translateX(0)';
+  }, 10);
+  
+  // Animar barra de progreso
+  setTimeout(() => {
+    progressBar.style.transform = 'scaleX(0)';
+  }, 100);
+  
+  // Auto-remover después de 3 segundos
+  setTimeout(() => {
+    if (notification.parentElement) {
+      notification.style.transform = 'translateX(400px)';
+      setTimeout(() => {
+        if (notification.parentElement) {
+          notification.remove();
+        }
+      }, 300);
+    }
+  }, 3000);
+  
+  // Efecto hover (más sutil)
+  notification.addEventListener('mouseenter', () => {
+    notification.style.transform = 'translateX(0)';
+    notification.style.boxShadow = '0 2px 12px rgba(0,0,0,0.15)';
+    progressBar.style.transition = 'none';
+  });
+  
+  notification.addEventListener('mouseleave', () => {
+    notification.style.transform = 'translateX(0)';
+    notification.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
+    progressBar.style.transition = 'transform 3s linear';
+  });
+}
+
+// Función para mostrar mensaje con botón deshacer
+function mostrarMensajeConDeshacer(mensaje, usuarioId) {
+  console.log('Mostrando mensaje con deshacer:', mensaje, usuarioId);
+  
+  // Crear el contenedor de notificaciones si no existe
+  let notificationContainer = document.getElementById('notification-container');
+  if (!notificationContainer) {
+    notificationContainer = document.createElement('div');
+    notificationContainer.id = 'notification-container';
+    notificationContainer.style.cssText = `
+      position: fixed;
+      top: 16px;
+      right: 16px;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      max-width: 320px;
+    `;
+    document.body.appendChild(notificationContainer);
+  }
+  
+  // Crear la notificación con botón deshacer (diseño minimalista)
+  const notification = document.createElement('div');
+  notification.className = 'notification';
+  notification.style.cssText = `
+    background: #f8d7da;
+    color: #721c24;
+    padding: 10px 14px;
+    border-radius: 6px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    border: 1px solid #f5c2c7;
+    transform: translateX(400px);
+    transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    position: relative;
+    overflow: hidden;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-weight: 400;
+    font-size: 13px;
+  `;
+  
+  // Agregar barra de progreso (más sutil)
+  const progressBar = document.createElement('div');
+  progressBar.style.cssText = `
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    height: 2px;
+    background: rgba(114, 28, 36, 0.2);
+    width: 100%;
+    transform: scaleX(1);
+    transform-origin: left;
+    transition: transform 10s linear;
+  `;
+  
+  notification.appendChild(progressBar);
+  
+  // Contenido de la notificación con botón deshacer (minimalista)
+  notification.innerHTML += `
+    <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+      <div style="flex: 1;">
+        <div style="font-size: 13px; font-weight: 400; margin-bottom: 6px; text-align: center; line-height: 1.4;">
+          ${mensaje}
+        </div>
+        <div style="text-align: center;">
+          <button id="btnDeshacerEliminacion" 
+                  onclick="restaurarUsuario(${usuarioId}, this)" 
+                  style="background: rgba(114, 28, 36, 0.1); border: 1px solid rgba(114, 28, 36, 0.2); color: #721c24; padding: 4px 10px; border-radius: 4px; font-size: 11px; cursor: pointer; transition: all 0.2s; font-weight: 400;">
+            Deshacer
+          </button>
+        </div>
+      </div>
+      <button onclick="this.parentElement.parentElement.remove()" 
+              style="background: none; border: none; color: #721c24; font-size: 16px; cursor: pointer; padding: 0; opacity: 0.5; transition: opacity 0.2s; flex-shrink: 0; line-height: 1;">
+        ×
+      </button>
+    </div>
+  `;
+  
+  // Agregar la notificación al contenedor
+  notificationContainer.appendChild(notification);
+  
+  // Animar entrada
+  setTimeout(() => {
+    notification.style.transform = 'translateX(0)';
+  }, 10);
+  
+  // Animar barra de progreso
+  setTimeout(() => {
+    progressBar.style.transform = 'scaleX(0)';
+  }, 100);
+  
+  // Auto-remover después de 10 segundos
+  setTimeout(() => {
+    if (notification.parentElement) {
+      notification.style.transform = 'translateX(400px)';
+      setTimeout(() => {
+        if (notification.parentElement) {
+          notification.remove();
+        }
+      }, 300);
+    }
+  }, 10000);
+  
+  // Efecto hover
+  notification.addEventListener('mouseenter', () => {
+    notification.style.transform = 'translateX(0) scale(1.02)';
+    progressBar.style.transition = 'none';
+  });
+  
+  notification.addEventListener('mouseleave', () => {
+    notification.style.transform = 'translateX(0) scale(1)';
+    progressBar.style.transition = 'transform 10s linear';
+  });
+}
+
+// Función para restaurar usuario (ya existente, solo actualizar para usar notificaciones push)
+function restaurarUsuario(usuarioId, button) {
+  const usuarioEliminadoStr = sessionStorage.getItem('usuarioEliminado');
+  if (!usuarioEliminadoStr) return;
+  
+  const usuarioEliminado = JSON.parse(usuarioEliminadoStr);
+  
+  // Verificar que no hayan pasado más de 5 minutos (300000 ms)
+  const tiempoTranscurrido = new Date().getTime() - usuarioEliminado.timestamp;
+  if (tiempoTranscurrido > 300000) {
+    mostrarMensajeEnPagina('El tiempo para deshacer ha expirado (5 minutos).', 'danger');
+    sessionStorage.removeItem('usuarioEliminado');
+    return;
+  }
+  
+  // Deshabilitar botón
+  button.disabled = true;
+  button.textContent = 'Restaurando...';
+  button.style.opacity = '0.7';
+  
+  // Hacer petición AJAX para restaurar el usuario
+  fetch(`/perfiles/restaurar/${usuarioId}/`, {
+    method: 'POST',
+    headers: {
+      'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+      'Content-Type': 'application/json',
+    }
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      // Ocultar la notificación de eliminación
+      const notification = button.closest('.notification');
+      if (notification) {
+        notification.style.transform = 'translateX(400px)';
+        setTimeout(() => {
+          if (notification.parentElement) {
+            notification.remove();
+          }
+        }, 300);
+      }
+      
+      // Restaurar la fila en la tabla usando el sistema unificado
+      actualizarTablaPerfiles();
+      
+      // Mostrar mensaje de éxito
+      mostrarMensajeEnPagina('Perfil restaurado correctamente.', 'success');
+      
+      // Limpiar datos del sessionStorage
+      sessionStorage.removeItem('usuarioEliminado');
+    } else {
+      throw new Error(data.message || 'Error al restaurar el perfil');
+    }
+  })
+  .catch(error => {
+    console.error('Error al restaurar usuario:', error);
+    mostrarMensajeEnPagina(error.message || 'Error al restaurar el perfil', 'danger');
+    
+    // Restaurar botón
+    button.disabled = false;
+    button.textContent = 'Deshacer';
+    button.style.opacity = '1';
+  });
+
+
+}
+</script>
+
+<style>
+/* Iconos en negro en los botones de acciones - modo claro */
+.btn-group .btn i,
+.unified-table .btn-group .btn i {
+  color: #000 !important;
+}
+
+/* Iconos en blanco en modo oscuro */
+[data-theme="dark"] .btn-group .btn i,
+[data-theme="dark"] .unified-table .btn-group .btn i {
+  color: #fff !important;
+}
+</style>
+{% endblock %} 

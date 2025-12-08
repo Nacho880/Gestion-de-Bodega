@@ -1,0 +1,981 @@
+{% extends 'home/base_main.html' %}
+{% load humanize %}
+{% load static %}
+
+{% block title %}Estadísticas - Inventario{% endblock %}
+
+{% block extra_css %}
+{{ block.super }}
+<style>
+/* Estilos generales */
+.metric-card {
+  transition: transform 0.2s, box-shadow 0.2s;
+  border-radius: 12px;
+  height: 100%;
+}
+
+.metric-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 16px rgba(0,0,0,0.15) !important;
+}
+
+.metric-icon {
+  font-size: 2.5rem;
+  opacity: 0.8;
+}
+
+.metric-value {
+  font-size: 2rem;
+  font-weight: bold;
+  margin: 0.5rem 0;
+}
+
+.alert-card {
+  border-left: 4px solid;
+  border-radius: 8px;
+}
+
+  .grafico-contenedor {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+  .grafico-titulo {
+  font-size: 1.5rem;
+  font-weight: bold;
+  margin-bottom: 1rem;
+  color: #1976d2;
+}
+
+/* Modo oscuro */
+[data-theme="dark"] .grafico-contenedor {
+  background: #181c24;
+  border-color: #222;
+}
+
+[data-theme="dark"] .grafico-titulo {
+  color: #60a5fa;
+}
+
+[data-theme="dark"] .metric-card {
+  background: #181c24;
+  border-color: #333;
+}
+
+[data-theme="dark"] .card {
+  background: #181c24;
+  border-color: #333;
+  color: #fff;
+}
+
+[data-theme="dark"] .text-muted {
+  color: #aaa !important;
+}
+
+/* Ajustar tablas para que no excedan el ancho del bloque */
+.card .unified-table {
+  min-width: auto !important;
+    width: 100% !important;
+    max-width: 100% !important;
+}
+
+.card .table-responsive {
+  max-width: 100% !important;
+  overflow-x: auto !important;
+  }
+  
+/* Responsive */
+@media (max-width: 768px) {
+  .metric-value {
+    font-size: 1.5rem;
+  }
+  
+  .metric-icon {
+    font-size: 2rem;
+  }
+  
+  .grafico-contenedor {
+    padding: 1rem;
+  }
+  
+  .grafico-titulo {
+    font-size: 1.2rem;
+  }
+}
+
+/* Botones de período */
+.btn-group.flex-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0;
+  }
+  
+.btn-group.flex-wrap .btn {
+  margin: 0;
+  border-radius: 0.375rem !important;
+  margin-right: 0.25rem;
+  margin-bottom: 0.25rem;
+  flex: 0 0 auto;
+  }
+
+.btn-group.flex-wrap .btn:first-child {
+  border-top-left-radius: 0.375rem !important;
+  border-bottom-left-radius: 0.375rem !important;
+}
+
+.btn-group.flex-wrap .btn:last-child {
+  border-top-right-radius: 0.375rem !important;
+  border-bottom-right-radius: 0.375rem !important;
+}
+
+[data-theme="dark"] .btn-group.flex-wrap .btn {
+  background: #23272b;
+  border-color: #23272b;
+  color: #fff;
+  }
+
+[data-theme="dark"] .btn-group.flex-wrap .btn.active,
+[data-theme="dark"] .btn-group.flex-wrap .btn:hover {
+  background: #3b82f6;
+  border-color: #3b82f6;
+}
+
+@media (max-width: 576px) {
+  .btn-group.flex-wrap .btn {
+    flex: 1 1 calc(50% - 0.25rem);
+    min-width: calc(50% - 0.25rem);
+  }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+  <h1 class="fw-bold mb-4">
+    </i>Estadísticas
+  </h1>
+
+  <!-- Filtros -->
+  <div class="card mb-4">
+    <div class="card-body">
+      <form method="get" class="row g-3 align-items-end" id="formFiltros">
+        <div class="col-md-2">
+          <label for="top" class="form-label fw-semibold">Top:</label>
+          <input type="number" id="top" name="top" value="{{ top }}" min="1" max="100" class="form-control">
+            </div>
+        <div class="col-md-3">
+          <label for="fecha_inicio" class="form-label fw-semibold">Fecha inicio:</label>
+          <input type="date" id="fecha_inicio" name="fecha_inicio" value="{{ fecha_inicio }}" class="form-control">
+            </div>
+        <div class="col-md-3">
+          <label for="fecha_fin" class="form-label fw-semibold">Fecha fin:</label>
+          <input type="date" id="fecha_fin" name="fecha_fin" value="{{ fecha_fin }}" class="form-control">
+          </div>
+        <div class="col-md-12 col-lg-12">
+          <label class="form-label fw-semibold d-block mb-2">Período rápido:</label>
+          <div class="btn-group flex-wrap" role="group" style="width: 100%;">
+            <button type="button" class="btn {% if periodo_actual == 'hoy' %}btn-primary{% else %}btn-secondary{% endif %} btn-sm" onclick="setPeriodo('hoy')">Hoy</button>
+            <button type="button" class="btn {% if periodo_actual == 'ayer' %}btn-primary{% else %}btn-secondary{% endif %} btn-sm" onclick="setPeriodo('ayer')">Ayer</button>
+            <button type="button" class="btn {% if periodo_actual == 'semana' %}btn-primary{% else %}btn-secondary{% endif %} btn-sm" onclick="setPeriodo('semana')">Semana</button>
+            <button type="button" class="btn {% if periodo_actual == 'mes' %}btn-primary{% else %}btn-secondary{% endif %} btn-sm" onclick="setPeriodo('mes')">Mes</button>
+            <button type="button" class="btn {% if periodo_actual == 'año' %}btn-primary{% else %}btn-secondary{% endif %} btn-sm" onclick="setPeriodo('año')">Año</button>
+            <button type="button" class="btn btn-secondary btn-sm" onclick="limpiarFiltros()">Limpiar</button>
+        </div>
+      </div>
+        <div class="col-md-12 mt-3">
+          <button type="submit" class="btn btn-primary">
+            <i class="bi bi-arrow-clockwise me-2"></i>Actualizar
+          </button>
+    </div>
+      </form>
+            </div>
+  </div>
+
+  {% if advertencia_fecha %}
+  <div class="alert alert-warning">Las fechas fueron invertidas automáticamente.</div>
+              {% endif %}
+
+  <!-- Métricas principales de inventario -->
+  <div class="row g-3 mb-4">
+    <div class="col-md-3 col-sm-6">
+      <div class="card metric-card border-primary">
+        <div class="card-body text-center">
+          <i class="bi bi-currency-dollar metric-icon text-primary"></i>
+          <div class="metric-value text-primary">${{ valor_total_inventario|intcomma }}</div>
+          <div class="text-muted">Valor Total Inventario</div>
+            </div>
+          </div>
+        </div>
+    <div class="col-md-3 col-sm-6">
+      <div class="card metric-card border-success">
+        <div class="card-body text-center">
+          <i class="bi bi-box-seam metric-icon text-success"></i>
+          <div class="metric-value text-success">{{ total_productos|intcomma }}</div>
+          <div class="text-muted">Total Productos</div>
+      </div>
+    </div>
+    </div>
+    <div class="col-md-3 col-sm-6">
+      <div class="card metric-card border-warning">
+        <div class="card-body text-center">
+          <i class="bi bi-exclamation-triangle metric-icon text-warning"></i>
+          <div class="metric-value text-warning">{{ productos_stock_bajo|intcomma }}</div>
+          <div class="text-muted">Stock Bajo</div>
+            </div>
+            </div>
+          </div>
+    <div class="col-md-3 col-sm-6">
+      <div class="card metric-card border-danger">
+        <div class="card-body text-center">
+          <i class="bi bi-x-circle metric-icon text-danger"></i>
+          <div class="metric-value text-danger">{{ productos_sin_stock|intcomma }}</div>
+          <div class="text-muted">Sin Stock</div>
+        </div>
+      </div>
+    </div>
+            </div>
+
+  <!-- Alertas de inventario -->
+  {% if productos_stock_bajo > 0 or productos_sin_stock > 0 %}
+  <div class="row g-3 mb-4">
+    {% if productos_stock_bajo > 0 %}
+    <div class="col-md-6">
+      <div class="card alert-card border-warning">
+        <div class="card-header bg-warning text-dark">
+          <i class="bi bi-exclamation-triangle me-2"></i>Productos con Stock Bajo
+            </div>
+        <div class="card-body">
+          <div class="list-group">
+            {% for producto in productos_stock_bajo_lista %}
+            <div class="list-group-item d-flex justify-content-between align-items-center">
+              <div>
+                <strong>{{ producto.nombre }}</strong>
+                <br>
+                <small class="text-muted">Stock: {{ producto.stock_actual }} / Mínimo: {{ producto.stock_minimo|default:"N/A" }}</small>
+          </div>
+              <span class="badge bg-warning text-dark">{{ producto.stock_actual }}</span>
+        </div>
+            {% endfor %}
+      </div>
+    </div>
+  </div>
+    </div>
+    {% endif %}
+    
+    {% if productos_sin_stock > 0 %}
+    <div class="col-md-6">
+      <div class="card alert-card border-danger">
+        <div class="card-header bg-danger text-white">
+          <i class="bi bi-x-circle me-2"></i>Productos Sin Stock
+    </div>
+        <div class="card-body">
+          <div class="list-group">
+            {% for producto in productos_sin_stock_lista %}
+            <div class="list-group-item d-flex justify-content-between align-items-center">
+              <div>
+                <strong>{{ producto.nombre }}</strong>
+                <br>
+                <small class="text-muted">{{ producto.marca }}</small>
+    </div>
+              <span class="badge bg-danger">0</span>
+    </div>
+            {% endfor %}
+    </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+  </div>
+  {% endif %}
+
+  <!-- Resumen de movimiento -->
+  <div class="row g-3 mb-4">
+    <div class="col-md-6">
+      <div class="card border-success">
+        <div class="card-header bg-success text-white">
+          <i class="bi bi-box-arrow-right me-2"></i>Resumen de Salidas
+    </div>
+        <div class="card-body">
+          <div class="row text-center">
+            <div class="col-6">
+              <div class="fs-3 fw-bold text-success">{{ totales_ventas.total_cant|default:0|intcomma }}</div>
+              <div class="text-muted">Unidades</div>
+            </div>
+            <div class="col-6">
+              <div class="fs-3 fw-bold text-success">${{ totales_ventas.total_monto|default:0|floatformat:0|intcomma }}</div>
+              <div class="text-muted">Monto Total</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div class="card border-primary">
+        <div class="card-header bg-primary text-white">
+          <i class="bi bi-box-arrow-in-right me-2"></i>Resumen de Entradas
+        </div>
+        <div class="card-body">
+          <div class="row text-center">
+            <div class="col-6">
+              <div class="fs-3 fw-bold text-primary">{{ totales_compras.total_cant|default:0|intcomma }}</div>
+              <div class="text-muted">Unidades</div>
+            </div>
+            <div class="col-6">
+              <div class="fs-3 fw-bold text-primary">${{ totales_compras.total_monto|default:0|floatformat:0|intcomma }}</div>
+              <div class="text-muted">Monto Total</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Gráfico: Entradas vs Salidas -->
+  <div class="grafico-contenedor">
+    <div class="grafico-titulo">Entradas vs Salidas</div>
+    <canvas id="graficoEntradasSalidas" style="max-height: 400px;"></canvas>
+  </div>
+
+  <!-- Gráfico: Top Productos -->
+  <div class="row g-3 mb-4">
+    <div class="col-md-6">
+<div class="grafico-contenedor">
+        <div class="grafico-titulo">Top Productos Salidos</div>
+        <canvas id="graficoProductosSalidos"></canvas>
+    </div>
+  </div>
+    <div class="col-md-6">
+      <div class="grafico-contenedor">
+        <div class="grafico-titulo">Top Productos Ingresados</div>
+        <canvas id="graficoProductosIngresados"></canvas>
+      </div>
+    </div>
+</div>
+
+  <!-- Gráfico: Categorías -->
+  <div class="row g-3 mb-4">
+    <div class="col-md-6">
+      <div class="grafico-contenedor">
+        <div class="grafico-titulo">Categorías Más Salidas</div>
+        <canvas id="graficoCategoriasSalidas"></canvas>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div class="grafico-contenedor">
+        <div class="grafico-titulo">Categorías Más Ingresadas</div>
+        <canvas id="graficoCategoriasIngresadas"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tablas de información -->
+  <div class="row g-3 mb-4">
+    <div class="col-md-6">
+      <div class="card shadow-lg border-0">
+        <div class="card-header bg-gradient fw-bold" style="background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%); color: #000;">
+          <i class="bi bi-trophy me-2"></i>Top Productos Salidos
+        </div>
+        <div class="card-body px-4 py-4">
+          <div class="table-responsive" style="max-width: 100%; overflow-x: auto;">
+            <table class="unified-table" style="width: 100%; max-width: 100%;">
+              <thead>
+                <tr>
+                  <th class="text-left">Producto</th>
+                  <th class="text-center">Cantidad</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for item in productos_vendidos %}
+                <tr>
+                  <td class="text-left">{{ item.producto__nombre }}</td>
+                  <td class="text-center">{{ item.total_vendido|intcomma }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                  <td colspan="2" class="text-center text-muted">No hay datos</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div class="card shadow-lg border-0">
+        <div class="card-header bg-gradient fw-bold" style="background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%); color: #000;">
+          <i class="bi bi-cart-plus me-2"></i>Top Productos Ingresados
+        </div>
+        <div class="card-body px-4 py-4">
+          <div class="table-responsive" style="max-width: 100%; overflow-x: auto;">
+            <table class="unified-table" style="width: 100%; max-width: 100%;">
+              <thead>
+                <tr>
+                  <th class="text-left">Producto</th>
+                  <th class="text-center">Cantidad</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for item in productos_comprados %}
+                <tr>
+                  <td class="text-left">{{ item.producto__nombre }}</td>
+                  <td class="text-center">{{ item.total_comprado|intcomma }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                  <td colspan="2" class="text-center text-muted">No hay datos</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Productos sin movimiento -->
+  {% if productos_sin_movimiento %}
+  <div class="card shadow-lg border-0 mb-4">
+    <div class="card-header bg-gradient fw-bold" style="background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%); color: #000;">
+      <i class="bi bi-info-circle me-2"></i>Productos Sin Movimiento (Últimos 30 días)
+    </div>
+    <div class="card-body px-4 py-4">
+      <div class="table-responsive" style="max-width: 100%; overflow-x: auto;">
+        <table class="unified-table" style="width: 100%; max-width: 100%;">
+          <thead>
+            <tr>
+              <th class="text-left">Producto</th>
+              <th class="text-left">Marca</th>
+              <th class="text-center">Stock Actual</th>
+              <th class="text-center">Precio Unitario</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for producto in productos_sin_movimiento %}
+            <tr>
+              <td class="text-left">{{ producto.nombre }}</td>
+              <td class="text-left">{{ producto.marca }}</td>
+              <td class="text-center">{{ producto.stock_actual|intcomma }}</td>
+              <td class="text-center">${{ producto.precio_unitario|intcomma }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Proveedores -->
+  {% if compras_por_proveedor %}
+  <div class="card shadow-lg border-0 mb-4">
+    <div class="card-header bg-gradient fw-bold" style="background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%); color: #000;">
+      <i class="bi bi-truck me-2"></i>Gasto por Proveedor
+    </div>
+    <div class="card-body px-4 py-4">
+      <div class="table-responsive" style="max-width: 100%; overflow-x: auto;">
+        <table class="unified-table" style="width: 100%; max-width: 100%;">
+          <thead>
+            <tr>
+              <th class="text-left">Proveedor</th>
+              <th class="text-center">Cantidad</th>
+              <th class="text-center">Monto Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in compras_por_proveedor %}
+            <tr>
+              <td class="text-left">{{ item.compra__proveedor__nombre|default:"Sin proveedor" }}</td>
+              <td class="text-center">{{ item.total_cant|intcomma }}</td>
+              <td class="text-center">${{ item.total_monto|intcomma }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// Datos para gráficos
+const ventasPorDia = [
+  {% for item in ventas_por_dia %}
+  {
+    venta__fecha__date: "{{ item.venta__fecha__date }}",
+    total_cant: {{ item.total_cant|default:0 }},
+    total_monto: {{ item.total_monto|default:0 }}
+  }{% if not forloop.last %},{% endif %}
+  {% endfor %}
+  ];
+const comprasPorDia = [
+  {% for item in compras_por_dia %}
+  {
+    compra__fecha__date: "{{ item.compra__fecha__date }}",
+    total_cant: {{ item.total_cant|default:0 }},
+    total_monto: {{ item.total_monto|default:0 }}
+  }{% if not forloop.last %},{% endif %}
+  {% endfor %}
+];
+const productosVendidos = [
+  {% for item in productos_vendidos %}
+  {
+    producto__nombre: "{{ item.producto__nombre|escapejs }}",
+    total_vendido: {{ item.total_vendido|default:0 }},
+    monto_generado: {{ item.monto_generado|default:0 }}
+  }{% if not forloop.last %},{% endif %}
+  {% endfor %}
+];
+const productosComprados = [
+  {% for item in productos_comprados %}
+  {
+    producto__nombre: "{{ item.producto__nombre|escapejs }}",
+    total_comprado: {{ item.total_comprado|default:0 }},
+    monto_gastado: {{ item.monto_gastado|default:0 }}
+  }{% if not forloop.last %},{% endif %}
+  {% endfor %}
+];
+const categoriasVendidas = [
+  {% for item in categorias_vendidas %}
+  {
+    producto__id_categoria__nombre: "{{ item.producto__id_categoria__nombre|default:'Sin categoría'|escapejs }}",
+    total_vendido: {{ item.total_vendido|default:0 }},
+    monto_generado: {{ item.monto_generado|default:0 }}
+  }{% if not forloop.last %},{% endif %}
+  {% endfor %}
+];
+const categoriasCompradas = [
+  {% for item in categorias_compradas %}
+  {
+    producto__id_categoria__nombre: "{{ item.producto__id_categoria__nombre|default:'Sin categoría'|escapejs }}",
+    total_comprado: {{ item.total_comprado|default:0 }},
+    monto_gastado: {{ item.monto_gastado|default:0 }}
+  }{% if not forloop.last %},{% endif %}
+  {% endfor %}
+];
+
+// Detectar modo oscuro
+function isDarkMode() {
+  return document.documentElement.getAttribute('data-theme') === 'dark';
+}
+
+// Colores según modo
+function getColors() {
+  if (isDarkMode()) {
+    return {
+      primary: 'rgba(96, 165, 250, 0.8)',
+      success: 'rgba(74, 222, 128, 0.8)',
+      warning: 'rgba(251, 191, 36, 0.8)',
+      danger: 'rgba(248, 113, 113, 0.8)',
+      text: '#fff',
+      grid: 'rgba(255, 255, 255, 0.1)'
+    };
+  }
+  return {
+    primary: 'rgba(13, 110, 253, 0.8)',
+    success: 'rgba(25, 135, 84, 0.8)',
+    warning: 'rgba(255, 193, 7, 0.8)',
+    danger: 'rgba(220, 53, 69, 0.8)',
+    text: '#333',
+    grid: 'rgba(0, 0, 0, 0.1)'
+  };
+}
+
+// Gráfico: Entradas vs Salidas
+function renderEntradasSalidas() {
+  const colors = getColors();
+  const labels = [];
+  const ventasData = [];
+  const comprasData = [];
+  
+  // Combinar fechas de ventas y compras
+  const allDates = new Set();
+  
+  // Verificar y agregar fechas de ventas
+  if (ventasPorDia && Array.isArray(ventasPorDia) && ventasPorDia.length > 0) {
+    ventasPorDia.forEach(v => {
+      if (v && v.venta__fecha__date) {
+        allDates.add(v.venta__fecha__date);
+      }
+    });
+  }
+  
+  // Verificar y agregar fechas de compras
+  if (comprasPorDia && Array.isArray(comprasPorDia) && comprasPorDia.length > 0) {
+    comprasPorDia.forEach(c => {
+      if (c && c.compra__fecha__date) {
+        allDates.add(c.compra__fecha__date);
+      }
+    });
+  }
+  
+  const sortedDates = Array.from(allDates).sort();
+  
+  if (sortedDates.length === 0) {
+    // Si no hay datos, mostrar un mensaje
+    labels.push('Sin datos');
+    ventasData.push(0);
+    comprasData.push(0);
+  } else {
+    sortedDates.forEach(date => {
+      try {
+        // Formatear fecha
+        const dateObj = new Date(date);
+        if (isNaN(dateObj.getTime())) {
+          // Si la fecha no es válida, usar el string directamente
+          labels.push(date);
+        } else {
+          labels.push(dateObj.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' }));
+        }
+        
+        // Buscar datos de ventas
+        const venta = (ventasPorDia && Array.isArray(ventasPorDia)) 
+          ? ventasPorDia.find(v => v && v.venta__fecha__date === date) 
+          : null;
+        
+        // Buscar datos de compras
+        const compra = (comprasPorDia && Array.isArray(comprasPorDia)) 
+          ? comprasPorDia.find(c => c && c.compra__fecha__date === date) 
+          : null;
+        
+        ventasData.push(venta && venta.total_cant ? parseFloat(venta.total_cant) || 0 : 0);
+        comprasData.push(compra && compra.total_cant ? parseFloat(compra.total_cant) || 0 : 0);
+      } catch (e) {
+        console.error('Error procesando fecha:', date, e);
+        labels.push(date);
+        ventasData.push(0);
+        comprasData.push(0);
+      }
+    });
+  }
+  
+  const canvas = document.getElementById('graficoEntradasSalidas');
+  if (!canvas) {
+    console.error('Canvas graficoEntradasSalidas no encontrado');
+    return;
+  }
+  
+  const ctx = canvas.getContext('2d');
+  if (window.chartEntradasSalidas) {
+    window.chartEntradasSalidas.destroy();
+  }
+  
+  window.chartEntradasSalidas = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: labels,
+      datasets: [{
+        label: 'Salidas',
+        data: ventasData,
+        borderColor: colors.danger,
+        backgroundColor: colors.danger.replace('0.8', '0.2'),
+        tension: 0.4,
+        fill: true,
+        pointRadius: 5,
+        pointHoverRadius: 7,
+        pointBackgroundColor: colors.danger,
+        pointBorderColor: '#fff',
+        pointBorderWidth: 2
+      }, {
+        label: 'Entradas',
+        data: comprasData,
+        borderColor: colors.success,
+        backgroundColor: colors.success.replace('0.8', '0.2'),
+        tension: 0.4,
+        fill: true,
+        pointRadius: 5,
+        pointHoverRadius: 7,
+        pointBackgroundColor: colors.success,
+        pointBorderColor: '#fff',
+        pointBorderWidth: 2
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      aspectRatio: 2,
+      plugins: {
+        legend: {
+          display: true,
+          labels: { 
+            color: colors.text,
+            usePointStyle: true
+          }
+        },
+        tooltip: {
+          mode: 'index',
+          intersect: false
+        }
+      },
+      scales: {
+        x: {
+          ticks: { color: colors.text },
+          grid: { color: colors.grid }
+        },
+        y: {
+          ticks: { color: colors.text },
+          grid: { color: colors.grid },
+          beginAtZero: true
+        }
+      },
+      interaction: {
+        mode: 'nearest',
+        axis: 'x',
+        intersect: false
+      }
+    }
+  });
+}
+
+// Gráfico: Top Productos Salidos
+function renderProductosSalidos() {
+  const colors = getColors();
+  if (!productosVendidos || productosVendidos.length === 0) {
+    return;
+  }
+  const labels = productosVendidos.map(p => p.producto__nombre);
+  const data = productosVendidos.map(p => p.total_vendido);
+  
+  const ctx = document.getElementById('graficoProductosSalidos').getContext('2d');
+  if (window.chartProductosSalidos) window.chartProductosSalidos.destroy();
+  
+  window.chartProductosSalidos = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: labels,
+      datasets: [{
+        label: 'Cantidad',
+        data: data,
+        backgroundColor: colors.danger,
+        borderColor: colors.danger.replace('0.8', '1'),
+        borderWidth: 1
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: true,
+      plugins: {
+        legend: { display: false }
+      },
+      scales: {
+        x: {
+          ticks: { color: colors.text, maxRotation: 45 },
+          grid: { color: colors.grid }
+        },
+        y: {
+          ticks: { color: colors.text },
+          grid: { color: colors.grid },
+          beginAtZero: true
+        }
+      }
+    }
+  });
+}
+
+// Gráfico: Top Productos Ingresados
+function renderProductosIngresados() {
+  const colors = getColors();
+  if (!productosComprados || productosComprados.length === 0) {
+    return;
+  }
+  const labels = productosComprados.map(p => p.producto__nombre);
+  const data = productosComprados.map(p => p.total_comprado);
+  
+  const ctx = document.getElementById('graficoProductosIngresados').getContext('2d');
+  if (window.chartProductosIngresados) window.chartProductosIngresados.destroy();
+  
+  window.chartProductosIngresados = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: labels,
+      datasets: [{
+        label: 'Cantidad',
+        data: data,
+        backgroundColor: colors.success,
+        borderColor: colors.success.replace('0.8', '1'),
+        borderWidth: 1
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: true,
+      plugins: {
+        legend: { display: false }
+      },
+      scales: {
+        x: {
+          ticks: { color: colors.text, maxRotation: 45 },
+          grid: { color: colors.grid }
+        },
+        y: {
+          ticks: { color: colors.text },
+          grid: { color: colors.grid },
+          beginAtZero: true
+        }
+      }
+    }
+  });
+}
+
+// Gráfico: Categorías Salidas
+function renderCategoriasSalidas() {
+  const colors = getColors();
+  if (!categoriasVendidas || categoriasVendidas.length === 0) {
+    return;
+  }
+  const labels = categoriasVendidas.map(c => c.producto__id_categoria__nombre || 'Sin categoría');
+  const data = categoriasVendidas.map(c => c.total_vendido);
+  
+  const ctx = document.getElementById('graficoCategoriasSalidas').getContext('2d');
+  if (window.chartCategoriasSalidas) window.chartCategoriasSalidas.destroy();
+  
+  window.chartCategoriasSalidas = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: labels,
+      datasets: [{
+        data: data,
+        backgroundColor: [
+          colors.danger,
+          colors.warning,
+          colors.primary,
+          colors.success,
+          'rgba(156, 39, 176, 0.8)',
+          'rgba(255, 87, 34, 0.8)'
+        ]
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: true,
+      plugins: {
+        legend: {
+          labels: { color: colors.text },
+          position: 'bottom'
+        }
+      }
+    }
+  });
+}
+
+// Gráfico: Categorías Ingresadas
+function renderCategoriasIngresadas() {
+  const colors = getColors();
+  if (!categoriasCompradas || categoriasCompradas.length === 0) {
+    return;
+  }
+  const labels = categoriasCompradas.map(c => c.producto__id_categoria__nombre || 'Sin categoría');
+  const data = categoriasCompradas.map(c => c.total_comprado);
+  
+  const ctx = document.getElementById('graficoCategoriasIngresadas').getContext('2d');
+  if (window.chartCategoriasIngresadas) window.chartCategoriasIngresadas.destroy();
+  
+  window.chartCategoriasIngresadas = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: labels,
+      datasets: [{
+        data: data,
+        backgroundColor: [
+          colors.success,
+          colors.primary,
+          colors.warning,
+          colors.danger,
+          'rgba(156, 39, 176, 0.8)',
+          'rgba(255, 87, 34, 0.8)'
+        ]
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: true,
+      plugins: {
+        legend: {
+          labels: { color: colors.text },
+          position: 'bottom'
+        }
+      }
+    }
+  });
+}
+
+// Inicializar gráficos
+document.addEventListener('DOMContentLoaded', function() {
+  renderEntradasSalidas();
+  renderProductosSalidos();
+  renderProductosIngresados();
+  renderCategoriasSalidas();
+  renderCategoriasIngresadas();
+  
+  // Observar cambios de tema
+  const observer = new MutationObserver(function() {
+    renderEntradasSalidas();
+    renderProductosSalidos();
+    renderProductosIngresados();
+    renderCategoriasSalidas();
+    renderCategoriasIngresadas();
+  });
+  
+  observer.observe(document.documentElement, {
+    attributes: true,
+    attributeFilter: ['data-theme']
+  });
+});
+
+// Funciones de período
+function formatDateJS(date) {
+  const d = new Date(date);
+  const month = '' + (d.getMonth() + 1);
+  const day = '' + d.getDate();
+  const year = d.getFullYear();
+  return [year, month.padStart(2, '0'), day.padStart(2, '0')].join('-');
+}
+
+function setPeriodo(tipo) {
+  const hoy = new Date();
+  let fechaInicio = '';
+  let fechaFin = '';
+  
+  switch(tipo) {
+    case 'hoy':
+      fechaInicio = fechaFin = formatDateJS(hoy);
+      break;
+    case 'ayer':
+      const ayer = new Date(hoy);
+      ayer.setDate(hoy.getDate() - 1);
+      fechaInicio = fechaFin = formatDateJS(ayer);
+      break;
+    case 'semana':
+      const inicioSemana = new Date(hoy);
+      inicioSemana.setDate(hoy.getDate() - hoy.getDay());
+      fechaInicio = formatDateJS(inicioSemana);
+      fechaFin = formatDateJS(hoy);
+      break;
+    case 'mes':
+      fechaInicio = formatDateJS(new Date(hoy.getFullYear(), hoy.getMonth(), 1));
+      fechaFin = formatDateJS(hoy);
+      break;
+    case 'año':
+      fechaInicio = formatDateJS(new Date(hoy.getFullYear(), 0, 1));
+      fechaFin = formatDateJS(hoy);
+      break;
+  }
+  
+  document.getElementById('fecha_inicio').value = fechaInicio;
+  document.getElementById('fecha_fin').value = fechaFin;
+  document.getElementById('formFiltros').submit();
+}
+
+function limpiarFiltros() {
+  document.getElementById('fecha_inicio').value = '';
+  document.getElementById('fecha_fin').value = '';
+  document.getElementById('formFiltros').submit();
+}
+</script>
+{% endblock %}

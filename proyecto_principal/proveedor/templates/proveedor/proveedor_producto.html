@@ -1,0 +1,481 @@
+{% extends 'home/base_main.html' %}
+{% load humanize %}
+{% load static %}
+{% load table_tags %}
+
+{% block title %}Productos del Proveedor - Inventario{% endblock %}
+
+{% block content %}
+<!-- Header con título y botones -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h1 class="fw-bold mb-0 mt-6 mb-2">Productos del Proveedor: {{ proveedor.nombre }}</h1>
+</div>
+
+<!-- Información de Contacto del Proveedor -->
+<div class="card shadow-lg border-0 mt-4 mb-4" style="width: auto; max-width: 100%; min-width: 300px;">
+  <div class="card-header bg-gradient text-white fw-bold">
+    <i class="bi bi-info-circle me-2"></i>Información de Contacto del Proveedor
+  </div>
+  <div class="card-body px-4 py-4" style="word-wrap: break-word; overflow-wrap: break-word;">
+    <div class="row">
+      <div class="col-12 col-md-6 mb-2 mb-md-0">
+        <strong>Teléfono:</strong> 
+        <span style="word-break: break-word;">
+        {% if proveedor.telefono %}
+          {% if proveedor.telefono|length == 9 %}
+            +56 {{ proveedor.telefono|slice:"0:1" }} {{ proveedor.telefono|slice:"1:5" }} {{ proveedor.telefono|slice:"5:" }}
+          {% else %}
+            {{ proveedor.telefono }}
+          {% endif %}
+        {% else %}
+          <span class="text-muted fst-italic">Sin teléfono</span>
+        {% endif %}
+        </span>
+      </div>
+      <div class="col-12 col-md-6">
+        <strong>Correo:</strong> 
+        <span style="word-break: break-all;">
+        {% if proveedor.correo %}
+          {{ proveedor.correo }}
+        {% else %}
+          <span class="text-muted fst-italic">Sin correo</span>
+        {% endif %}
+        </span>
+      </div>
+    </div>
+    <div class="row mt-2">
+      <div class="col-12">
+        <strong>Dirección:</strong> 
+        <span style="word-wrap: break-word; overflow-wrap: break-word; display: inline-block; max-width: 100%;">
+        {% if proveedor.direccion or proveedor.comuna or proveedor.ciudad or proveedor.pais %}
+          {{ proveedor.direccion|default:"" }}{% if proveedor.direccion and proveedor.comuna %}, {% endif %}{{ proveedor.comuna|default:"" }}{% if proveedor.comuna and proveedor.ciudad %}, {% endif %}{{ proveedor.ciudad|default:"" }}{% if proveedor.ciudad and proveedor.pais %}, {% endif %}{{ proveedor.pais|default:"" }}
+        {% else %}
+          <span class="text-muted fst-italic">Sin dirección</span>
+        {% endif %}
+        </span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Barra de Acciones -->
+<div class="action-bar d-flex align-items-center justify-content-between mb-3">
+  <div class="d-flex align-items-center gap-2">
+    <button
+      type="button"
+      class="btn btn-primary"
+      data-bs-toggle="modal"
+      data-bs-target="#agregarProductoModal"
+      title="Agregar producto"
+    >
+      <i class="bi bi-plus-circle"></i>
+    </button>
+    <!-- Botón de escaneo -->
+    <button
+      type="button"
+      class="btn btn-secondary"
+      data-bs-toggle="modal"
+      data-bs-target="#scanCodeModal"
+      title="Escanear código de barras"
+    >
+      <i class="bi bi-upc-scan"></i>
+    </button>
+    <form method="get" class="d-flex align-items-center gap-2">
+      {% if request.GET.sort %}
+        <input type="hidden" name="sort" value="{{ request.GET.sort }}">
+      {% endif %}
+      {% if request.GET.order %}
+        <input type="hidden" name="order" value="{{ request.GET.order }}">
+      {% endif %}
+      {% if request.GET.per_page %}
+        <input type="hidden" name="per_page" value="{{ request.GET.per_page }}">
+      {% endif %}
+      <input
+        type="text"
+        name="search"
+        class="form-control"
+        placeholder="Buscar producto..."
+        value="{{ request.GET.search|default:'' }}"
+        style="max-width: 300px;"
+      />
+    </form>
+  </div>
+</div>
+
+<!-- Modal Agregar Producto -->
+<div class="modal fade" id="agregarProductoModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content border-0 shadow-lg rounded-4">
+      <form method="post" action="{% url 'agregar_producto_proveedor' proveedor.id_proveedor %}" autocomplete="off">
+        {% csrf_token %}
+        <div class="modal-header bg-primary text-white rounded-top-4">
+          <h5 class="modal-title fw-bold"><i class="bi bi-plus-circle me-2"></i> Agregar producto a este proveedor</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body px-4 py-3">
+          <div class="mb-3 position-relative">
+            <label for="producto_autocomplete" class="form-label fw-semibold">Producto</label>
+            <input type="text" id="producto_autocomplete" class="form-control rounded px-3" placeholder="Buscar por nombre o código..." autocomplete="off" required />
+            <input type="hidden" name="producto_id" id="producto_id_hidden" />
+            <div id="autocomplete_suggestions" class="list-group position-absolute w-100" style="z-index: 10;"></div>
+          </div>
+          <div class="mb-3">
+            <label for="precio_proveedor" class="form-label fw-semibold">Precio del Proveedor</label>
+            <input type="number" name="precio_proveedor" id="precio_proveedor" class="form-control rounded px-3" min="0" step="1" required placeholder="0">
+          </div>
+          <div id="addProductoErrorMsg" class="d-none text-center mt-3 text-danger fw-semibold"></div>
+        </div>
+        <div class="modal-footer px-4 pb-4">
+          <button type="submit" class="btn btn-primary btn-sm rounded px-3 fw-semibold">Agregar</button>
+          <button type="button" class="btn btn-outline-secondary btn-sm rounded px-3" data-bs-dismiss="modal">Cerrar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Editar Precio -->
+<div class="modal fade" id="editarPrecioModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content border-0 shadow-lg rounded-4">
+      <form method="post" id="editarPrecioForm">
+        {% csrf_token %}
+        <div class="modal-header bg-warning text-dark rounded-top-4">
+          <h5 class="modal-title fw-bold"><i class="bi bi-pencil me-2"></i> Editar Precio del Producto</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body px-4 py-3">
+          <input type="hidden" name="producto_id" id="edit-producto-id" />
+          <div class="mb-3">
+            <label for="edit-precio-proveedor" class="form-label fw-semibold">Nuevo Precio</label>
+            <input type="number" id="edit-precio-proveedor" name="precio_proveedor" class="form-control rounded px-3" min="0" step="1" required>
+          </div>
+        </div>
+        <div class="modal-footer px-4 pb-4">
+          <button type="submit" class="btn btn-warning btn-sm rounded px-3 fw-semibold">Actualizar</button>
+          <button type="button" class="btn btn-outline-secondary btn-sm rounded px-3" data-bs-dismiss="modal">Cerrar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Eliminar Producto -->
+<div class="modal fade" id="deleteProductoModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content border-0 shadow-lg rounded-4">
+      <form method="post" id="deleteProductoForm">
+        {% csrf_token %}
+        <div class="modal-header bg-danger text-white rounded-top-4">
+          <h5 class="modal-title fw-bold"><i class="bi bi-trash me-2"></i> Confirmar Eliminación</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body px-4 py-3">
+          <input type="hidden" name="producto_id" id="delete-producto-id" />
+          <p>¿Está seguro que desea eliminar el producto <strong id="deleteProductoName"></strong> de este proveedor?</p>
+        </div>
+        <div class="modal-footer px-4 pb-4">
+          <button type="submit" class="btn btn-danger btn-sm rounded px-3 fw-semibold">Eliminar</button>
+          <button type="button" class="btn btn-outline-secondary btn-sm rounded px-3" data-bs-dismiss="modal">Cerrar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Escaneo Código -->
+<div class="modal fade" id="scanCodeModal" tabindex="-1" aria-labelledby="scanCodeModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content text-center p-4" id="scanModalContent">
+      <!-- Contenido para escanear directamente -->
+      <div id="scanCodeUI">
+        <i class="bi bi-upc-scan" style="font-size: 5rem;"></i>
+        <p class="mt-3">Escanea el código de barras</p>
+        <input type="text" id="scanCodeInput" autocomplete="off" style="position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0;" />
+        <p id="scanMessage" class="mt-3 text-danger" style="display: none;"></p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="table-wrapper" class="unified-table-wrapper">
+  {% if producto_proveedores %}
+    {% include 'proveedor/partials/proveedor_producto_table.html' %}
+  {% else %}
+    <div class="card shadow-lg border-0">
+      <div class="card-body text-center px-4 py-4">
+        <div class="alert alert-info mb-0">No hay productos asociados a este proveedor.</div>
+      </div>
+    </div>
+  {% endif %}
+</div>
+
+
+{% endblock %}
+
+{% block extra_scripts %}
+<style>
+/* Estilos mejorados para botón de volver */
+.btn-back {
+  background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
+  color: #fff !important;
+  border: none;
+  padding: 0.6rem 1.2rem;
+  border-radius: 8px;
+  font-weight: 500;
+  font-size: 0.95rem;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(108, 117, 125, 0.2);
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+}
+
+.btn-back:hover {
+  background: linear-gradient(135deg, #5a6268 0%, #495057 100%);
+  color: #fff !important;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(108, 117, 125, 0.3);
+  text-decoration: none;
+}
+
+.btn-back:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 6px rgba(108, 117, 125, 0.25);
+}
+
+.btn-back i,
+.btn-back.btn i,
+.btn-group .btn-back i,
+a.btn-back i {
+  transition: transform 0.3s ease;
+  color: #fff !important;
+}
+
+.btn-back:hover i,
+.btn-back.btn:hover i,
+.btn-group .btn-back:hover i,
+a.btn-back:hover i {
+  transform: translateX(-3px);
+  color: #fff !important;
+}
+
+/* Modo oscuro */
+[data-theme="dark"] .btn-back {
+  background: linear-gradient(135deg, #495057 0%, #3d4146 100%);
+  color: #fff !important;
+}
+
+[data-theme="dark"] .btn-back:hover {
+  background: linear-gradient(135deg, #3d4146 0%, #343a40 100%);
+  color: #fff !important;
+}
+
+[data-theme="dark"] .btn-back i {
+  color: #fff !important;
+}
+
+.card-header.bg-gradient {
+  background: #fff !important;
+  color: #222 !important;
+  font-weight: 600;
+  font-size: 1.08rem;
+  padding: 1rem 1.5rem;
+  border-radius: 0.75rem 0.75rem 0 0;
+  border-bottom: 1.5px solid #e5e7eb;
+  letter-spacing: 0.01em;
+  box-shadow: none;
+}
+
+/* Estilos para el autocompletado */
+#autocomplete_suggestions {
+  max-height: 200px;
+  overflow-y: auto;
+  border: 1px solid #dee2e6;
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  background: white;
+  margin-top: 2px;
+}
+
+#autocomplete_suggestions .list-group-item {
+  border: none;
+  border-bottom: 1px solid #f8f9fa;
+  padding: 0.25rem 0.75rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+#autocomplete_suggestions .list-group-item > div {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+#autocomplete_suggestions .list-group-item .badge {
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+#autocomplete_suggestions .list-group-item:hover,
+#autocomplete_suggestions .list-group-item.active {
+  background-color: #f8f9fa;
+  border-color: #dee2e6;
+}
+
+#autocomplete_suggestions .list-group-item:last-child {
+  border-bottom: none;
+}
+
+#autocomplete_suggestions .badge {
+  font-size: 0.75rem;
+}
+
+/* Ancho fijo para la columna de acciones - igual que categoría */
+.unified-table th:last-child,
+.unified-table td:last-child {
+  width: 180px !important;
+  min-width: 180px !important;
+  max-width: 180px !important;
+  padding: 0.5rem !important;
+}
+
+/* Asegurar que los botones se ajusten bien */
+.unified-table td:last-child .btn-group {
+  display: flex;
+  width: 100%;
+  justify-content: center;
+}
+
+.unified-table td:last-child .btn-group .btn {
+  width: 60px !important;
+  min-width: 60px !important;
+  max-width: 60px !important;
+  padding: 0.25rem 0.5rem;
+  flex-shrink: 0;
+}
+
+/* Compactar botones de acción solo en proveedor-producto */
+.unified-table .btn-group {
+  display: inline-flex;
+  vertical-align: middle;
+}
+
+.unified-table .btn-group .btn {
+  margin-right: 0 !important;
+  margin-left: 0 !important;
+  border-radius: 0 !important;
+  white-space: nowrap;
+  overflow: visible;
+}
+
+.unified-table .btn-group .btn:first-child {
+  border-top-left-radius: 0.5rem !important;
+  border-bottom-left-radius: 0.5rem !important;
+}
+
+.unified-table .btn-group .btn:last-child {
+  border-top-right-radius: 0.5rem !important;
+  border-bottom-right-radius: 0.5rem !important;
+}
+
+/* Desactivar scroll-behavior para evitar movimiento durante actualizaciones AJAX */
+#table-wrapper {
+  scroll-behavior: auto !important;
+}
+
+#table-wrapper .unified-table,
+#table-wrapper .table-responsive {
+  scroll-behavior: auto !important;
+}
+
+/* Clase temporal para desactivar transiciones durante actualización AJAX */
+#table-wrapper.updating {
+  transition: none !important;
+  animation: none !important;
+}
+
+#table-wrapper.updating * {
+  transition: none !important;
+  animation: none !important;
+}
+
+/* Mantener transiciones de hover del card cuando NO está actualizando */
+#table-wrapper:not(.updating) .card {
+  /* Las transiciones de hover están definidas en styles.css */
+}
+
+/* Mantener todas las transiciones de hover del card y filas cuando NO está actualizando */
+#table-wrapper:not(.updating) .card:hover {
+  /* Las transiciones de hover funcionan normalmente */
+}
+</style>
+<script src="{% static 'home/js/unified-table.js' %}"></script>
+<script>
+// Override de updateTableContent para desactivar animaciones durante actualización
+(function() {
+    const originalUpdateTableContent = window.updateTableContent;
+    if (originalUpdateTableContent) {
+        window.updateTableContent = function(url, searchValue, cursorPosition, restoreFocus) {
+            // Agregar clase para desactivar transiciones durante la actualización
+            const tableWrapper = document.getElementById('table-wrapper');
+            if (tableWrapper) {
+                tableWrapper.classList.add('updating');
+                tableWrapper.style.scrollBehavior = 'auto';
+            }
+            
+            // Llamar a la función original
+            const result = originalUpdateTableContent(url, searchValue, cursorPosition, restoreFocus);
+            
+            // Remover clase después de la actualización para restaurar hover
+            setTimeout(function() {
+                if (tableWrapper) {
+                    tableWrapper.classList.remove('updating');
+                }
+                
+                // Asegurar que los eventos se reinicialicen después de actualizar
+                if (typeof initializeTableEvents === 'function') {
+                    initializeTableEvents();
+                }
+            }, 300);
+            
+            return result;
+        };
+    }
+})();
+</script>
+<script src="{% static 'proveedor/js/proveedor_producto.js' %}"></script>
+
+<style>
+/* Iconos en negro en los botones de acciones - modo claro */
+.btn-group .btn:not(.btn-back) i,
+.unified-table .btn-group .btn i {
+  color: #000 !important;
+}
+
+/* Iconos en blanco en modo oscuro */
+[data-theme="dark"] .btn-group .btn:not(.btn-back) i,
+[data-theme="dark"] .unified-table .btn-group .btn i {
+  color: #fff !important;
+}
+
+@media (max-width: 768px) {
+  /* Botones del modal footer en móvil - ocupar todo el ancho y apilarse */
+  #agregarProductoModal .modal-footer,
+  #editarPrecioModal .modal-footer,
+  #deleteProductoModal .modal-footer {
+    padding: 1rem !important;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  #agregarProductoModal .modal-footer .btn,
+  #editarPrecioModal .modal-footer .btn,
+  #deleteProductoModal .modal-footer .btn {
+    width: 100%;
+    margin: 0;
+  }
+}
+</style>
+{% endblock %} 

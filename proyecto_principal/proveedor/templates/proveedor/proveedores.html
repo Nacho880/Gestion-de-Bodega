@@ -1,0 +1,1540 @@
+{% extends 'home/base_main.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}Proveedores - Inventario{% endblock %}
+
+{% block extra_styles %}
+<style>
+  /* Estilos para los selects de prefijos */
+  .prefijo-select {
+    font-size: 0.9rem;
+  }
+  
+  .prefijo-select option {
+    padding: 8px;
+  }
+  
+  /* Mejorar la apariencia del input personalizado */
+  .prefijo-custom {
+    transition: all 0.3s ease;
+  }
+  
+  .prefijo-custom:focus {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+  }
+  
+  /* Responsive para móviles */
+  @media (max-width: 768px) {
+    .prefijo-select {
+      font-size: 0.85rem;
+    }
+  }
+  
+  /* Asegurar que el modal se muestre correctamente */
+  .modal.show {
+    display: block !important;
+    z-index: 1055 !important;
+  }
+  
+  .modal-backdrop.show {
+    opacity: 0.5 !important;
+    z-index: 1050 !important;
+  }
+  
+  /* Forzar visibilidad del modal */
+  #editProveedorModal.show {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+  }
+  
+  /* Asegurar que el modal esté por encima de todo */
+  #editProveedorModal {
+    z-index: 1055 !important;
+  }
+  
+  /* Forzar que el modal se muestre incluso si hay problemas */
+  #editProveedorModal.modal.show {
+    display: block !important;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    z-index: 1055 !important;
+    background-color: rgba(0, 0, 0, 0.5) !important;
+  }
+  
+  /* Forzar visibilidad del modal cuando tiene la clase show */
+  #editProveedorModal.show {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    z-index: 1055 !important;
+    padding: 0 !important;
+    overflow: auto !important;
+  }
+  
+  /* Asegurar que el modal-dialog sea visible */
+  #editProveedorModal.show .modal-dialog {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    min-height: calc(100% - 1rem) !important;
+    max-width: 800px !important; /* Tamaño modal-lg */
+    margin: 0.5rem auto !important;
+    pointer-events: none !important;
+  }
+  
+  /* Asegurar que el modal-content sea visible */
+  #editProveedorModal.show .modal-content {
+    pointer-events: auto !important;
+    background-color: #fff !important;
+    border-radius: 0.5rem !important;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+  }
+  
+  /* Asegurar que el contenido del modal sea visible */
+  #editProveedorModal .modal-dialog {
+    z-index: 1056 !important;
+    position: relative !important;
+  }
+
+.modal-alert {
+  text-align: center !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+  display: block !important;
+  float: none !important;
+  clear: both !important;
+}
+
+.modal-footer .modal-alert {
+  display: block !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+  margin-bottom: 1.5rem !important;
+  margin-top: 0 !important;
+  max-width: 420px !important;
+  width: 100% !important;
+  text-align: center !important;
+  border-radius: 12px !important;
+  box-shadow: 0 4px 24px 0 rgba(0,0,0,0.07) !important;
+  padding: 18px 24px !important;
+  font-size: 1.08rem !important;
+  background: #fff6f6 !important;
+}
+
+/* Estilos para mensajes de error de teléfono */
+.telefono-error {
+  font-size: 0.875rem !important;
+  color: #dc3545 !important;
+  margin-top: 0.25rem !important;
+  font-weight: 500 !important;
+}
+
+/* Borde rojo para campos con error */
+.form-control.is-invalid {
+  border-color: #dc3545 !important;
+  box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25) !important;
+}
+
+/* Transición suave para los bordes */
+.form-control {
+  transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out !important;
+}
+  #addProveedorModal.show .messages,
+  #addProveedorModal.show .alert,
+  #addProveedorModal.show .modal-alert,
+  #editProveedorModal.show .messages,
+  #editProveedorModal.show .alert,
+  #editProveedorModal.show .modal-alert {
+    display: none !important;
+  }
+
+.modal .alert:not(.telefono-error),
+.modal .messages {
+  display: none !important;
+}
+
+#addProveedorModal .alert:not(.telefono-error),
+#addProveedorModal .messages,
+#editProveedorModal .alert:not(.telefono-error),
+#editProveedorModal .messages {
+  display: none !important;
+}
+
+body.modal-open .alert:not(.telefono-error),
+body.modal-open .messages {
+  display: none !important;
+}
+
+  /* Ancho fijo para la columna de acciones - sobrescribir estilos globales */
+  #tablaProveedores.unified-table th:last-child,
+  #tablaProveedores.unified-table td:last-child,
+  .unified-table-wrapper #tablaProveedores th:last-child,
+  .unified-table-wrapper #tablaProveedores td:last-child {
+    width: 180px !important;
+    min-width: 180px !important;
+    max-width: 180px !important;
+    padding: 0.5rem !important;
+  }
+
+  /* Asegurar que los botones se ajusten bien */
+  #tablaProveedores.unified-table td:last-child .btn-group,
+  .unified-table-wrapper #tablaProveedores td:last-child .btn-group {
+    display: flex !important;
+    width: 100% !important;
+    justify-content: center !important;
+  }
+
+  #tablaProveedores.unified-table td:last-child .btn-group .btn,
+  .unified-table-wrapper #tablaProveedores td:last-child .btn-group .btn,
+  #tablaProveedores.unified-table td:last-child .btn-group .btn-sm,
+  .unified-table-wrapper #tablaProveedores td:last-child .btn-group .btn-sm {
+    width: 60px !important;
+    min-width: 60px !important;
+    max-width: 60px !important;
+    padding: 0.25rem 0.5rem !important;
+    flex-shrink: 0 !important;
+    flex: none !important;
+  }
+
+  /* Compactar botones de acción solo en proveedores */
+  #tablaProveedores.unified-table .btn-group,
+  .unified-table-wrapper #tablaProveedores .btn-group {
+    display: inline-flex !important;
+    vertical-align: middle !important;
+    gap: 0 !important;
+  }
+
+  #tablaProveedores.unified-table .btn-group .btn,
+  .unified-table-wrapper #tablaProveedores .btn-group .btn,
+  #tablaProveedores.unified-table .btn-group .btn-sm,
+  .unified-table-wrapper #tablaProveedores .btn-group .btn-sm {
+    margin-right: 0 !important;
+    margin-left: 0 !important;
+    border-radius: 0 !important;
+    white-space: nowrap !important;
+    overflow: visible !important;
+  }
+
+  #tablaProveedores.unified-table .btn-group .btn:first-child,
+  .unified-table-wrapper #tablaProveedores .btn-group .btn:first-child {
+    border-top-left-radius: 0.5rem !important;
+    border-bottom-left-radius: 0.5rem !important;
+  }
+
+  #tablaProveedores.unified-table .btn-group .btn:last-child,
+  .unified-table-wrapper #tablaProveedores .btn-group .btn:last-child {
+    border-top-right-radius: 0.5rem !important;
+    border-bottom-right-radius: 0.5rem !important;
+  }
+
+</style>
+{% endblock %}
+
+{% load table_tags %}
+
+{% block content %}
+<h1 class="fw-bold mb-0 mt-6 mb-2">Proveedores</h1>
+
+<div class="action-bar d-flex align-items-center justify-content-between mb-3">
+  <div class="d-flex align-items-center gap-2">
+    <button
+      type="button"
+      class="btn btn-primary"
+      id="addProveedorBtn"
+      data-bs-toggle="modal"
+      data-bs-target="#addProveedorModal"
+      title="Agregar proveedor"
+    >
+      <i class="bi bi-plus-circle"></i>
+    </button>
+
+    <button
+      type="button"
+      class="btn btn-outline-primary"
+      id="filterBtn"
+      title="Filtrar por país, ciudad y comuna"
+    >
+      <i class="bi bi-sliders me-1"></i>
+      <span>Filtros</span>
+      <span class="ms-1" id="filterCount">({{ filter_paises|length|add:filter_ciudades|length|add:filter_comunas|length }})</span>
+    </button>
+
+    <form method="get" class="d-flex align-items-center gap-2">
+      {% if request.GET.sort %}
+        <input type="hidden" name="sort" value="{{ request.GET.sort }}">
+      {% endif %}
+      {% if request.GET.order %}
+        <input type="hidden" name="order" value="{{ request.GET.order }}">
+      {% endif %}
+      {% if request.GET.per_page %}
+        <input type="hidden" name="per_page" value="{{ request.GET.per_page }}">
+      {% endif %}
+      {% for pais in filter_paises %}
+        <input type="hidden" name="filter_pais" value="{{ pais }}">
+      {% endfor %}
+      {% for ciudad in filter_ciudades %}
+        <input type="hidden" name="filter_ciudad" value="{{ ciudad }}">
+      {% endfor %}
+      {% for comuna in filter_comunas %}
+        <input type="hidden" name="filter_comuna" value="{{ comuna }}">
+      {% endfor %}
+      <input
+        type="text"
+        name="search"
+        class="form-control"
+        placeholder="Buscar proveedor..."
+        value="{{ request.GET.search|default:'' }}"
+        style="max-width: 300px;"
+      />
+    </form>
+  </div>
+</div>
+
+<div id="table-wrapper" class="unified-table-wrapper">
+  {% if proveedores %}
+    {% include 'proveedor/partials/table_content.html' %}
+  {% else %}
+    <div class="card shadow-lg border-0">
+      <div class="card-body text-center px-4 py-4">
+        <div class="alert alert-info mb-0">No hay proveedores registrados.</div>
+      </div>
+    </div>
+  {% endif %}
+</div>
+
+
+<!-- Modal Agregar Proveedor -->
+<div class="modal fade" id="addProveedorModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content border-0 shadow-lg rounded-4">
+      <form method="post" action="{% url 'agregar_proveedor' %}" id="addProveedorForm">
+        {% csrf_token %}
+        <div class="modal-header bg-primary text-white rounded-top-4">
+          <h5 class="modal-title fw-bold"><i class="bi bi-plus-circle me-2"></i> Añadir Proveedor</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body px-4 py-3">
+          <div class="row">
+            <div class="col-12 col-md-6 mb-3">
+            <label for="add-nombre" class="form-label fw-semibold">Nombre</label>
+            <input type="text" id="add-nombre" name="nombre" class="form-control rounded px-3" required placeholder="Empresa ABC, Comercial XYZ" />
+          </div>
+            <div class="col-12 col-md-6 mb-3">
+            <label for="add-correo" class="form-label fw-semibold">Correo</label>
+            <input type="email" id="add-correo" name="correo" class="form-control rounded px-3" placeholder="contacto@proveedor.com" />
+          </div>
+          </div>
+          <div class="row">
+            <div class="col-12 col-sm-4 col-md-3 mb-3">
+            <label for="add-prefijo-telefono" class="form-label fw-semibold">Prefijo</label>
+            <select id="add-prefijo-telefono" name="prefijo_telefono" class="form-control rounded px-3 prefijo-select">
+              <option value="+56" selected>🇨🇱 +56 (Chile)</option>
+              <option value="+1">🇺🇸 +1 (Estados Unidos/Canadá)</option>
+              <option value="+52">🇲🇽 +52 (México)</option>
+              <option value="+57">🇨🇴 +57 (Colombia)</option>
+              <option value="+54">🇦🇷 +54 (Argentina)</option>
+              <option value="+51">🇵🇪 +51 (Perú)</option>
+              <option value="+58">🇻🇪 +58 (Venezuela)</option>
+              <option value="+593">🇪🇨 +593 (Ecuador)</option>
+              <option value="+591">🇧🇴 +591 (Bolivia)</option>
+              <option value="+595">🇵🇾 +595 (Paraguay)</option>
+              <option value="+598">🇺🇾 +598 (Uruguay)</option>
+              <option value="+34">🇪🇸 +34 (España)</option>
+              <option value="+33">🇫🇷 +33 (Francia)</option>
+              <option value="+49">🇩🇪 +49 (Alemania)</option>
+              <option value="+39">🇮🇹 +39 (Italia)</option>
+              <option value="+44">🇬🇧 +44 (Reino Unido)</option>
+              <option value="+81">🇯🇵 +81 (Japón)</option>
+              <option value="+86">🇨🇳 +86 (China)</option>
+              <option value="+91">🇮🇳 +91 (India)</option>
+              <option value="+55">🇧🇷 +55 (Brasil)</option>
+              <option value="custom">📝 Otro (personalizado)</option>
+            </select>
+            <input type="text" id="add-prefijo-custom" name="prefijo_telefono_custom" class="form-control rounded px-3 mt-2 prefijo-custom" placeholder="+XX" style="display: none;" />
+          </div>
+            <div class="col-12 col-sm-8 col-md-9 mb-3">
+            <label for="add-telefono" class="form-label fw-semibold">Teléfono</label>
+            <input type="text" id="add-telefono" name="telefono" class="form-control rounded px-3" placeholder="912345678 o 212345678" />
+          </div>
+          </div>
+
+          <div class="mb-3">
+            <label for="add-direccion" class="form-label fw-semibold">Dirección</label>
+            <input type="text" id="add-direccion" name="direccion" class="form-control rounded px-3" placeholder="Av. Principal 1234, Local 5" />
+          </div>
+          <div class="row">
+            <div class="col-12 col-md-4 mb-3">
+            <label for="add-pais" class="form-label fw-semibold">País</label>
+            <input type="text" id="add-pais" name="pais" class="form-control rounded px-3" placeholder="Chile" />
+          </div>
+            <div class="col-12 col-md-4 mb-3">
+            <label for="add-ciudad" class="form-label fw-semibold">Ciudad</label>
+            <input type="text" id="add-ciudad" name="ciudad" class="form-control rounded px-3" placeholder="Santiago" />
+          </div>
+            <div class="col-12 col-md-4 mb-3">
+            <label for="add-comuna" class="form-label fw-semibold">Comuna</label>
+            <input type="text" id="add-comuna" name="comuna" class="form-control rounded px-3" placeholder="Providencia" />
+          </div>
+        </div>
+        </div>
+        <div class="modal-footer px-4 pb-4">
+          <button type="submit" class="btn btn-primary btn-sm rounded px-3 fw-semibold">Guardar</button>
+          <button type="button" class="btn btn-outline-secondary btn-sm rounded px-3" data-bs-dismiss="modal">Cerrar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Editar Proveedor -->
+<div class="modal fade" id="editProveedorModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content border-0 shadow-lg rounded-4">
+      <form method="post" id="editProveedorForm">
+        {% csrf_token %}
+        <div class="modal-header bg-warning text-dark rounded-top-4">
+          <h5 class="modal-title fw-bold"><i class="bi bi-pencil me-2"></i> Editar Proveedor</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body px-4 py-3">
+          <input type="hidden" name="id" id="edit-id" />
+          <div class="row">
+            <div class="col-12 col-md-6 mb-3">
+            <label for="edit-nombre" class="form-label fw-semibold">Nombre</label>
+            <input type="text" id="edit-nombre" name="nombre" class="form-control rounded px-3" required />
+          </div>
+            <div class="col-12 col-md-6 mb-3">
+            <label for="edit-correo" class="form-label fw-semibold">Correo</label>
+            <input type="email" id="edit-correo" name="correo" class="form-control rounded px-3" />
+          </div>
+          </div>
+          <div class="row">
+            <div class="col-12 col-sm-4 col-md-3 mb-3">
+            <label for="edit-prefijo-telefono" class="form-label fw-semibold">Prefijo</label>
+            <select id="edit-prefijo-telefono" name="prefijo_telefono" class="form-control rounded px-3 prefijo-select">
+              <option value="+56">🇨🇱 +56 (Chile)</option>
+              <option value="+1">🇺🇸 +1 (Estados Unidos/Canadá)</option>
+              <option value="+52">🇲🇽 +52 (México)</option>
+              <option value="+57">🇨🇴 +57 (Colombia)</option>
+              <option value="+54">🇦🇷 +54 (Argentina)</option>
+              <option value="+51">🇵🇪 +51 (Perú)</option>
+              <option value="+58">🇻🇪 +58 (Venezuela)</option>
+              <option value="+593">🇪🇨 +593 (Ecuador)</option>
+              <option value="+591">🇧🇴 +591 (Bolivia)</option>
+              <option value="+595">🇵🇾 +595 (Paraguay)</option>
+              <option value="+598">🇺🇾 +598 (Uruguay)</option>
+              <option value="+34">🇪🇸 +34 (España)</option>
+              <option value="+33">🇫🇷 +33 (Francia)</option>
+              <option value="+49">🇩🇪 +49 (Alemania)</option>
+              <option value="+39">🇮🇹 +39 (Italia)</option>
+              <option value="+44">🇬🇧 +44 (Reino Unido)</option>
+              <option value="+81">🇯🇵 +81 (Japón)</option>
+              <option value="+86">🇨🇳 +86 (China)</option>
+              <option value="+91">🇮🇳 +91 (India)</option>
+              <option value="+55">🇧🇷 +55 (Brasil)</option>
+              <option value="custom">📝 Otro (personalizado)</option>
+            </select>
+            <input type="text" id="edit-prefijo-custom" name="prefijo_telefono_custom" class="form-control rounded px-3 mt-2 prefijo-custom" placeholder="+XX" style="display: none;" />
+          </div>
+            <div class="col-12 col-sm-8 col-md-9 mb-3">
+            <label for="edit-telefono" class="form-label fw-semibold">Teléfono</label>
+            <input type="text" id="edit-telefono" name="telefono" class="form-control rounded px-3" placeholder="912345678 o 212345678" />
+          </div>
+          </div>
+
+          <div class="mb-3">
+            <label for="edit-direccion" class="form-label fw-semibold">Dirección</label>
+            <input type="text" id="edit-direccion" name="direccion" class="form-control rounded px-3" />
+          </div>
+          <div class="row">
+            <div class="col-12 col-md-4 mb-3">
+            <label for="edit-pais" class="form-label fw-semibold">País</label>
+            <input type="text" id="edit-pais" name="pais" class="form-control rounded px-3" />
+          </div>
+            <div class="col-12 col-md-4 mb-3">
+            <label for="edit-ciudad" class="form-label fw-semibold">Ciudad</label>
+            <input type="text" id="edit-ciudad" name="ciudad" class="form-control rounded px-3" />
+          </div>
+            <div class="col-12 col-md-4 mb-3">
+            <label for="edit-comuna" class="form-label fw-semibold">Comuna</label>
+            <input type="text" id="edit-comuna" name="comuna" class="form-control rounded px-3" />
+          </div>
+        </div>
+        </div>
+        <div class="modal-footer px-4 pb-4">
+          <button type="submit" class="btn btn-warning btn-sm rounded px-3 fw-semibold">Guardar</button>
+          <button type="button" class="btn btn-outline-secondary btn-sm rounded px-3" data-bs-dismiss="modal">Cerrar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Ver Detalles del Proveedor -->
+<div class="modal fade" id="verDetallesProveedorModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content border-0 shadow-lg rounded-4">
+      <div class="modal-header bg-primary text-white rounded-top-4">
+        <h5 class="modal-title fw-bold"><i class="bi bi-info-circle me-2"></i> Detalles del Proveedor</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body px-4 py-3">
+        <div class="row">
+          <div class="col-12 col-md-6 mb-3">
+            <strong><i class="bi bi-person me-2"></i>Nombre:</strong>
+            <p id="detalle-proveedor-nombre" class="mb-0"></p>
+          </div>
+          <div class="col-12 col-md-6 mb-3">
+            <strong><i class="bi bi-telephone me-2"></i>Teléfono:</strong>
+            <p id="detalle-proveedor-telefono" class="mb-0"></p>
+          </div>
+          <div class="col-12 col-md-6 mb-3">
+            <strong><i class="bi bi-envelope me-2"></i>Correo:</strong>
+            <p id="detalle-proveedor-correo" class="mb-0"></p>
+          </div>
+          <div class="col-12 col-md-6 mb-3">
+            <strong><i class="bi bi-geo-alt me-2"></i>Dirección:</strong>
+            <p id="detalle-proveedor-direccion" class="mb-0"></p>
+          </div>
+          <div class="col-12 col-md-4 mb-3">
+            <strong><i class="bi bi-globe me-2"></i>País:</strong>
+            <p id="detalle-proveedor-pais" class="mb-0"></p>
+          </div>
+          <div class="col-12 col-md-4 mb-3">
+            <strong><i class="bi bi-building me-2"></i>Ciudad:</strong>
+            <p id="detalle-proveedor-ciudad" class="mb-0"></p>
+          </div>
+          <div class="col-12 col-md-4 mb-3">
+            <strong><i class="bi bi-geo me-2"></i>Comuna:</strong>
+            <p id="detalle-proveedor-comuna" class="mb-0"></p>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer px-4 pb-4">
+        <button type="button" class="btn btn-outline-secondary btn-sm rounded px-3" data-bs-dismiss="modal">Cerrar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Eliminar Proveedor -->
+<div class="modal fade" id="deleteProveedorModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content border-0 shadow-lg rounded-4">
+      <form method="post" id="deleteProveedorForm">
+        {% csrf_token %}
+        <div class="modal-header bg-danger text-white rounded-top-4">
+          <h5 class="modal-title fw-bold"><i class="bi bi-trash me-2"></i> Confirmar Eliminación</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body px-4 py-3">
+          <input type="hidden" name="id" id="delete-id" />
+          <p>¿Está seguro que desea eliminar el proveedor <strong id="delete-nombre"></strong>?</p>
+        </div>
+        <div class="modal-footer px-4 pb-4">
+          <button type="submit" class="btn btn-danger btn-sm rounded px-3 fw-semibold">Eliminar</button>
+          <button type="button" class="btn btn-outline-secondary btn-sm rounded px-3" data-bs-dismiss="modal">Cerrar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<style>
+.card-header.bg-gradient {
+  background: #fff !important;
+  color: #222 !important;
+  font-weight: 600;
+  font-size: 1.08rem;
+  padding: 1rem 1.5rem;
+  border-radius: 0.75rem 0.75rem 0 0;
+  border-bottom: 1.5px solid #e5e7eb;
+  letter-spacing: 0.01em;
+  box-shadow: none;
+}
+
+/* Ancho fijo para la columna de acciones - ajustado para 3 botones (igual que categorías) */
+#tablaProveedores th:last-child,
+#tablaProveedores td:last-child {
+  width: 180px !important;
+  min-width: 180px !important;
+  max-width: 180px !important;
+  padding: 0.5rem !important;
+}
+
+/* Asegurar que los botones se ajusten bien */
+#tablaProveedores td:last-child .btn-group {
+  display: flex;
+  width: 100%;
+  justify-content: center;
+}
+
+#tablaProveedores td:last-child .btn-group .btn {
+  flex: 1;
+  min-width: 0;
+  padding: 0.25rem 0.5rem;
+}
+
+/* Compactar botones de acción solo en proveedores */
+#tablaProveedores .btn-group {
+  display: inline-flex;
+  vertical-align: middle;
+}
+
+#tablaProveedores .btn-group .btn {
+  margin-right: 0 !important;
+  margin-left: 0 !important;
+  border-radius: 0 !important;
+  white-space: nowrap;
+  overflow: visible;
+}
+
+#tablaProveedores .btn-group .btn:first-child {
+  border-top-left-radius: 0.5rem !important;
+  border-bottom-left-radius: 0.5rem !important;
+}
+
+#tablaProveedores .btn-group .btn:last-child {
+  border-top-right-radius: 0.5rem !important;
+  border-bottom-right-radius: 0.5rem !important;
+}
+
+.proveedor-modal-alert,
+.modal-error.proveedor-modal-alert,
+.alert.proveedor-modal-alert {
+  max-width: 85% !important;
+  width: auto !important;
+  margin: 0 auto 15px auto !important;
+  padding: 12px 20px !important;
+  border-radius: 8px !important;
+  font-size: 0.95rem !important;
+  text-align: center !important;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1) !important;
+  display: block !important;
+  float: none !important;
+  clear: both !important;
+}
+
+/* Forzar que los mensajes de error en modales de proveedor no ocupen todo el ancho */
+#addProveedorModal .modal-error,
+#editProveedorModal .modal-error {
+  max-width: 85% !important;
+  width: auto !important;
+  margin: 0 auto 15px auto !important;
+  text-align: center !important;
+}
+
+/* Asegurar que los modales estén por encima del sidebar (z-index: 1060) */
+.modal {
+  z-index: 9999 !important;
+}
+
+.modal-backdrop {
+  z-index: 9998 !important;
+}
+
+/* Asegurar que el modal de detalles sea visible */
+#verDetallesProveedorModal {
+  z-index: 10000 !important;
+}
+
+#verDetallesProveedorModal.show {
+  display: block !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+/* Estilos responsivos para modal de detalles en móviles */
+@media (max-width: 768px) {
+  #verDetallesProveedorModal .modal-dialog {
+    margin: 0.5rem;
+    max-width: calc(100% - 1rem);
+  }
+  
+  #verDetallesProveedorModal .modal-content {
+    border-radius: 1rem !important;
+  }
+  
+  #verDetallesProveedorModal .modal-header {
+    padding: 1rem;
+    border-radius: 1rem 1rem 0 0 !important;
+  }
+  
+  #verDetallesProveedorModal .modal-title {
+    font-size: 1rem;
+  }
+  
+  #verDetallesProveedorModal .modal-body {
+    padding: 1rem !important;
+  }
+  
+  #verDetallesProveedorModal .modal-body .row > div {
+    margin-bottom: 1rem !important;
+  }
+  
+  #verDetallesProveedorModal .modal-body strong {
+    font-size: 0.9rem;
+    display: block;
+    margin-bottom: 0.25rem;
+  }
+  
+  #verDetallesProveedorModal .modal-body p {
+    font-size: 0.9rem;
+    margin-bottom: 0;
+  }
+  
+  #verDetallesProveedorModal .modal-footer {
+    padding: 1rem !important;
+  }
+  
+  #verDetallesProveedorModal .modal-footer .btn {
+    width: 100%;
+    margin: 0;
+  }
+  
+  /* Botones del modal footer en móvil - ocupar todo el ancho y apilarse */
+  #addProveedorModal .modal-footer,
+  #editProveedorModal .modal-footer,
+  #deleteProveedorModal .modal-footer {
+    padding: 1rem !important;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  #addProveedorModal .modal-footer .btn,
+  #editProveedorModal .modal-footer .btn,
+  #deleteProveedorModal .modal-footer .btn {
+    width: 100%;
+    margin: 0;
+  }
+  
+  #verDetallesProveedorModal .col-md-6,
+  #verDetallesProveedorModal .col-md-4 {
+    flex: 0 0 100%;
+    max-width: 100%;
+  }
+}
+
+/* Estilos para panel de filtros lateral */
+.filter-panel-overlay {
+  position: fixed;
+  top: 64px;
+  left: 280px;
+  right: 0;
+  bottom: 0;
+  width: calc(100vw - 280px);
+  height: calc(100vh - 64px);
+  background-color: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 10050 !important;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s ease, visibility 0.3s ease;
+  display: none;
+}
+
+.filter-panel-overlay.active {
+  opacity: 1 !important;
+  visibility: visible !important;
+  display: block !important;
+  backdrop-filter: blur(4px) !important;
+  -webkit-backdrop-filter: blur(4px) !important;
+}
+
+.filter-panel {
+  position: fixed;
+  top: 0;
+  right: -40%;
+  width: 40%;
+  max-width: 380px;
+  height: 100vh;
+  background-color: #fff;
+  box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1);
+  z-index: 10060 !important;
+  transition: right 0.3s ease;
+  display: none;
+  flex-direction: column;
+  overflow: hidden;
+  overflow-x: hidden;
+  border-radius: 1rem 0 0 1rem;
+}
+
+.filter-panel.active {
+  right: 0;
+  display: flex !important;
+}
+
+.filter-panel.active {
+  right: 0;
+}
+
+.filter-panel-header {
+  padding: 1.5rem;
+  border-bottom: 1px solid #e5e7eb;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #fff;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.filter-panel-title {
+  margin: 0;
+  color: #222;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.filter-panel-body {
+  flex: 1;
+  padding: 1rem 1.5rem;
+  overflow-y: auto;
+  overflow-x: hidden;
+  width: 100%;
+  max-width: 100%;
+}
+
+.filter-panel-footer {
+  padding: 1.5rem;
+  border-top: 1px solid #e5e7eb;
+  background-color: #fff;
+  position: sticky;
+  bottom: 0;
+  z-index: 10;
+}
+
+/* Secciones de filtro */
+.filter-section {
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  margin-bottom: 1rem;
+  background-color: #fff;
+  overflow: hidden;
+  overflow-x: hidden;
+  width: 100%;
+  max-width: 100%;
+}
+
+.filter-section-header {
+  padding: 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  user-select: none;
+  transition: background-color 0.2s;
+}
+
+.filter-section-header:hover {
+  background-color: #f8f9fa;
+}
+
+.filter-section-title {
+  font-weight: 600;
+  color: #222;
+  font-size: 0.95rem;
+}
+
+.filter-section-icon {
+  color: #6b7280;
+  font-size: 0.875rem;
+  transition: transform 0.2s;
+}
+
+.filter-section-content {
+  padding: 0 1rem 1rem 1rem;
+  max-height: 400px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  width: 100%;
+  max-width: 100%;
+}
+
+.filter-search-box {
+  position: relative;
+}
+
+.filter-search-box .form-control {
+  padding-right: 2.5rem;
+  border-radius: 0.5rem;
+  border: 1px solid #d1d5db;
+  font-size: 0.875rem;
+}
+
+.filter-search-box .form-control:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.filter-search-icon {
+  position: absolute;
+  right: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #9ca3af;
+  pointer-events: none;
+}
+
+.filter-options-list {
+  max-height: 300px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  width: 100%;
+  max-width: 100%;
+}
+
+.filter-option {
+  display: flex;
+  align-items: center;
+  padding: 0.5rem 0;
+  cursor: pointer;
+  user-select: none;
+  transition: background-color 0.2s;
+  border-radius: 0.25rem;
+  padding-left: 0.5rem;
+  margin-left: -0.5rem;
+  margin-right: -0.5rem;
+}
+
+.filter-option:hover {
+  background-color: #f9fafb;
+}
+
+.filter-option input[type="checkbox"] {
+  margin-right: 0.75rem;
+  width: 1.125rem;
+  height: 1.125rem;
+  cursor: pointer;
+  accent-color: #3b82f6;
+}
+
+.filter-option span {
+  color: #374151;
+  font-size: 0.875rem;
+  flex: 1;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  max-width: 100%;
+}
+
+/* Animación del botón de filtros */
+#filterBtn {
+  transition: all 0.15s ease-in-out !important;
+}
+
+#filterBtn:hover {
+  background-color: transparent !important;
+  border-color: #0d6efd !important;
+  color: #0d6efd !important;
+  transform: translateY(-1px) !important;
+}
+
+#filterBtn:active {
+  transform: scale(0.95) !important;
+}
+
+/* Estilos para modo oscuro */
+[data-theme="dark"] .filter-panel {
+  background-color: #282828 !important;
+  box-shadow: -2px 0 10px rgba(0, 0, 0, 0.3) !important;
+}
+
+[data-theme="dark"] .filter-panel-header {
+  background-color: #323232 !important;
+  border-bottom: 1px solid #444 !important;
+}
+
+[data-theme="dark"] .filter-panel-title {
+  color: #fff !important;
+}
+
+[data-theme="dark"] .filter-panel-body {
+  background-color: #282828 !important;
+}
+
+[data-theme="dark"] .filter-panel-footer {
+  background-color: #282828 !important;
+  border-top: 1px solid #444 !important;
+}
+
+[data-theme="dark"] .filter-section {
+  background-color: #323232 !important;
+  border: 1px solid #444 !important;
+}
+
+[data-theme="dark"] .filter-section-header {
+  background-color: #323232 !important;
+}
+
+[data-theme="dark"] .filter-section-header:hover {
+  background-color: #3a3a3a !important;
+}
+
+[data-theme="dark"] .filter-section-title {
+  color: #fff !important;
+}
+
+[data-theme="dark"] .filter-section-icon {
+  color: #9ca3af !important;
+}
+
+[data-theme="dark"] .filter-search-box .form-control {
+  background-color: #23272b !important;
+  border: 1px solid #444 !important;
+  color: #fff !important;
+}
+
+[data-theme="dark"] .filter-search-box .form-control:focus {
+  background-color: #23272b !important;
+  border-color: #3b82f6 !important;
+  color: #fff !important;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2) !important;
+}
+
+[data-theme="dark"] .filter-search-box .form-control::placeholder {
+  color: #9ca3af !important;
+}
+
+[data-theme="dark"] .filter-search-icon {
+  color: #9ca3af !important;
+}
+
+[data-theme="dark"] .filter-option {
+  color: #fff !important;
+}
+
+[data-theme="dark"] .filter-option:hover {
+  background-color: #3a3a3a !important;
+}
+
+[data-theme="dark"] .filter-option span {
+  color: #e4e6eb !important;
+}
+
+[data-theme="dark"] .filter-panel-header .text-primary {
+  color: #60a5fa !important;
+}
+
+[data-theme="dark"] .filter-panel-header .text-primary:hover {
+  color: #93c5fd !important;
+}
+
+[data-theme="dark"] .filter-panel-header .btn-close {
+  filter: brightness(0) invert(1) !important;
+}
+
+/* Responsive para móviles */
+@media (max-width: 768px) {
+  .filter-panel-overlay {
+    top: 64px !important;
+    left: 0 !important;
+    width: 100vw !important;
+    height: calc(100vh - 64px) !important;
+  }
+  
+  .filter-panel {
+    width: 100%;
+    right: -100%;
+    border-radius: 0;
+  }
+  
+  .filter-panel.active {
+    right: 0;
+  }
+}
+</style>
+
+<!-- Panel de Filtros -->
+<div class="filter-panel-overlay" id="filterOverlay" onclick="toggleFilterPanel()" style="display: none;"></div>
+<div class="filter-panel" id="filterPanel" style="display: none;">
+  <div class="filter-panel-header">
+    <h5 class="filter-panel-title fw-bold">
+      <i class="bi bi-sliders me-2"></i> Filtrar
+    </h5>
+    <div class="d-flex align-items-center gap-2">
+      <a href="?{% if search_query %}search={{ search_query }}&{% endif %}{% if sort_field %}sort={{ sort_field }}&order={{ order }}&{% endif %}{% if request.GET.per_page %}per_page={{ request.GET.per_page }}{% endif %}" class="text-primary text-decoration-none fw-semibold">Limpiar filtros</a>
+      <button type="button" class="btn-close" onclick="toggleFilterPanel()" aria-label="Cerrar"></button>
+    </div>
+  </div>
+  <form method="get" action="" id="filterForm" class="filter-panel-body">
+    {% if sort_field %}
+      <input type="hidden" name="sort" value="{{ sort_field }}">
+    {% endif %}
+    {% if order %}
+      <input type="hidden" name="order" value="{{ order }}">
+    {% endif %}
+    {% if search_query %}
+      <input type="hidden" name="search" value="{{ search_query }}">
+    {% endif %}
+    {% if request.GET.per_page %}
+      <input type="hidden" name="per_page" value="{{ request.GET.per_page }}">
+    {% endif %}
+    
+    <!-- Sección País -->
+    <div class="filter-section">
+      <div class="filter-section-header" onclick="toggleFilterSection('pais')">
+        <span class="filter-section-title">País</span>
+        <i class="bi bi-chevron-down filter-section-icon" id="pais-icon"></i>
+      </div>
+      <div class="filter-section-content" id="pais-content" style="display: none;">
+        <div class="filter-search-box mb-3">
+          <input type="text" class="form-control" id="pais-search" placeholder="Buscar país" onkeyup="filterPaisOptions(this.value)">
+          <i class="bi bi-search filter-search-icon"></i>
+        </div>
+        <div class="filter-options-list" id="pais-options">
+          {% for pais in paises %}
+            <label class="filter-option">
+              <input type="checkbox" name="filter_pais" value="{{ pais }}" 
+                     {% if pais in filter_paises %}checked{% endif %}
+                     onchange="updateFilterBadge()">
+              <span>{{ pais }}</span>
+            </label>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+    
+    <!-- Sección Ciudad -->
+    <div class="filter-section">
+      <div class="filter-section-header" onclick="toggleFilterSection('ciudad')">
+        <span class="filter-section-title">Ciudad</span>
+        <i class="bi bi-chevron-down filter-section-icon" id="ciudad-icon"></i>
+      </div>
+      <div class="filter-section-content" id="ciudad-content" style="display: none;">
+        <div class="filter-search-box mb-3">
+          <input type="text" class="form-control" id="ciudad-search" placeholder="Buscar ciudad" onkeyup="filterCiudadOptions(this.value)">
+          <i class="bi bi-search filter-search-icon"></i>
+        </div>
+        <div class="filter-options-list" id="ciudad-options">
+          {% for ciudad in ciudades %}
+            <label class="filter-option">
+              <input type="checkbox" name="filter_ciudad" value="{{ ciudad }}" 
+                     {% if ciudad in filter_ciudades %}checked{% endif %}
+                     onchange="updateFilterBadge()">
+              <span>{{ ciudad }}</span>
+            </label>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+    
+    <!-- Sección Comuna -->
+    <div class="filter-section">
+      <div class="filter-section-header" onclick="toggleFilterSection('comuna')">
+        <span class="filter-section-title">Comuna</span>
+        <i class="bi bi-chevron-down filter-section-icon" id="comuna-icon"></i>
+      </div>
+      <div class="filter-section-content" id="comuna-content" style="display: none;">
+        <div class="filter-search-box mb-3">
+          <input type="text" class="form-control" id="comuna-search" placeholder="Buscar comuna" onkeyup="filterComunaOptions(this.value)">
+          <i class="bi bi-search filter-search-icon"></i>
+        </div>
+        <div class="filter-options-list" id="comuna-options">
+          {% for comuna in comunas %}
+            <label class="filter-option">
+              <input type="checkbox" name="filter_comuna" value="{{ comuna }}" 
+                     {% if comuna in filter_comunas %}checked{% endif %}
+                     onchange="updateFilterBadge()">
+              <span>{{ comuna }}</span>
+            </label>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+    
+    <div class="filter-panel-footer">
+      <button type="submit" class="btn btn-primary rounded px-4 fw-semibold w-100">Aplicar Filtros</button>
+    </div>
+  </form>
+</div>
+
+<script src="{% static 'home/js/unified-table.js' %}"></script>
+<script src="{% static 'proveedor/js/proveedores.js' %}"></script>
+<script>
+// Override de updateTableContent para desactivar animaciones durante actualización
+(function() {
+    const originalUpdateTableContent = window.updateTableContent;
+    if (originalUpdateTableContent) {
+        window.updateTableContent = function(url, searchValue, cursorPosition, restoreFocus) {
+            // Agregar clase para desactivar transiciones durante la actualización
+            const tableWrapper = document.getElementById('table-wrapper');
+            if (tableWrapper) {
+                tableWrapper.classList.add('updating');
+                tableWrapper.style.scrollBehavior = 'auto';
+            }
+            
+            // Llamar a la función original
+            const result = originalUpdateTableContent(url, searchValue, cursorPosition, restoreFocus);
+            
+            // Remover clase después de la actualización para restaurar hover
+            setTimeout(function() {
+                if (tableWrapper) {
+                    tableWrapper.classList.remove('updating');
+                }
+                
+                // Asegurar que los eventos se reinicialicen después de actualizar
+                if (typeof initializeTableEvents === 'function') {
+                    initializeTableEvents();
+                }
+            }, 300);
+            
+            return result;
+        };
+    }
+})();
+</script>
+<script>
+// Función para mostrar todos los detalles de un proveedor
+function mostrarDetallesProveedor(proveedorId) {
+  console.log('Mostrando detalles del proveedor:', proveedorId);
+  const url = `/proveedor/${proveedorId}/detalles/`;
+  fetch(url)
+    .then(response => {
+      if (!response.ok) {
+        throw new Error('Error en la respuesta del servidor');
+      }
+      return response.json();
+    })
+    .then(data => {
+      console.log('Datos recibidos:', data);
+      if (data.success) {
+        mostrarModalDetallesProveedor(data.proveedor);
+      } else {
+        alert(data.message || 'Error al cargar los detalles del proveedor');
+      }
+    })
+    .catch(error => {
+      console.error('Error al obtener detalles:', error);
+      alert('Error al cargar los detalles del proveedor: ' + error.message);
+    });
+}
+
+function mostrarModalDetallesProveedor(proveedor) {
+  console.log('Mostrando modal con datos:', proveedor);
+  const modalElement = document.getElementById('verDetallesProveedorModal');
+  if (!modalElement) {
+    console.error('Modal no encontrado');
+    alert('Error: No se encontró el modal');
+    return;
+  }
+  
+  // Llenar los datos primero
+  document.getElementById('detalle-proveedor-nombre').textContent = proveedor.nombre || '';
+  document.getElementById('detalle-proveedor-telefono').textContent = proveedor.telefono || '';
+  document.getElementById('detalle-proveedor-correo').textContent = proveedor.correo || '';
+  document.getElementById('detalle-proveedor-direccion').textContent = proveedor.direccion || '';
+  document.getElementById('detalle-proveedor-pais').textContent = proveedor.pais || '';
+  document.getElementById('detalle-proveedor-ciudad').textContent = proveedor.ciudad || '';
+  document.getElementById('detalle-proveedor-comuna').textContent = proveedor.comuna || '';
+  
+  // Crear o obtener instancia del modal (igual que los otros modales)
+  let modal = bootstrap.Modal.getInstance(modalElement);
+  if (!modal) {
+    modal = new bootstrap.Modal(modalElement, {
+      backdrop: true,
+      keyboard: true,
+      focus: true
+    });
+  }
+  
+  // Mostrar el modal
+  modal.show();
+}
+
+// Event delegation para manejar clicks en filas dinámicas
+document.addEventListener('DOMContentLoaded', function() {
+  const tabla = document.getElementById('tablaProveedores');
+  if (tabla) {
+    tabla.addEventListener('click', function(e) {
+      const fila = e.target.closest('tr.proveedor-row');
+      if (fila && !e.target.closest('td:last-child')) {
+        const proveedorId = fila.getAttribute('data-proveedor-id');
+        if (proveedorId) {
+          mostrarDetallesProveedor(parseInt(proveedorId));
+        }
+      }
+    });
+  }
+  
+  // Asegurar que el panel de filtros esté oculto al cargar
+  const panel = document.getElementById('filterPanel');
+  const overlay = document.getElementById('filterOverlay');
+  if (panel) {
+    panel.style.display = 'none';
+    panel.classList.remove('active');
+  }
+  if (overlay) {
+    overlay.style.display = 'none';
+    overlay.classList.remove('active');
+  }
+  
+  // Agregar event listener al botón de filtros
+  const filterBtn = document.getElementById('filterBtn');
+  if (filterBtn) {
+    filterBtn.addEventListener('click', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      console.log('Botón de filtros clickeado');
+      toggleFilterPanel();
+    });
+  } else {
+    console.error('No se encontró el botón de filtros');
+  }
+  
+  updateFilterBadge();
+  
+  const filterForm = document.getElementById('filterForm');
+  if (filterForm) {
+    filterForm.addEventListener('submit', function(e) {
+      e.preventDefault();
+      
+      const formData = new FormData(filterForm);
+      const url = new URL(window.location.href);
+      
+      // Limpiar filtros anteriores
+      url.searchParams.delete('filter_pais');
+      url.searchParams.delete('filter_ciudad');
+      url.searchParams.delete('filter_comuna');
+      url.searchParams.set('page', '1'); // Resetear a página 1
+      
+      // Agregar nuevos filtros
+      const paises = formData.getAll('filter_pais');
+      const ciudades = formData.getAll('filter_ciudad');
+      const comunas = formData.getAll('filter_comuna');
+      
+      paises.forEach(pais => {
+        if (pais) {
+          url.searchParams.append('filter_pais', pais);
+        }
+      });
+      
+      ciudades.forEach(ciudad => {
+        if (ciudad) {
+          url.searchParams.append('filter_ciudad', ciudad);
+        }
+      });
+      
+      comunas.forEach(comuna => {
+        if (comuna) {
+          url.searchParams.append('filter_comuna', comuna);
+        }
+      });
+      
+      // Cerrar panel
+      toggleFilterPanel();
+      
+      // Recargar página para actualizar filtros
+      window.location.href = url.toString();
+    });
+  }
+});
+
+// Función para abrir/cerrar el panel de filtros
+function toggleFilterPanel() {
+  console.log('toggleFilterPanel llamado');
+  const panel = document.getElementById('filterPanel');
+  const overlay = document.getElementById('filterOverlay');
+  
+  console.log('Panel encontrado:', panel);
+  console.log('Overlay encontrado:', overlay);
+  
+  if (!panel || !overlay) {
+    console.error('No se encontraron los elementos del panel de filtros');
+    return;
+  }
+  
+  const isActive = panel.classList.contains('active');
+  console.log('Panel activo:', isActive);
+  
+  if (isActive) {
+    // Cerrar panel
+    panel.classList.remove('active');
+    overlay.classList.remove('active');
+    document.body.style.overflow = '';
+    // Ocultar completamente después de la animación
+    setTimeout(() => {
+      panel.style.display = 'none';
+      overlay.style.display = 'none';
+    }, 300);
+  } else {
+    // Abrir panel
+    overlay.style.display = 'block';
+    panel.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+    
+    // Pequeño delay para asegurar que el display se aplique antes de la animación
+    setTimeout(() => {
+      overlay.classList.add('active');
+      panel.classList.add('active');
+      // Forzar estilos para asegurar visibilidad y backdrop-filter
+      // El overlay debe empezar después del sidebar (280px) y del topbar (64px)
+      overlay.style.zIndex = '10050';
+      overlay.style.position = 'fixed';
+      overlay.style.top = '64px';
+      overlay.style.left = '280px';
+      overlay.style.right = '0';
+      overlay.style.bottom = '0';
+      overlay.style.width = 'calc(100vw - 280px)';
+      overlay.style.height = 'calc(100vh - 64px)';
+      overlay.style.opacity = '1';
+      overlay.style.visibility = 'visible';
+      overlay.style.backdropFilter = 'blur(4px)';
+      overlay.style.webkitBackdropFilter = 'blur(4px)';
+      panel.style.zIndex = '10060';
+    }, 10);
+  }
+}
+
+// Asegurar que la función esté disponible globalmente
+window.toggleFilterPanel = toggleFilterPanel;
+
+// Función para abrir/cerrar secciones de filtro
+function toggleFilterSection(sectionId) {
+  const content = document.getElementById(sectionId + '-content');
+  const icon = document.getElementById(sectionId + '-icon');
+  
+  if (content && icon) {
+    const isOpen = content.style.display !== 'none';
+    if (isOpen) {
+      content.style.display = 'none';
+      icon.classList.remove('bi-chevron-up');
+      icon.classList.add('bi-chevron-down');
+    } else {
+      content.style.display = 'block';
+      icon.classList.remove('bi-chevron-down');
+      icon.classList.add('bi-chevron-up');
+    }
+  }
+}
+
+// Función para filtrar opciones de país
+function filterPaisOptions(searchTerm) {
+  const options = document.querySelectorAll('#pais-options .filter-option');
+  const term = searchTerm.toLowerCase();
+  
+  options.forEach(option => {
+    const text = option.querySelector('span').textContent.toLowerCase();
+    if (text.includes(term)) {
+      option.style.display = 'flex';
+    } else {
+      option.style.display = 'none';
+    }
+  });
+}
+
+// Función para filtrar opciones de ciudad
+function filterCiudadOptions(searchTerm) {
+  const options = document.querySelectorAll('#ciudad-options .filter-option');
+  const term = searchTerm.toLowerCase();
+  
+  options.forEach(option => {
+    const text = option.querySelector('span').textContent.toLowerCase();
+    if (text.includes(term)) {
+      option.style.display = 'flex';
+    } else {
+      option.style.display = 'none';
+    }
+  });
+}
+
+// Función para filtrar opciones de comuna
+function filterComunaOptions(searchTerm) {
+  const options = document.querySelectorAll('#comuna-options .filter-option');
+  const term = searchTerm.toLowerCase();
+  
+  options.forEach(option => {
+    const text = option.querySelector('span').textContent.toLowerCase();
+    if (text.includes(term)) {
+      option.style.display = 'flex';
+    } else {
+      option.style.display = 'none';
+    }
+  });
+}
+
+// Función para actualizar el badge de filtros
+function updateFilterBadge() {
+  const filterCount = document.getElementById('filterCount');
+  
+  // Verificar si hay filtros activos en la URL
+  const urlParams = new URLSearchParams(window.location.search);
+  const paisesCount = urlParams.getAll('filter_pais').length;
+  const ciudadesCount = urlParams.getAll('filter_ciudad').length;
+  const comunasCount = urlParams.getAll('filter_comuna').length;
+  const totalFilters = paisesCount + ciudadesCount + comunasCount;
+  
+  if (filterCount) {
+    filterCount.textContent = `(${totalFilters})`;
+  }
+}
+</script>
+<style>
+/* Estilos para filas clickeables */
+#tablaProveedores tbody tr.proveedor-row:hover {
+  background-color: rgba(0, 123, 255, 0.05) !important;
+  transition: background-color 0.2s;
+}
+
+/* Desactivar scroll-behavior para evitar movimiento durante actualizaciones AJAX */
+#table-wrapper {
+  scroll-behavior: auto !important;
+}
+
+#table-wrapper .unified-table,
+#table-wrapper .table-responsive {
+  scroll-behavior: auto !important;
+}
+
+/* Clase temporal para desactivar transiciones durante actualización AJAX */
+#table-wrapper.updating {
+  transition: none !important;
+  animation: none !important;
+}
+
+#table-wrapper.updating * {
+  transition: none !important;
+  animation: none !important;
+}
+
+/* Mantener transiciones de hover del card cuando NO está actualizando */
+#table-wrapper:not(.updating) .card {
+  /* Las transiciones de hover están definidas en styles.css */
+}
+
+/* Mantener todas las transiciones de hover del card y filas cuando NO está actualizando */
+#table-wrapper:not(.updating) .card:hover {
+  /* Las transiciones de hover funcionan normalmente */
+}
+
+/* Iconos en negro en los botones de acciones - modo claro */
+.btn-group .btn i,
+.unified-table .btn-group .btn i,
+#tablaProveedores .btn-group .btn i {
+  color: #000 !important;
+}
+
+/* Iconos en blanco en modo oscuro */
+[data-theme="dark"] .btn-group .btn i,
+[data-theme="dark"] .unified-table .btn-group .btn i,
+[data-theme="dark"] #tablaProveedores .btn-group .btn i {
+  color: #fff !important;
+}
+</style>
+{% endblock %}
+

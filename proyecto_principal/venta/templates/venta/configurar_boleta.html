@@ -1,0 +1,358 @@
+{% extends 'home/base_main.html' %}
+{% load static %}
+{% block title %}Configurar Formato de Boleta{% endblock %}
+{% block content %}
+<div class="container py-4">
+  <!-- Header con título y botones -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="fw-bold mb-0 mt-6 mb-2">Configurar Formato de Boleta</h1>
+  </div>
+  
+  <div class="row justify-content-center">
+    <div class="col-12 col-md-8 col-lg-6">
+      <div class="card shadow-lg rounded-4">
+        <div class="card-header bg-gradient text-white rounded-top-4">
+          <h4 class="mb-0 fw-bold"><i class="bi bi-receipt me-2"></i>Configurar Formato de Boleta</h4>
+        </div>
+        <div class="card-body p-4">
+          <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="row g-3">
+              <div class="col-12 col-md-6">
+                <div class="form-floating mb-3">
+                  <input type="text" class="form-control" id="nombre" name="nombre" value="{{ config.nombre|default:'' }}" required>
+                  <label for="nombre">Nombre del negocio</label>
+                </div>
+              </div>
+              <div class="col-12 col-md-6">
+                <div class="form-floating mb-3">
+                  <input type="text" class="form-control" id="rut" name="rut" value="{{ config.rut|default:'' }}" required>
+                  <label for="rut">RUT</label>
+                </div>
+              </div>
+            </div>
+
+            <div class="form-floating mb-3">
+              <input type="text" class="form-control" id="direccion" name="direccion" value="{{ config.direccion|default:'' }}" required>
+              <label for="direccion">Dirección</label>
+            </div>
+
+            <div class="row g-3">
+              <div class="col-12 col-md-6">
+                <div class="form-floating mb-3">
+                  <input type="text" class="form-control" id="fono" name="fono" value="{{ config.fono|default:'' }}" required>
+                  <label for="fono">Teléfono</label>
+                </div>
+              </div>
+              <div class="col-12 col-md-6">
+                <div class="form-floating mb-3">
+                  <input type="email" class="form-control" id="correo" name="correo" value="{{ config.correo|default:'' }}">
+                  <label for="correo">Correo electrónico</label>
+                </div>
+              </div>
+            </div>
+
+            <div class="form-floating mb-3">
+              <input type="text" class="form-control" id="sitio_web" name="sitio_web" value="{{ config.sitio_web|default:'' }}">
+              <label for="sitio_web">Sitio web</label>
+            </div>
+
+            <div class="mb-4">
+              <label for="logo" class="form-label fw-semibold">Logo del negocio</label>
+              <input type="file" class="form-control" id="logo" name="logo" accept="image/*">
+              {% if config.logo %}
+                <div class="mt-2 p-2 border rounded">
+                  <img src="{{ config.logo.url }}" alt="Logo actual" class="img-thumbnail" style="max-height: 100px;">
+                </div>
+              {% endif %}
+            </div>
+
+            <div class="form-floating mb-4">
+              <input type="text" class="form-control" id="mensaje_pie" name="mensaje_pie" value="{{ config.mensaje_pie|default:'¡Gracias por su compra!' }}">
+              <label for="mensaje_pie">Mensaje de pie de boleta</label>
+            </div>
+
+            <div class="d-grid gap-2">
+              <button type="submit" class="btn btn-primary btn-lg">
+                <i class="bi bi-save me-2"></i>Guardar configuración
+              </button>
+              <div class="row g-2">
+                <div class="col-6">
+                  <button type="button" class="btn btn-warning w-100" onclick="restablecerCampos()">
+                    <i class="bi bi-arrow-clockwise me-2"></i>Restablecer
+                  </button>
+                </div>
+                <div class="col-6">
+                  <a href="{% url 'ventas' %}" class="btn btn-outline-secondary w-100">
+                    <i class="bi bi-x-circle me-2"></i>Cerrar
+                  </a>
+                </div>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+.form-floating > .form-control {
+  height: calc(3.5rem + 2px);
+  line-height: 1.25;
+}
+.form-floating > label {
+  padding: 1rem 0.75rem;
+}
+.card-header.bg-gradient {
+  background: #fff !important;
+  color: #222 !important;
+  font-weight: 600;
+  font-size: 1.08rem;
+  padding: 1rem 1.5rem;
+  border-radius: 0.75rem 0.75rem 0 0;
+  border-bottom: 1.5px solid #e5e7eb;
+  letter-spacing: 0.01em;
+  box-shadow: none;
+}
+
+/* Estilos mejorados para botón de volver */
+.btn-back {
+  background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
+  color: #fff !important;
+  border: none;
+  padding: 0.6rem 1.2rem;
+  border-radius: 8px;
+  font-weight: 500;
+  font-size: 0.95rem;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(108, 117, 125, 0.2);
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+}
+
+.btn-back:hover {
+  background: linear-gradient(135deg, #5a6268 0%, #495057 100%);
+  color: #fff !important;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(108, 117, 125, 0.3);
+  text-decoration: none;
+}
+
+.btn-back:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 6px rgba(108, 117, 125, 0.25);
+}
+
+.btn-back i {
+  transition: transform 0.3s ease;
+}
+
+.btn-back:hover i {
+  transform: translateX(-3px);
+}
+
+/* Modo oscuro */
+[data-theme="dark"] .btn-back {
+  background: linear-gradient(135deg, #495057 0%, #3d4146 100%);
+  color: #fff !important;
+}
+
+[data-theme="dark"] .btn-back:hover {
+  background: linear-gradient(135deg, #3d4146 0%, #343a40 100%);
+  color: #fff !important;
+}
+
+/* Modo oscuro para la página de configurar boleta */
+[data-theme="dark"] .card {
+  background-color: #2d2d2d !important;
+  border-color: #444 !important;
+}
+
+[data-theme="dark"] .card-header.bg-gradient {
+  background: #323232 !important;
+  color: #fff !important;
+  border-bottom: 1.5px solid #444 !important;
+}
+
+[data-theme="dark"] .card-body {
+  background-color: #2d2d2d !important;
+}
+
+[data-theme="dark"] .form-floating > .form-control {
+  background-color: #23272b !important;
+  color: #fff !important;
+  border-color: #444 !important;
+}
+
+[data-theme="dark"] .form-floating > .form-control:focus {
+  background-color: #23272b !important;
+  color: #fff !important;
+  border-color: #0d6efd !important;
+  box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.15) !important;
+}
+
+[data-theme="dark"] .form-floating {
+  --bs-body-bg: #23272b !important;
+}
+
+[data-theme="dark"] .form-floating > label {
+  color: #adb5bd !important;
+  --bs-body-bg: #23272b !important;
+}
+
+[data-theme="dark"] .form-floating > .form-control:focus ~ label,
+[data-theme="dark"] .form-floating > .form-control:not(:placeholder-shown) ~ label,
+[data-theme="dark"] .form-floating > .form-select ~ label {
+  color: #adb5bd !important;
+  --bs-body-bg: #23272b !important;
+  opacity: 0.65 !important;
+}
+
+[data-theme="dark"] .form-label {
+  color: #fff !important;
+}
+
+[data-theme="dark"] input[type="file"].form-control {
+  background-color: #23272b !important;
+  color: #fff !important;
+  border-color: #444 !important;
+}
+
+/* Bordes redondeados para input de archivo */
+input[type="file"].form-control {
+  border-radius: 8px !important;
+}
+
+input[type="file"].form-control::file-selector-button {
+  border-radius: 6px !important;
+  margin-right: 10px !important;
+}
+
+[data-theme="dark"] input[type="file"].form-control::file-selector-button {
+  background-color: #444 !important;
+  color: #fff !important;
+  border-color: #555 !important;
+  border-radius: 6px !important;
+}
+
+[data-theme="dark"] .border.rounded {
+  background-color: #23272b !important;
+  border-color: #444 !important;
+}
+
+[data-theme="dark"] .img-thumbnail {
+  background-color: #23272b !important;
+  border-color: #444 !important;
+}
+
+[data-theme="dark"] h1.fw-bold {
+  color: #fff !important;
+}
+</style>
+
+<script>
+function restablecerCampos() {
+  // Restablecer todos los campos de texto
+  document.getElementById('nombre').value = '';
+  document.getElementById('rut').value = '';
+  document.getElementById('direccion').value = '';
+  document.getElementById('fono').value = '';
+  document.getElementById('correo').value = '';
+  document.getElementById('sitio_web').value = '';
+  document.getElementById('mensaje_pie').value = '¡Gracias por su compra!';
+
+  // Limpiar el campo de archivo
+  document.getElementById('logo').value = '';
+
+  // Ocultar la vista previa del logo actual si existe
+  var logoPreview = document.querySelector('img[alt="Logo actual"]');
+  if (logoPreview) {
+    var logoContainer = logoPreview.closest('div');
+    if (logoContainer) {
+      logoContainer.style.display = 'none';
+    }
+  }
+
+  // Mostrar mensaje de confirmación
+  mostrarMensaje('Campos restablecidos correctamente', 'success');
+}
+
+function mostrarMensaje(mensaje, tipo) {
+  // Crear el contenedor de notificaciones si no existe
+  let notificationContainer = document.getElementById('notification-container');
+  if (!notificationContainer) {
+    notificationContainer = document.createElement('div');
+    notificationContainer.id = 'notification-container';
+    notificationContainer.style.cssText = `
+      position: fixed;
+      top: 24px;
+      right: 24px;
+      left: auto;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      pointer-events: none;
+    `;
+    document.body.appendChild(notificationContainer);
+  }
+  
+  // Crear la notificación
+  const notification = document.createElement('div');
+  notification.className = 'notification';
+  notification.style.cssText = `
+    background: ${tipo === 'success' ? '#198754' : '#dc3545'};
+    color: white;
+    padding: 16px 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    margin-bottom: 10px;
+    position: relative;
+    overflow: hidden;
+    font-family: 'Poppins', sans-serif;
+    font-weight: 500;
+    min-width: 350px;
+    max-width: 600px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    pointer-events: auto;
+    transform: translateX(400px);
+    transition: transform 0.3s ease;
+  `;
+  
+  // Icono
+  const icon = tipo === 'success' ? 'bi-check-circle' : 'bi-x-circle';
+  notification.innerHTML = `
+    <i class="bi ${icon}" style="font-size: 1.2em;"></i>
+    <span style="flex:1;">${mensaje}</span>
+    <button type="button" class="btn-close" aria-label="Cerrar" style="pointer-events:auto; color: white;"></button>
+  `;
+  
+  // Event listener para cerrar
+  notification.querySelector('.btn-close').onclick = function() {
+    notification.style.transform = 'translateX(400px)';
+    setTimeout(() => {
+      if (notification.parentNode) notification.parentNode.removeChild(notification);
+    }, 300);
+  };
+  
+  notificationContainer.appendChild(notification);
+  
+  // Animar entrada
+  setTimeout(() => {
+    notification.style.transform = 'translateX(0)';
+  }, 10);
+  
+  // Auto-remover después de 3 segundos
+  setTimeout(() => {
+    notification.style.transform = 'translateX(400px)';
+    setTimeout(() => {
+      if (notification.parentNode) notification.parentNode.removeChild(notification);
+    }, 300);
+  }, 3000);
+}
+</script>
+{% endblock %} 

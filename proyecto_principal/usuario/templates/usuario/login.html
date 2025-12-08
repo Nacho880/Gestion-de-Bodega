@@ -1,0 +1,176 @@
+{% extends "usuario/base_login.html" %}
+
+{% block title %}Iniciar Sesión{% endblock %}
+
+{% block heading %}Iniciar Sesión{% endblock %}
+
+{% block messages %}{% endblock %}
+
+{% block form_fields %}
+  <div class="mb-3">
+    <label for="username" class="form-label">Nombre de usuario</label>
+    <input
+      type="text"
+      class="form-control"
+      id="username"
+      name="username"
+      required
+      placeholder="Ingresa tu usuario"
+      autocomplete="off"
+    />
+    <div id="username-error" class="mt-1" style="display: none;">
+      <small class="text-danger">
+        <i class="bi bi-x-circle me-1"></i> <span class="error-text"></span>
+      </small>
+    </div>
+  </div>
+
+  <div class="mb-3">
+    <label for="password" class="form-label">Contraseña</label>
+    <input
+      type="password"
+      class="form-control"
+      id="password"
+      name="password"
+      required
+      placeholder="********"
+      autocomplete="off"
+    />
+    <div id="password-error" class="mt-1" style="display: none;">
+      <small class="text-danger">
+        <i class="bi bi-x-circle me-1"></i> <span class="error-text"></span>
+      </small>
+    </div>
+  </div>
+
+  <div class="form-check mb-3">
+    <input class="form-check-input" type="checkbox" id="showPassword" />
+    <label class="form-check-label" for="showPassword">
+      Mostrar contraseña
+    </label>
+  </div>
+
+  <!-- Error general -->
+  <div id="login-error" class="mb-3" style="display: none;">
+    <small class="text-danger">
+      <i class="bi bi-x-circle me-1"></i> <span class="error-text"></span>
+    </small>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const usernameInput = document.getElementById('username');
+      const passwordInput = document.getElementById('password');
+      const showPasswordCheckbox = document.getElementById('showPassword');
+      const usernameError = document.getElementById('username-error');
+      const passwordError = document.getElementById('password-error');
+      const loginError = document.getElementById('login-error');
+      const form = document.getElementById('login-form');
+      const submitButton = document.querySelector('button[type="submit"]');
+
+      // Mostrar/ocultar contraseña
+      showPasswordCheckbox.addEventListener('change', function() {
+        passwordInput.type = this.checked ? 'text' : 'password';
+      });
+
+      // Limpiar errores al escribir
+      usernameInput.addEventListener('input', function() {
+        clearError(usernameInput, usernameError);
+        hideLoginError();
+      });
+      
+      passwordInput.addEventListener('input', function() {
+        clearError(passwordInput, passwordError);
+        hideLoginError();
+      });
+
+      // Funciones de error
+      function showError(input, errorDiv, message) {
+        errorDiv.querySelector('.error-text').textContent = message;
+        errorDiv.style.display = 'block';
+        input.classList.add('is-invalid');
+      }
+
+      function clearError(input, errorDiv) {
+        errorDiv.style.display = 'none';
+        input.classList.remove('is-invalid');
+      }
+
+      function showLoginError(message) {
+        loginError.querySelector('.error-text').textContent = message;
+        loginError.style.display = 'block';
+      }
+
+      function hideLoginError() {
+        loginError.style.display = 'none';
+      }
+
+      // Manejar envío del formulario con AJAX
+      form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const username = usernameInput.value.trim();
+        const password = passwordInput.value;
+        
+        // Limpiar errores anteriores
+        clearError(usernameInput, usernameError);
+        clearError(passwordInput, passwordError);
+        hideLoginError();
+        
+        // Validar campos vacíos
+        let hasError = false;
+        if (!username) {
+          showError(usernameInput, usernameError, 'Ingresa tu nombre de usuario');
+          hasError = true;
+        }
+        if (!password) {
+          showError(passwordInput, passwordError, 'Ingresa tu contraseña');
+          hasError = true;
+        }
+        if (hasError) return;
+        
+        // Deshabilitar botón mientras se envía
+        submitButton.disabled = true;
+        
+        // Enviar formulario con AJAX
+        const formData = new FormData(form);
+        
+        fetch(form.action || window.location.href, {
+          method: 'POST',
+          body: formData,
+          headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+          }
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            window.location.href = data.redirect || '/home/';
+          } else {
+            showLoginError(data.message || 'Usuario o contraseña incorrectos');
+            submitButton.disabled = false;
+          }
+        })
+        .catch(error => {
+          showLoginError('Error de conexión. Intenta nuevamente.');
+          submitButton.disabled = false;
+        });
+      });
+    });
+  </script>
+{% endblock %}
+
+{% block button_text %}<i class="bi bi-box-arrow-in-right"></i> Entrar{% endblock %}
+
+{% block bottom_text %}
+  <div class="text-center">
+    <span>¿Olvidaste tu contraseña?</span>
+    <a href="{% url 'verificacion' %}" class="fw-semibold text-primary ms-1">Restablecer</a>
+  </div>
+  {% if not existen_usuarios %}
+    <div class="text-center" style="margin-top: 5px;">
+      <span>¿Primera vez usando el sistema?</span>
+      <a href="{% url 'crear_primer_usuario' %}" class="fw-semibold text-primary ms-1">Crear Usuario</a>
+    </div>
+  {% endif %}
+{% endblock %}

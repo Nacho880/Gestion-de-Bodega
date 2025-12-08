@@ -1,0 +1,465 @@
+{% extends 'home/base_main.html' %}
+{% load static %}
+{% load table_tags %}
+
+{% block title %}Categorías - Inventario{% endblock %}
+
+{% block content %}
+<h1 class="fw-bold mb-0 mt-6 mb-2">Categorías</h1>
+
+<div class="action-bar d-flex align-items-center justify-content-between mb-3">
+  <div class="d-flex align-items-center gap-2">
+    <button
+      type="button"
+      class="btn btn-primary"
+      id="addCategoriaBtn"
+      data-bs-toggle="modal"
+      data-bs-target="#addCategoryModal"
+      title="Agregar categoría"
+    >
+      <i class="bi bi-plus-circle"></i>
+    </button>
+
+    <form method="get" action="" class="d-inline">
+      {% if sort_field %}
+        <input type="hidden" name="sort" value="{{ sort_field }}">
+      {% endif %}
+      {% if order %}
+        <input type="hidden" name="order" value="{{ order }}">
+      {% endif %}
+      {% if request.GET.per_page %}
+        <input type="hidden" name="per_page" value="{{ request.GET.per_page }}">
+      {% endif %}
+      <input
+        type="text"
+        class="form-control"
+        name="search"
+        placeholder="Buscar categoría..."
+        aria-label="Buscar categoría"
+        id="searchCategorias"
+        value="{{ search_query }}"
+        style="max-width: 300px;"
+      />
+    </form>
+  </div>
+</div>
+
+{% if categorias %}
+  <div class="unified-table-wrapper" id="table-wrapper">
+    {% include 'categoria/partials/table_content.html' %}
+  </div>
+{% else %}
+  <div class="card shadow-lg border-0">
+    <div class="card-body text-center px-4 py-4">
+      <div class="alert alert-info mb-0">No hay categorías registradas.</div>
+    </div>
+  </div>
+{% endif %}
+
+<!-- Modal Añadir Categoría -->
+<div class="modal fade" id="addCategoryModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content border-0 shadow-lg rounded-4">
+      <form method="post" action="{% url 'agregar_categoria' %}">
+        {% csrf_token %}
+        <div class="modal-header bg-primary text-white rounded-top-4">
+          <h5 class="modal-title fw-bold"><i class="bi bi-plus-circle me-2"></i> Añadir Categoría</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body px-4 py-3">
+          <div class="mb-3">
+            <label for="add-nombre" class="form-label fw-semibold">Nombre</label>
+            <input type="text" id="add-nombre" name="nombre" class="form-control rounded px-3" maxlength="50" required placeholder="Categoría A, Categoría B, Categoría C" />
+            <div class="form-text text-end">
+              <span id="add-nombre-counter">0</span>/50
+            </div>
+          </div>
+          <div class="mb-3">
+            <label for="add-descripcion" class="form-label fw-semibold">Descripción</label>
+            <textarea id="add-descripcion" name="descripcion" class="form-control rounded-3 px-3" rows="4" maxlength="200" placeholder="Descripción de la categoría, tipos de productos incluidos, características generales"></textarea>
+            <div class="form-text text-end">
+              <span id="add-descripcion-counter">0</span>/200
+            </div>
+          </div>
+          <!-- Contenedor fijo para el mensaje de error -->
+          <div class="modal-alert-container" style="min-height: 48px;"></div>
+        </div>
+        <div class="modal-footer px-4 pb-4">
+          <button type="submit" class="btn btn-primary btn-sm rounded px-3 fw-semibold">Guardar</button>
+          <button type="button" class="btn btn-outline-secondary btn-sm rounded px-3" data-bs-dismiss="modal">Cerrar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Editar Categoría -->
+<div class="modal fade" id="editCategoryModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content border-0 shadow-lg rounded-4">
+      <form method="post" id="editCategoryForm">
+        {% csrf_token %}
+        <div class="modal-header bg-warning text-dark rounded-top-4">
+          <h5 class="modal-title fw-bold"><i class="bi bi-pencil me-2"></i> Editar Categoría</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body px-4 py-3">
+          <input type="hidden" name="id" id="edit-id" />
+          <div class="mb-3">
+            <label for="edit-nombre" class="form-label fw-semibold">Nombre</label>
+            <input type="text" id="edit-nombre" name="nombre" class="form-control rounded px-3" maxlength="50" required />
+            <div class="form-text text-end">
+              <span id="edit-nombre-counter">0</span>/50
+            </div>
+          </div>
+          <div class="mb-3">
+            <label for="edit-descripcion" class="form-label fw-semibold">Descripción</label>
+            <textarea id="edit-descripcion" name="descripcion" class="form-control rounded-3 px-3" rows="4" maxlength="200"></textarea>
+            <div class="form-text text-end">
+              <span id="edit-descripcion-counter">0</span>/200
+            </div>
+          </div>
+          <!-- Contenedor fijo para el mensaje de error -->
+          <div class="modal-alert-container" style="min-height: 48px;"></div>
+        </div>
+        <div class="modal-footer px-4 pb-4">
+          <button type="submit" class="btn btn-warning btn-sm rounded px-3 fw-semibold">Guardar</button>
+          <button type="button" class="btn btn-outline-secondary btn-sm rounded px-3" data-bs-dismiss="modal">Cerrar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Ver Detalles de Categoría -->
+<div class="modal fade" id="verDetallesCategoriaModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content border-0 shadow-lg rounded-4">
+      <div class="modal-header bg-primary text-white rounded-top-4">
+        <h5 class="modal-title fw-bold"><i class="bi bi-info-circle me-2"></i> Detalles de la Categoría</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body px-4 py-4">
+        <div class="row">
+          <div class="col-12 mb-3">
+            <strong><i class="bi bi-tag me-2"></i>Nombre:</strong>
+            <p id="detalle-categoria-nombre" class="mb-0"></p>
+          </div>
+          <div class="col-12 mb-3">
+            <strong><i class="bi bi-file-text me-2"></i>Descripción:</strong>
+            <p id="detalle-categoria-descripcion" class="mb-0 mt-2" style="white-space: pre-wrap; word-wrap: break-word;"></p>
+            <div id="detalle-categoria-sin-descripcion" class="text-muted fst-italic mt-2" style="display: none;">
+              Sin descripción
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer px-4 pb-4">
+        <button type="button" class="btn btn-outline-secondary btn-sm rounded px-3" data-bs-dismiss="modal">Cerrar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Eliminar Categoría -->
+<div class="modal fade" id="deleteCategoryModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content border-0 shadow-lg rounded-4">
+      <form method="post" id="deleteCategoryForm">
+        {% csrf_token %}
+        <div class="modal-header bg-danger text-white rounded-top-4">
+          <h5 class="modal-title fw-bold"><i class="bi bi-trash me-2"></i> Confirmar Eliminación</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body px-4 py-3">
+          <input type="hidden" name="id" id="delete-id" />
+          <p>¿Está seguro que desea eliminar la categoría <strong id="delete-nombre"></strong>?</p>
+        </div>
+        <div class="modal-footer px-4 pb-4">
+          <button type="submit" class="btn btn-danger btn-sm rounded px-3 fw-semibold">Eliminar</button>
+          <button type="button" class="btn btn-outline-secondary btn-sm rounded px-3" data-bs-dismiss="modal">Cerrar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<style>
+.card-header.bg-gradient {
+  background: #fff !important;
+  color: #222 !important;
+  font-weight: 600;
+  font-size: 1.08rem;
+  padding: 1rem 1.5rem;
+  border-radius: 0.75rem 0.75rem 0 0;
+  border-bottom: 1.5px solid #e5e7eb;
+  letter-spacing: 0.01em;
+  box-shadow: none;
+}
+
+/* Ancho fijo para la columna de acciones - ajustado para 3 botones */
+#tablaCategorias th:last-child,
+#tablaCategorias td:last-child {
+  width: 180px !important;
+  min-width: 180px !important;
+  max-width: 180px !important;
+  padding: 0.5rem !important;
+}
+
+/* Asegurar que los botones se ajusten bien */
+#tablaCategorias td:last-child .btn-group {
+  display: flex;
+  width: 100%;
+  justify-content: center;
+}
+
+#tablaCategorias td:last-child .btn-group .btn {
+  flex: 1;
+  min-width: 0;
+  padding: 0.25rem 0.5rem;
+}
+
+/* Compactar botones de acción solo en categorías */
+#tablaCategorias .btn-group {
+  display: inline-flex;
+  vertical-align: middle;
+}
+
+#tablaCategorias .btn-group .btn {
+  margin-right: 0 !important;
+  margin-left: 0 !important;
+  border-radius: 0 !important;
+  white-space: nowrap;
+  overflow: visible;
+}
+
+#tablaCategorias .btn-group .btn:first-child {
+  border-top-left-radius: 0.5rem !important;
+  border-bottom-left-radius: 0.5rem !important;
+}
+
+#tablaCategorias .btn-group .btn:last-child {
+  border-top-right-radius: 0.5rem !important;
+  border-bottom-right-radius: 0.5rem !important;
+}
+
+/* Iconos en negro en los botones de acciones */
+#tablaCategorias .btn-group .btn i {
+  color: #000 !important;
+}
+
+/* Iconos en blanco en modo oscuro */
+[data-theme="dark"] #tablaCategorias .btn-group .btn i {
+  color: #fff !important;
+}
+
+/* Contadores de caracteres visibles en modo oscuro */
+[data-theme="dark"] .form-text {
+  color: #adb5bd !important;
+}
+
+[data-theme="dark"] .form-text span {
+  color: #f1f5f9 !important;
+}
+
+/* Estilos para tablas unificadas */
+.unified-table-wrapper {
+  margin-bottom: 2rem;
+}
+
+.table-info {
+  font-size: 0.95rem;
+}
+
+.sortable:hover {
+  background-color: rgba(0,0,0,0.05) !important;
+  transition: background-color 0.2s;
+}
+
+/* Desactivar scroll-behavior para evitar movimiento durante actualizaciones AJAX */
+#table-wrapper {
+  scroll-behavior: auto !important;
+}
+
+#table-wrapper .unified-table,
+#table-wrapper .table-responsive {
+  scroll-behavior: auto !important;
+}
+
+/* Clase temporal para desactivar transiciones durante actualización AJAX */
+#table-wrapper.updating {
+  transition: none !important;
+  animation: none !important;
+}
+
+#table-wrapper.updating * {
+  transition: none !important;
+  animation: none !important;
+}
+
+/* Mantener transiciones de hover del card cuando NO está actualizando */
+#table-wrapper:not(.updating) .card {
+  /* Las transiciones de hover están definidas en styles.css */
+}
+
+/* Mantener todas las transiciones de hover del card y filas cuando NO está actualizando */
+#table-wrapper:not(.updating) .card:hover {
+  /* Las transiciones de hover funcionan normalmente */
+}
+</style>
+<script src="{% static 'home/js/unified-table.js' %}"></script>
+<script src="{% static 'categoria/js/categorias.js' %}"></script>
+<script>
+// Override de updateTableContent para desactivar animaciones durante actualización
+(function() {
+    const originalUpdateTableContent = window.updateTableContent;
+    if (originalUpdateTableContent) {
+        window.updateTableContent = function(url, searchValue, cursorPosition, restoreFocus) {
+            // Agregar clase para desactivar transiciones durante la actualización
+            const tableWrapper = document.getElementById('table-wrapper');
+            if (tableWrapper) {
+                tableWrapper.classList.add('updating');
+                tableWrapper.style.scrollBehavior = 'auto';
+            }
+            
+            // Llamar a la función original
+            const result = originalUpdateTableContent(url, searchValue, cursorPosition, restoreFocus);
+            
+            // Remover clase después de la actualización para restaurar hover
+            setTimeout(function() {
+                if (tableWrapper) {
+                    tableWrapper.classList.remove('updating');
+                }
+                
+                // Asegurar que los eventos se reinicialicen después de actualizar
+                if (typeof initializeTableEvents === 'function') {
+                    initializeTableEvents();
+                }
+            }, 300);
+            
+            return result;
+        };
+    }
+})();
+</script>
+<script>
+// Función para mostrar todos los detalles de una categoría
+function mostrarDetallesCategoria(categoriaId) {
+  const url = `/categoria/${categoriaId}/detalles/`;
+  fetch(url)
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        mostrarModalDetallesCategoria(data.categoria);
+      } else {
+        alert(data.message || 'Error al cargar los detalles de la categoría');
+      }
+    })
+    .catch(error => {
+      console.error('Error al obtener detalles:', error);
+      alert('Error al cargar los detalles de la categoría');
+    });
+}
+
+function mostrarModalDetallesCategoria(categoria) {
+  const modal = new bootstrap.Modal(document.getElementById('verDetallesCategoriaModal'));
+  
+  document.getElementById('detalle-categoria-nombre').textContent = categoria.nombre;
+  
+  const descripcionDiv = document.getElementById('detalle-categoria-descripcion');
+  const sinDescripcionDiv = document.getElementById('detalle-categoria-sin-descripcion');
+  if (categoria.descripcion && categoria.descripcion.trim() !== '') {
+    descripcionDiv.textContent = categoria.descripcion;
+    descripcionDiv.style.display = 'block';
+    sinDescripcionDiv.style.display = 'none';
+  } else {
+    descripcionDiv.style.display = 'none';
+    sinDescripcionDiv.style.display = 'block';
+  }
+  
+  modal.show();
+}
+</script>
+<style>
+/* Estilos para filas clickeables */
+#tablaCategorias tbody tr.categoria-row:hover {
+  background-color: rgba(0, 123, 255, 0.05) !important;
+  transition: background-color 0.2s;
+}
+
+/* Estilos responsivos para modal de detalles en móviles */
+@media (max-width: 768px) {
+  #verDetallesCategoriaModal .modal-dialog {
+    margin: 0.5rem;
+    max-width: calc(100% - 1rem);
+  }
+  
+  #verDetallesCategoriaModal .modal-content {
+    border-radius: 1rem !important;
+  }
+  
+  #verDetallesCategoriaModal .modal-header {
+    padding: 1rem;
+    border-radius: 1rem 1rem 0 0 !important;
+  }
+  
+  #verDetallesCategoriaModal .modal-title {
+    font-size: 1rem;
+  }
+  
+  #verDetallesCategoriaModal .modal-body {
+    padding: 1rem !important;
+  }
+  
+  #verDetallesCategoriaModal .modal-body strong {
+    font-size: 0.9rem;
+    display: block;
+    margin-bottom: 0.25rem;
+  }
+  
+  #verDetallesCategoriaModal .modal-body p {
+    font-size: 0.9rem;
+    margin-bottom: 0;
+  }
+  
+  #verDetallesCategoriaModal .modal-footer {
+    padding: 1rem !important;
+  }
+  
+  #verDetallesCategoriaModal .modal-footer .btn {
+    width: 100%;
+    margin: 0;
+  }
+  
+  /* Botones del modal footer en móvil - ocupar todo el ancho y apilarse */
+  #addCategoryModal .modal-footer,
+  #editCategoryModal .modal-footer,
+  #deleteCategoryModal .modal-footer {
+    padding: 1rem !important;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  #addCategoryModal .modal-footer .btn,
+  #editCategoryModal .modal-footer .btn,
+  #deleteCategoryModal .modal-footer .btn {
+    width: 100%;
+    margin: 0;
+  }
+}
+</style>
+{% endblock %}
+
+
+
+
+
+
+
+
+
+
+

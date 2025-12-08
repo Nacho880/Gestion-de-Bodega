@@ -1,0 +1,1165 @@
+/* Variables CSS para modo oscuro */
+[data-theme="dark"] {
+  --sidebar-bg: #0f172a;
+  --sidebar-hover-bg: #1e293b;
+  --sidebar-text: #cbd5e1;
+  --sidebar-active-bg: #334155;
+  --topbar-bg: #1e293b;
+  --content-bg: #05070a;
+  --primary-color: #60a5fa;
+  --table-row-hover-bg: #1e293b;
+  --card-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.3), 0 2px 4px -2px rgb(0 0 0 / 0.3);
+  --body-bg: #05070a;
+  --text-color: #f1f5f9;
+  --card-bg: #232b3b;
+  --border-color: #334155;
+  --input-bg: #1e293b;
+  --input-border: #475569;
+  --input-focus-border: #6b7280;
+  --table-bg: #232b3b;
+  --table-text: #f1f5f9;
+  --table-border: #334155;
+  --table-stripe: rgba(255, 255, 255, 0.05);
+  --table-hover: #334155;
+}
+
+/* Fondo general y bloques de información en modo oscuro */
+[data-theme="dark"] body,
+[data-theme="dark"] html,
+[data-theme="dark"] .content {
+  background: #05070a !important;
+  background-color: #05070a !important;
+}
+[data-theme="dark"] .card:not(.shadow-lg):not(.shadow-sm):not(.shadow):not(.shadow-none),
+[data-theme="dark"] .card-body,
+[data-theme="dark"] .table,
+[data-theme="dark"] .modal-content,
+[data-theme="dark"] .dropdown-menu,
+[data-theme="dark"] .table-card,
+[data-theme="dark"] .accordion,
+[data-theme="dark"] .accordion-body {
+  background: #282828 !important;
+  background-color: #282828 !important;
+  box-shadow: 0 2px 16px -6px rgba(30,33,37,0.25) !important;
+  color: #fff !important;
+}
+
+/* Respetar las sombras de Bootstrap en modo oscuro */
+[data-theme="dark"] .card.shadow-lg {
+  background: #282828 !important;
+  background-color: #282828 !important;
+  box-shadow: 0 1rem 3rem rgba(0, 0, 0, 0.5) !important;
+  color: #fff !important;
+}
+
+[data-theme="dark"] .card.shadow-lg:hover {
+  box-shadow: 0 1.25rem 3.5rem rgba(0, 0, 0, 0.6) !important;
+}
+
+/* Forzar fondo blanco y texto oscuro en todos los buscadores del sistema */
+[data-theme="dark"] .search-input input,
+[data-theme="dark"] .dataTables_filter input,
+[data-theme="dark"] input[type="search"] {
+  background: #fff !important;
+  color: #222 !important;
+  border: 2px solid var(--input-border) !important;
+}
+[data-theme="dark"] .action-bar .form-control[type="text"],
+[data-theme="dark"] .action-bar input.form-control[type="search"],
+[data-theme="dark"] .action-bar input[type="text"],
+[data-theme="dark"] .action-bar input[type="date"],
+[data-theme="dark"] .action-bar input[type="number"],
+[data-theme="dark"] .action-bar select,
+[data-theme="dark"] .action-bar .form-control,
+[data-theme="dark"] .action-bar .form-select {
+  background: #23272b !important;
+  color: #fff !important;
+  border: 2px solid #444 !important;
+}
+[data-theme="dark"] .action-bar .form-control[type="text"]:focus,
+[data-theme="dark"] .action-bar input.form-control[type="search"]:focus,
+[data-theme="dark"] .action-bar input[type="text"]:focus,
+[data-theme="dark"] .action-bar input[type="date"]:focus,
+[data-theme="dark"] .action-bar input[type="number"]:focus,
+[data-theme="dark"] .action-bar select:focus,
+[data-theme="dark"] .action-bar .form-control:focus,
+[data-theme="dark"] .action-bar .form-select:focus {
+  background: #23272b !important;
+  color: #fff !important;
+  border-color: #444 !important;
+  box-shadow: 0 0 0 0.2rem rgba(68, 68, 68, 0.25) !important;
+  outline: none !important;
+}
+[data-theme="dark"] .action-bar .form-control[type="text"]::placeholder,
+[data-theme="dark"] .action-bar input.form-control[type="search"]::placeholder {
+  color: #9ca3af !important;
+  opacity: 1 !important;
+}
+[data-theme="dark"] input[type="text"],
+[data-theme="dark"] input[type="number"],
+[data-theme="dark"] input[type="date"],
+[data-theme="dark"] input[type="email"],
+[data-theme="dark"] input[type="password"],
+[data-theme="dark"] textarea {
+  background: #1e293b !important;
+  color: #fff !important;
+  border: 2px solid var(--input-border) !important;
+}
+[data-theme="dark"] input[type="text"]::placeholder,
+[data-theme="dark"] input[type="number"]::placeholder,
+[data-theme="dark"] input[type="date"]::placeholder,
+[data-theme="dark"] input[type="email"]::placeholder,
+[data-theme="dark"] input[type="password"]::placeholder,
+[data-theme="dark"] textarea::placeholder {
+  color: #9ca3af !important;
+  opacity: 1 !important;
+} 
+
+[data-theme="dark"] .venta-main .accordion-item,
+[data-theme="dark"] .venta-main .accordion-header,
+[data-theme="dark"] .compra-main .accordion-item,
+[data-theme="dark"] .compra-main .accordion-header {
+  background: #323232 !important;
+  background-color: #323232 !important;
+  color: #fff !important;
+} 
+
+[data-theme="dark"] .venta-main .accordion-item .text-dark,
+[data-theme="dark"] .venta-main .accordion-header .text-dark,
+[data-theme="dark"] .compra-main .accordion-item .text-dark,
+[data-theme="dark"] .compra-main .accordion-header .text-dark {
+  color: #111 !important;
+}
+
+[data-theme="dark"] .venta-main .accordion-item .text-muted,
+[data-theme="dark"] .venta-main .accordion-header .text-muted,
+[data-theme="dark"] .compra-main .accordion-item .text-muted,
+[data-theme="dark"] .compra-main .accordion-header .text-muted,
+[data-theme="dark"] .venta-main .accordion-item .text-secondary,
+[data-theme="dark"] .venta-main .accordion-header .text-secondary,
+[data-theme="dark"] .compra-main .accordion-item .text-secondary,
+[data-theme="dark"] .compra-main .accordion-header .text-secondary,
+[data-theme="dark"] .venta-main .accordion-item span,
+[data-theme="dark"] .venta-main .accordion-header span,
+[data-theme="dark"] .compra-main .accordion-item span,
+[data-theme="dark"] .compra-main .accordion-header span {
+  color: #fff !important;
+  opacity: 1 !important;
+} 
+
+[data-theme="dark"] .card-header.bg-gradient,
+[data-theme="dark"] .card-header,
+[data-theme="dark"] .section-title,
+[data-theme="dark"] .block-title {
+  background: #323232 !important;
+  background-color: #323232 !important;
+  color: #fff !important;
+  border-bottom: 1.5px solid #444 !important;
+} 
+
+/* DataTables en modo oscuro */
+[data-theme="dark"] table.dataTable,
+[data-theme="dark"] .dataTables_wrapper .table {
+  background: #232323 !important;
+  color: #fff !important;
+  border-color: #444 !important;
+}
+[data-theme="dark"] table.dataTable th,
+[data-theme="dark"] .dataTables_wrapper .table th {
+  background: #18191a !important;
+  color: #fff !important;
+  border-color: #444 !important;
+}
+[data-theme="dark"] table.dataTable td,
+[data-theme="dark"] .dataTables_wrapper .table td {
+  background: #232323 !important;
+  color: #fff !important;
+  border-color: #444 !important;
+}
+[data-theme="dark"] table.dataTable tbody tr:nth-child(odd),
+[data-theme="dark"] .dataTables_wrapper .table tbody tr:nth-child(odd) {
+  background: #282828 !important;
+}
+[data-theme="dark"] table.dataTable tbody tr:nth-child(even),
+[data-theme="dark"] .dataTables_wrapper .table tbody tr:nth-child(even) {
+  background: #232323 !important;
+}
+[data-theme="dark"] table.dataTable tbody tr:hover,
+[data-theme="dark"] .dataTables_wrapper .table tbody tr:hover {
+  background: #333 !important;
+}
+[data-theme="dark"] .dataTables_wrapper .dataTables_paginate .paginate_button {
+  background: #232323 !important;
+  color: #fff !important;
+  border: 1px solid #444 !important;
+}
+[data-theme="dark"] .dataTables_wrapper .dataTables_paginate .paginate_button.current,
+[data-theme="dark"] .dataTables_wrapper .dataTables_paginate .paginate_button.current:hover {
+  background: #fff !important;
+  color: #232323 !important;
+  border: 1px solid #fff !important;
+}
+[data-theme="dark"] .dataTables_wrapper .dataTables_filter input,
+[data-theme="dark"] .dataTables_wrapper .dataTables_length select {
+  background: #fff !important;
+  color: #232323 !important;
+  border: 1.5px solid #444 !important;
+} 
+
+[data-theme="dark"] .table .text-muted,
+[data-theme="dark"] .table .fst-italic,
+[data-theme="dark"] .table .text-secondary,
+[data-theme="dark"] .card .text-muted,
+[data-theme="dark"] .card .fst-italic,
+[data-theme="dark"] .card .text-secondary {
+  color: rgba(255,255,255,0.8) !important;
+}
+
+/* Modales en modo oscuro */
+[data-theme="dark"] .modal-content {
+  background: #282828 !important;
+  border: 1px solid #444 !important;
+  color: #fff !important;
+}
+
+[data-theme="dark"] .modal-header {
+  background: #323232 !important;
+  border-bottom: 1px solid #444 !important;
+  color: #fff !important;
+}
+
+/* Preservar colores originales de títulos de modales */
+[data-theme="dark"] .modal-header .modal-title {
+  color: inherit !important;
+}
+
+/* Preservar colores específicos de headers de modales */
+[data-theme="dark"] .modal-header.bg-primary {
+  background: #0d6efd !important;
+  color: #fff !important;
+}
+
+[data-theme="dark"] .modal-header.bg-warning {
+  background: #ffc107 !important;
+  color: #000 !important;
+}
+
+[data-theme="dark"] .modal-header.bg-danger {
+  background: #dc3545 !important;
+  color: #fff !important;
+}
+
+[data-theme="dark"] .modal-header.bg-success {
+  background: #198754 !important;
+  color: #fff !important;
+}
+
+[data-theme="dark"] .modal-header.bg-info {
+  background: #0dcaf0 !important;
+  color: #000 !important;
+}
+
+[data-theme="dark"] .modal-header.bg-secondary {
+  background: #6c757d !important;
+  color: #fff !important;
+}
+
+/* Ajustar botones de cerrar según el color del header */
+[data-theme="dark"] .modal-header.bg-primary .btn-close,
+[data-theme="dark"] .modal-header.bg-danger .btn-close,
+[data-theme="dark"] .modal-header.bg-success .btn-close,
+[data-theme="dark"] .modal-header.bg-secondary .btn-close {
+  filter: brightness(0) invert(1) !important;
+}
+
+[data-theme="dark"] .modal-header.bg-warning .btn-close,
+[data-theme="dark"] .modal-header.bg-info .btn-close {
+  filter: none !important;
+}
+
+[data-theme="dark"] .modal-body {
+  background: #282828 !important;
+  color: #fff !important;
+}
+
+/* Inputs específicos en modales - fondo gris oscuro neutro */
+[data-theme="dark"] .modal-body input[type="text"],
+[data-theme="dark"] .modal-body input[type="number"],
+[data-theme="dark"] .modal-body input[type="date"],
+[data-theme="dark"] .modal-body input[type="email"],
+[data-theme="dark"] .modal-body input[type="password"],
+[data-theme="dark"] .modal-body textarea,
+[data-theme="dark"] .modal-body .form-control {
+  background-color: #23272b !important;
+  color: #fff !important;
+  border: 2px solid #444 !important;
+}
+
+/* Hacer visible la flecha del select en modo oscuro - GLOBAL */
+[data-theme="dark"] .form-select,
+[data-theme="dark"] select.form-select,
+[data-theme="dark"] .modal-body .form-select,
+[data-theme="dark"] .modal-body select {
+  background-color: #23272b !important;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23ffffff' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e") !important;
+  background-repeat: no-repeat !important;
+  background-position: right 0.75rem center !important;
+  background-size: 16px 12px !important;
+  color: #fff !important;
+}
+
+[data-theme="dark"] .modal-body input[type="text"]:focus,
+[data-theme="dark"] .modal-body input[type="number"]:focus,
+[data-theme="dark"] .modal-body input[type="date"]:focus,
+[data-theme="dark"] .modal-body input[type="email"]:focus,
+[data-theme="dark"] .modal-body input[type="password"]:focus,
+[data-theme="dark"] .modal-body textarea:focus,
+[data-theme="dark"] .modal-body .form-control:focus {
+  background-color: #23272b !important;
+  color: #fff !important;
+  border-color: #444 !important;
+  box-shadow: 0 0 0 0.2rem rgba(68, 68, 68, 0.25) !important;
+  outline: none !important;
+}
+
+[data-theme="dark"] .modal-body select:focus,
+[data-theme="dark"] .modal-body .form-select:focus {
+  background-color: #23272b !important;
+  color: #fff !important;
+  border-color: #444 !important;
+  box-shadow: 0 0 0 0.2rem rgba(68, 68, 68, 0.25) !important;
+  outline: none !important;
+}
+
+/* Reglas adicionales para asegurar que no se use azul */
+[data-theme="dark"] .modal-body .form-control:focus,
+[data-theme="dark"] .modal-body .form-select:focus,
+[data-theme="dark"] .modal-body input:focus,
+[data-theme="dark"] .modal-body textarea:focus,
+[data-theme="dark"] .modal-body select:focus {
+  border-color: #6b7280 !important;
+  box-shadow: 0 0 0 0.2rem rgba(107, 114, 128, 0.25) !important;
+  outline: none !important;
+}
+
+[data-theme="dark"] .modal-body input[type="text"]::placeholder,
+[data-theme="dark"] .modal-body input[type="number"]::placeholder,
+[data-theme="dark"] .modal-body input[type="date"]::placeholder,
+[data-theme="dark"] .modal-body input[type="email"]::placeholder,
+[data-theme="dark"] .modal-body input[type="password"]::placeholder,
+[data-theme="dark"] .modal-body textarea::placeholder {
+  color: #9ca3af !important;
+  opacity: 1 !important;
+}
+
+[data-theme="dark"] .modal-footer {
+  background: #323232 !important;
+  border-top: 1px solid #444 !important;
+  color: #fff !important;
+}
+
+
+
+[data-theme="dark"] .modal-body .text-muted {
+  color: rgba(255,255,255,0.7) !important;
+}
+
+[data-theme="dark"] .modal-body strong {
+  color: #fff !important;
+}
+
+/* Excepción: mantener colores originales en alert-info dentro de modales */
+[data-theme="dark"] .modal-body .alert-info strong {
+  color: #0c5460 !important;
+}
+
+[data-theme="dark"] .modal-body .alert-info i {
+  color: #0c5460 !important;
+}
+
+[data-theme="dark"] .modal-body ul li {
+  color: #fff !important;
+}
+
+[data-theme="dark"] .modal-body ul li .text-warning {
+  color: #ffc107 !important;
+} 
+
+/* Filtros de ventas, compras y reembolso en modo oscuro */
+[data-theme="dark"] form.row.g-3 input.form-control,
+[data-theme="dark"] form.row.g-3 select.form-control,
+[data-theme="dark"] form.row.g-3 select.form-select,
+[data-theme="dark"] form.row.g-3 input[type="date"],
+[data-theme="dark"] form.row.g-3 input[type="text"],
+[data-theme="dark"] form.row.g-3 select,
+[data-theme="dark"] form.mb-3 input.form-control,
+[data-theme="dark"] form.mb-3 select.form-control,
+[data-theme="dark"] form.mb-3 select.form-select,
+[data-theme="dark"] form.mb-3 input[type="date"],
+[data-theme="dark"] form.mb-3 input[type="text"],
+[data-theme="dark"] form.mb-3 select {
+  background: #23272b !important;
+  color: #fff !important;
+  border: 2px solid #444 !important;
+  border-radius: 8px !important;
+}
+[data-theme="dark"] form.row.g-3 input.form-control:focus,
+[data-theme="dark"] form.row.g-3 select.form-control:focus,
+[data-theme="dark"] form.row.g-3 select.form-select:focus,
+[data-theme="dark"] form.row.g-3 input[type="date"]:focus,
+[data-theme="dark"] form.row.g-3 input[type="text"]:focus,
+[data-theme="dark"] form.row.g-3 select:focus,
+[data-theme="dark"] form.mb-3 input.form-control:focus,
+[data-theme="dark"] form.mb-3 select.form-control:focus,
+[data-theme="dark"] form.mb-3 select.form-select:focus,
+[data-theme="dark"] form.mb-3 input[type="date"]:focus,
+[data-theme="dark"] form.mb-3 input[type="text"]:focus,
+[data-theme="dark"] form.mb-3 select:focus {
+  background: #23272b !important;
+  color: #fff !important;
+  border-color: #444 !important;
+  box-shadow: 0 0 0 0.2rem rgba(68, 68, 68, 0.25) !important;
+  outline: none !important;
+}
+
+/* Estilos para filtros en modo claro (ventas, compras, estadísticas) */
+form.row.g-3 input.form-control,
+form.row.g-3 select.form-control,
+form.row.g-3 select.form-select,
+form.row.g-3 input[type="date"],
+form.row.g-3 input[type="text"],
+form.row.g-3 select,
+form.mb-3 input.form-control,
+form.mb-3 select.form-control,
+form.mb-3 select.form-select,
+form.mb-3 input[type="date"],
+form.mb-3 input[type="text"],
+form.mb-3 select {
+  background: #ffffff !important;
+  color: #374151 !important;
+  border: 1px solid #d1d5db !important;
+  border-radius: 8px !important;
+  transition: all 0.15s ease !important;
+}
+
+form.row.g-3 input.form-control:focus,
+form.row.g-3 select.form-control:focus,
+form.row.g-3 select.form-select:focus,
+form.row.g-3 input[type="date"]:focus,
+form.row.g-3 input[type="text"]:focus,
+form.row.g-3 select:focus,
+form.mb-3 input.form-control:focus,
+form.mb-3 select.form-control:focus,
+form.mb-3 select.form-select:focus,
+form.mb-3 input[type="date"]:focus,
+form.mb-3 input[type="text"]:focus,
+form.mb-3 select:focus {
+  background: #ffffff !important;
+  color: #374151 !important;
+  border-color: #3b82f6 !important;
+  box-shadow: 0 0 0 0.2rem rgba(59, 130, 246, 0.25) !important;
+  outline: none !important;
+}
+
+/* Estilos específicos para filtros con rounded-pill - mantener diseño original */
+form input.form-control.rounded-pill,
+form select.form-control.rounded-pill,
+form select.form-select.rounded-pill,
+form input[type="date"].rounded-pill,
+form input[type="text"].rounded-pill,
+form select.rounded-pill {
+  background: #ffffff !important;
+  color: #374151 !important;
+  border: 1px solid #d1d5db !important;
+  border-radius: 50rem !important; /* Mantener diseño original de Bootstrap */
+  transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out, border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out !important;
+}
+
+form input.form-control.rounded-pill:focus,
+form select.form-control.rounded-pill:focus,
+form select.form-select.rounded-pill:focus,
+form input[type="date"].rounded-pill:focus,
+form input[type="text"].rounded-pill:focus,
+form select.rounded-pill:focus {
+  background: #ffffff !important;
+  color: #374151 !important;
+  border-color: #3b82f6 !important;
+  box-shadow: 0 0 0 0.2rem rgba(59, 130, 246, 0.25) !important;
+  outline: none !important;
+}
+
+/* Estilos para filtros con rounded-pill en modo oscuro - solo cambiar colores */
+[data-theme="dark"] form input.form-control.rounded-pill,
+[data-theme="dark"] form select.form-control.rounded-pill,
+[data-theme="dark"] form select.form-select.rounded-pill,
+[data-theme="dark"] form input[type="date"].rounded-pill,
+[data-theme="dark"] form input[type="text"].rounded-pill,
+[data-theme="dark"] form select.rounded-pill {
+  background: #23272b !important;
+  color: #fff !important;
+  border: 2px solid #444 !important;
+  border-radius: 50rem !important; /* Mantener la misma forma que en modo claro */
+  transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out, border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out !important;
+}
+
+[data-theme="dark"] form input.form-control.rounded-pill:focus,
+[data-theme="dark"] form select.form-control.rounded-pill:focus,
+[data-theme="dark"] form select.form-select.rounded-pill:focus,
+[data-theme="dark"] form input[type="date"].rounded-pill:focus,
+[data-theme="dark"] form input[type="text"].rounded-pill:focus,
+[data-theme="dark"] form select.rounded-pill:focus {
+  background: #23272b !important;
+  color: #fff !important;
+  border-color: #444 !important;
+  box-shadow: 0 0 0 0.2rem rgba(68, 68, 68, 0.25) !important;
+  outline: none !important;
+}
+
+/* Estilos para botones de filtro en ventas y compras - mantener diseño original */
+form .btn {
+  /* Mantener diseño original de Bootstrap */
+  border-radius: 0.375rem !important;
+  transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out, border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out !important;
+}
+
+form .btn-sm {
+  /* Mantener diseño original de Bootstrap */
+  border-radius: 0.25rem !important;
+  transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out, border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out !important;
+}
+
+form .btn.rounded-pill {
+  /* Mantener diseño original de Bootstrap */
+  border-radius: 50rem !important;
+  transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out, border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out !important;
+}
+
+/* Estilos para botones de filtro en modo oscuro - solo cambiar colores */
+[data-theme="dark"] form .btn {
+  /* Mantener la misma forma que en modo claro */
+  border-radius: 0.375rem !important;
+  transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out, border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out !important;
+}
+
+[data-theme="dark"] form .btn-sm {
+  /* Mantener la misma forma que en modo claro */
+  border-radius: 0.25rem !important;
+  transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out, border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out !important;
+}
+
+[data-theme="dark"] form .btn.rounded-pill {
+  /* Mantener la misma forma que en modo claro */
+  border-radius: 50rem !important;
+  transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out, border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out !important;
+}
+
+/* Estilos para filtros con border-primary */
+form input.form-control.border-primary,
+form select.form-control.border-primary,
+form select.form-select.border-primary,
+form input[type="date"].border-primary,
+form input[type="text"].border-primary,
+form select.border-primary {
+  background: #ffffff !important;
+  color: #374151 !important;
+  border: 2px solid #0d6efd !important;
+  transition: all 0.15s ease !important;
+}
+
+form input.form-control.border-primary:focus,
+form select.form-control.border-primary:focus,
+form select.form-select.border-primary:focus,
+form input[type="date"].border-primary:focus,
+form input[type="text"].border-primary:focus,
+form select.border-primary:focus {
+  background: #ffffff !important;
+  color: #374151 !important;
+  border-color: #0d6efd !important;
+  box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25) !important;
+  outline: none !important;
+}
+
+/* Estilos para filtros form-select-sm - mantener diseño original */
+form .form-select.form-select-sm {
+  background: #ffffff !important;
+  color: #374151 !important;
+  border: 1px solid #d1d5db !important;
+  border-radius: 0.375rem !important; /* Mantener diseño original de Bootstrap */
+  font-size: 0.875rem !important;
+  padding: 0.25rem 0.5rem !important;
+  transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out, border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out !important;
+}
+
+form .form-select.form-select-sm:focus {
+  background: #ffffff !important;
+  color: #374151 !important;
+  border-color: #3b82f6 !important;
+  box-shadow: 0 0 0 0.2rem rgba(59, 130, 246, 0.25) !important;
+  outline: none !important;
+}
+
+/* Estilos para filtros form-select-sm en modo oscuro - solo cambiar colores */
+[data-theme="dark"] form .form-select.form-select-sm {
+  background: #23272b !important;
+  color: #fff !important;
+  border: 2px solid #444 !important;
+  border-radius: 0.375rem !important; /* Mantener la misma forma que en modo claro */
+  font-size: 0.875rem !important;
+  padding: 0.25rem 0.5rem !important;
+  transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out, border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out !important;
+}
+
+[data-theme="dark"] form .form-select.form-select-sm:focus {
+  background: #23272b !important;
+  color: #fff !important;
+  border-color: #444 !important;
+  box-shadow: 0 0 0 0.2rem rgba(68, 68, 68, 0.25) !important;
+  outline: none !important;
+} 
+
+/* Autocompletado en modo oscuro */
+[data-theme="dark"] .autocomplete-suggestions,
+[data-theme="dark"] .list-group#autocomplete_suggestions {
+  background: #23272b !important;
+  color: #fff !important;
+  border: 1.5px solid #444 !important;
+  border-radius: 8px !important;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.25) !important;
+}
+[data-theme="dark"] .autocomplete-suggestion,
+[data-theme="dark"] .list-group#autocomplete_suggestions .list-group-item {
+  background: #23272b !important;
+  color: #fff !important;
+  border-bottom: 1px solid #444 !important;
+}
+[data-theme="dark"] .autocomplete-suggestion:hover,
+[data-theme="dark"] .autocomplete-suggestion.selected,
+[data-theme="dark"] .list-group#autocomplete_suggestions .list-group-item:hover,
+[data-theme="dark"] .list-group#autocomplete_suggestions .list-group-item.active {
+  background: #444 !important;
+  color: #fff !important;
+}
+[data-theme="dark"] .autocomplete-suggestion:last-child,
+[data-theme="dark"] .list-group#autocomplete_suggestions .list-group-item:last-child {
+  border-bottom: none !important;
+} 
+
+/* Refuerzo global para autocompletado en modo oscuro */
+[data-theme="dark"] .list-group-item,
+[data-theme="dark"] .list-group-item-action {
+  background: #23272b !important;
+  color: #fff !important;
+  border-bottom: 1px solid #444 !important;
+}
+[data-theme="dark"] .list-group-item:hover,
+[data-theme="dark"] .list-group-item-action:hover,
+[data-theme="dark"] .list-group-item.active,
+[data-theme="dark"] .list-group-item-action.active {
+  background: #444 !important;
+  color: #fff !important;
+}
+[data-theme="dark"] .list-group-item:last-child,
+[data-theme="dark"] .list-group-item-action:last-child {
+  border-bottom: none !important;
+} 
+
+/* Asegurar que los controles de DataTables tengan el mismo tamaño en compra y venta en modo oscuro */
+[data-theme="dark"] .compra-main .dataTables_wrapper .dataTables_length select,
+[data-theme="dark"] .venta-main .dataTables_wrapper .dataTables_length select,
+[data-theme="dark"] .compra-main .dataTables_wrapper .dataTables_filter input,
+[data-theme="dark"] .venta-main .dataTables_wrapper .dataTables_filter input {
+  background: #fff !important;
+  color: #232323 !important;
+  border: 1.5px solid #444 !important;
+  font-size: 0.8rem !important;
+  padding: 0.25rem 0.5rem !important;
+  border-radius: 6px !important;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
+  width: 100px !important;
+  max-width: 100px !important;
+  min-width: 100px !important;
+  box-sizing: border-box !important;
+}
+
+[data-theme="dark"] .compra-main .dataTables_wrapper .dataTables_length select:focus,
+[data-theme="dark"] .venta-main .dataTables_wrapper .dataTables_length select:focus,
+[data-theme="dark"] .compra-main .dataTables_wrapper .dataTables_filter input:focus,
+[data-theme="dark"] .venta-main .dataTables_wrapper .dataTables_filter input:focus {
+  border-color: #3b82f6 !important;
+  outline: none !important;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
+  width: 100px !important;
+  max-width: 100px !important;
+  min-width: 100px !important;
+}
+
+[data-theme="dark"] .compra-main .dataTables_wrapper .dataTables_length label,
+[data-theme="dark"] .venta-main .dataTables_wrapper .dataTables_length label,
+[data-theme="dark"] .compra-main .dataTables_wrapper .dataTables_filter label,
+[data-theme="dark"] .venta-main .dataTables_wrapper .dataTables_filter label {
+  color: #e5e7eb !important;
+  font-size: 0.8rem !important;
+  font-weight: 500 !important;
+  margin-bottom: 0.5rem !important;
+}
+
+/* Asegurar que los controles tengan el mismo tamaño en móviles en modo oscuro */
+@media (max-width: 768px) {
+  [data-theme="dark"] .compra-main .dataTables_wrapper .dataTables_length select,
+  [data-theme="dark"] .venta-main .dataTables_wrapper .dataTables_length select,
+  [data-theme="dark"] .compra-main .dataTables_wrapper .dataTables_filter input,
+  [data-theme="dark"] .venta-main .dataTables_wrapper .dataTables_filter input {
+    font-size: 0.75rem !important;
+    padding: 0.2rem 0.4rem !important;
+    min-width: 80px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  [data-theme="dark"] .compra-main .dataTables_wrapper .dataTables_length select,
+  [data-theme="dark"] .venta-main .dataTables_wrapper .dataTables_length select,
+  [data-theme="dark"] .compra-main .dataTables_wrapper .dataTables_filter input,
+  [data-theme="dark"] .venta-main .dataTables_wrapper .dataTables_filter input {
+    font-size: 0.7rem !important;
+    padding: 0.15rem 0.3rem !important;
+    min-width: 70px !important;
+  }
+} 
+
+/* Mejoras de bordes redondeados para modo oscuro */
+[data-theme="dark"] .modal-content {
+  border-radius: 12px !important;
+  overflow: hidden !important;
+}
+
+[data-theme="dark"] .modal-header {
+  border-radius: 12px 12px 0 0 !important;
+}
+
+[data-theme="dark"] .modal-footer {
+  border-radius: 0 0 12px 12px !important;
+}
+
+[data-theme="dark"] .modal-body {
+  border-radius: 0 !important;
+}
+
+/* Inputs y controles de formulario con bordes redondeados */
+[data-theme="dark"] .modal-body input[type="text"],
+[data-theme="dark"] .modal-body input[type="number"],
+[data-theme="dark"] .modal-body input[type="date"],
+[data-theme="dark"] .modal-body input[type="email"],
+[data-theme="dark"] .modal-body input[type="password"],
+[data-theme="dark"] .modal-body textarea,
+[data-theme="dark"] .modal-body select,
+[data-theme="dark"] .modal-body .form-control,
+[data-theme="dark"] .modal-body .form-select {
+  border-radius: 8px !important;
+}
+
+/* Filtros de formularios con bordes redondeados */
+[data-theme="dark"] form.row.g-3 input.form-control,
+[data-theme="dark"] form.row.g-3 select.form-control,
+[data-theme="dark"] form.row.g-3 select.form-select,
+[data-theme="dark"] form.row.g-3 input[type="date"],
+[data-theme="dark"] form.row.g-3 input[type="text"],
+[data-theme="dark"] form.row.g-3 select,
+[data-theme="dark"] form.mb-3 input.form-control,
+[data-theme="dark"] form.mb-3 select.form-control,
+[data-theme="dark"] form.mb-3 select.form-select,
+[data-theme="dark"] form.mb-3 input[type="date"],
+[data-theme="dark"] form.mb-3 input[type="text"],
+[data-theme="dark"] form.mb-3 select {
+  border-radius: 8px !important;
+}
+
+/* Autocompletado con bordes redondeados mejorados */
+[data-theme="dark"] .autocomplete-suggestions,
+[data-theme="dark"] .list-group#autocomplete_suggestions {
+  border-radius: 12px !important;
+  overflow: hidden !important;
+}
+
+[data-theme="dark"] .autocomplete-suggestion,
+[data-theme="dark"] .list-group#autocomplete_suggestions .list-group-item {
+  border-radius: 0 !important;
+}
+
+[data-theme="dark"] .autocomplete-suggestion:first-child,
+[data-theme="dark"] .list-group#autocomplete_suggestions .list-group-item:first-child {
+  border-radius: 12px 12px 0 0 !important;
+}
+
+[data-theme="dark"] .autocomplete-suggestion:last-child,
+[data-theme="dark"] .list-group#autocomplete_suggestions .list-group-item:last-child {
+  border-radius: 0 0 12px 12px !important;
+  border-bottom: none !important;
+}
+
+/* Cards y bloques de contenido con bordes redondeados */
+[data-theme="dark"] .card {
+  border-radius: 12px !important;
+  overflow: hidden !important;
+}
+
+[data-theme="dark"] .card-header {
+  border-radius: 12px 12px 0 0 !important;
+}
+
+[data-theme="dark"] .card-footer {
+  border-radius: 0 0 12px 12px !important;
+}
+
+/* Botones con bordes redondeados consistentes */
+/* Botones - mantener diseño original en modo claro */
+.btn {
+  /* Mantener diseño original de Bootstrap */
+  border-radius: 0.375rem !important;
+  transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out, border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out !important;
+}
+
+.btn-sm {
+  /* Mantener diseño original de Bootstrap */
+  border-radius: 0.25rem !important;
+  transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out, border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out !important;
+}
+
+.btn-lg {
+  /* Mantener diseño original de Bootstrap */
+  border-radius: 0.5rem !important;
+  transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out, border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out !important;
+}
+
+.btn.rounded-pill {
+  /* Mantener diseño original de Bootstrap */
+  border-radius: 50rem !important;
+  transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out, border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out !important;
+}
+
+/* Botones en modo oscuro - solo cambiar colores, mantener forma */
+[data-theme="dark"] .btn {
+  /* Mantener la misma forma que en modo claro */
+  border-radius: 0.375rem !important;
+  transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out, border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out !important;
+}
+
+[data-theme="dark"] .btn-sm {
+  /* Mantener la misma forma que en modo claro */
+  border-radius: 0.25rem !important;
+  transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out, border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out !important;
+}
+
+[data-theme="dark"] .btn-lg {
+  /* Mantener la misma forma que en modo claro */
+  border-radius: 0.5rem !important;
+  transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out, border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out !important;
+}
+
+[data-theme="dark"] .btn.rounded-pill {
+  /* Mantener la misma forma que en modo claro */
+  border-radius: 50rem !important;
+  transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out, border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out !important;
+}
+
+/* ============================================
+   ESTILOS DE BOTONES EN MODO OSCURO
+   Mejorar visibilidad de bordes
+   ============================================ */
+
+/* Reset general para todos los botones outline en modo oscuro */
+[data-theme="dark"] .btn[class*="btn-outline"] {
+  box-shadow: none !important;
+  -webkit-box-shadow: none !important;
+  -moz-box-shadow: none !important;
+  outline: none !important;
+  background-image: none !important;
+  -webkit-appearance: none !important;
+  -moz-appearance: none !important;
+}
+
+[data-theme="dark"] .btn[class*="btn-outline"]:hover,
+[data-theme="dark"] .btn[class*="btn-outline"]:focus,
+[data-theme="dark"] .btn[class*="btn-outline"]:active {
+  box-shadow: none !important;
+  -webkit-box-shadow: none !important;
+  -moz-box-shadow: none !important;
+  outline: none !important;
+  background-image: none !important;
+}
+
+/* Botones outline en modo oscuro - usar fondo sólido oscuro para evitar anti-aliasing */
+[data-theme="dark"] .btn-outline-primary {
+  color: #60a5fa !important;
+  border: 1px solid #60a5fa !important;
+  background-color: #1f2937 !important;
+}
+
+[data-theme="dark"] .btn-outline-primary:hover {
+  color: #fff !important;
+  background-color: #3b82f6 !important;
+  border: 1px solid #3b82f6 !important;
+}
+
+[data-theme="dark"] .btn-outline-secondary {
+  color: #9ca3af !important;
+  border: 1px solid #6b7280 !important;
+  background-color: #1f2937 !important;
+}
+
+[data-theme="dark"] .btn-outline-secondary:hover {
+  color: #fff !important;
+  background-color: #4b5563 !important;
+  border: 1px solid #4b5563 !important;
+}
+
+[data-theme="dark"] .btn-outline-success {
+  color: #34d399 !important;
+  border: 1px solid #34d399 !important;
+  background-color: #1f2937 !important;
+}
+
+[data-theme="dark"] .btn-outline-success:hover {
+  color: #fff !important;
+  background-color: #10b981 !important;
+  border: 1px solid #10b981 !important;
+}
+
+[data-theme="dark"] .btn-outline-danger {
+  color: #f87171 !important;
+  border: 1px solid #f87171 !important;
+  background-color: #1f2937 !important;
+}
+
+[data-theme="dark"] .btn-outline-danger:hover {
+  color: #fff !important;
+  background-color: #ef4444 !important;
+  border: 1px solid #ef4444 !important;
+}
+
+[data-theme="dark"] .btn-outline-warning {
+  color: #fbbf24 !important;
+  border: 1px solid #fbbf24 !important;
+  background-color: #1f2937 !important;
+}
+
+[data-theme="dark"] .btn-outline-warning:hover {
+  color: #000 !important;
+  background-color: #f59e0b !important;
+  border: 1px solid #f59e0b !important;
+}
+
+[data-theme="dark"] .btn-outline-info {
+  color: #22d3ee !important;
+  border: 1px solid #22d3ee !important;
+  background-color: #1f2937 !important;
+}
+
+[data-theme="dark"] .btn-outline-info:hover {
+  color: #000 !important;
+  background-color: #06b6d4 !important;
+  border: 1px solid #06b6d4 !important;
+}
+
+/* Botones sólidos en modo oscuro - mantener colores originales de Bootstrap */
+/* Solo ajustar btn-secondary para mejor visibilidad */
+[data-theme="dark"] .btn-secondary {
+  background-color: #6c757d !important;
+  border: 1px solid #6c757d !important;
+  color: #fff !important;
+}
+
+[data-theme="dark"] .btn-secondary:hover {
+  background-color: #5c636a !important;
+  border: 1px solid #565e64 !important;
+}
+
+/* Botón de cerrar sesión en topbar - modo oscuro */
+[data-theme="dark"] .topbar a[href*="logout"] {
+  border: 1px solid #6b7280 !important;
+  color: #e5e7eb !important;
+  background-color: #374151 !important;
+}
+
+[data-theme="dark"] .topbar a[href*="logout"]:hover {
+  background-color: #4b5563 !important;
+  border: 1px solid #9ca3af !important;
+  color: #fff !important;
+}
+
+/* Botón de tema en topbar - modo oscuro */
+[data-theme="dark"] #themeToggle {
+  border: 1px solid #6b7280 !important;
+  color: #e5e7eb !important;
+  background-color: #374151 !important;
+}
+
+[data-theme="dark"] #themeToggle:hover {
+  background-color: #4b5563 !important;
+  border: 1px solid #9ca3af !important;
+}
+
+/* Badges con bordes redondeados */
+[data-theme="dark"] .badge {
+  border-radius: 6px !important;
+}
+
+/* Alertas con bordes redondeados */
+[data-theme="dark"] .alert {
+  border-radius: 10px !important;
+}
+
+/* Dropdowns con bordes redondeados */
+[data-theme="dark"] .dropdown-menu {
+  border-radius: 10px !important;
+  overflow: hidden !important;
+}
+
+[data-theme="dark"] .dropdown-item {
+  border-radius: 0 !important;
+}
+
+[data-theme="dark"] .dropdown-item:first-child {
+  border-radius: 10px 10px 0 0 !important;
+}
+
+[data-theme="dark"] .dropdown-item:last-child {
+  border-radius: 0 0 10px 10px !important;
+}
+
+/* Acordeones con bordes redondeados */
+[data-theme="dark"] .accordion-item {
+  border-radius: 12px !important;
+  overflow: hidden !important;
+  margin-bottom: 8px !important;
+}
+
+[data-theme="dark"] .accordion-button {
+  border-radius: 12px 12px 0 0 !important;
+}
+
+[data-theme="dark"] .accordion-button.collapsed {
+  border-radius: 12px !important;
+}
+
+/* Flecha del acordeón en blanco para modo oscuro */
+[data-theme="dark"] .accordion-button::after {
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%23ffffff'%3e%3cpath fill-rule='evenodd' d='M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z'/%3e%3c/svg%3e") !important;
+  filter: none !important;
+}
+
+[data-theme="dark"] .accordion-button:not(.collapsed)::after {
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%23ffffff'%3e%3cpath fill-rule='evenodd' d='M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z'/%3e%3c/svg%3e") !important;
+  filter: none !important;
+}
+
+[data-theme="dark"] .accordion-body {
+  border-radius: 0 0 12px 12px !important;
+}
+
+/* Tablas dentro de modales y cards con bordes redondeados */
+[data-theme="dark"] .modal-body .table,
+[data-theme="dark"] .card-body .table {
+  border-radius: 8px !important;
+  overflow: hidden !important;
+}
+
+[data-theme="dark"] .modal-body .table thead th:first-child,
+[data-theme="dark"] .card-body .table thead th:first-child {
+  border-top-left-radius: 8px !important;
+}
+
+[data-theme="dark"] .modal-body .table thead th:last-child,
+[data-theme="dark"] .card-body .table thead th:last-child {
+  border-top-right-radius: 8px !important;
+}
+
+[data-theme="dark"] .modal-body .table tbody tr:last-child td:first-child,
+[data-theme="dark"] .card-body .table tbody tr:last-child td:first-child {
+  border-bottom-left-radius: 8px !important;
+}
+
+[data-theme="dark"] .modal-body .table tbody tr:last-child td:last-child,
+[data-theme="dark"] .card-body .table tbody tr:last-child td:last-child {
+  border-bottom-right-radius: 8px !important;
+}
+
+/* Inputs de búsqueda y filtros con bordes redondeados */
+[data-theme="dark"] .search-input input,
+[data-theme="dark"] .action-bar .form-control[type="text"],
+[data-theme="dark"] input[type="text"] {
+  border-radius: 8px !important;
+}
+
+/* Controles de DataTables con bordes redondeados */
+[data-theme="dark"] .compra-main .dataTables_wrapper .dataTables_length select,
+[data-theme="dark"] .venta-main .dataTables_wrapper .dataTables_length select,
+[data-theme="dark"] .compra-main .dataTables_wrapper .dataTables_filter input,
+[data-theme="dark"] .venta-main .dataTables_wrapper .dataTables_filter input {
+  border-radius: 8px !important;
+}
+
+/* Paginación con bordes redondeados */
+[data-theme="dark"] .dataTables_wrapper .dataTables_paginate .paginate_button {
+  border-radius: 6px !important;
+}
+
+/* Tooltips con bordes redondeados */
+[data-theme="dark"] .tooltip .tooltip-inner {
+  border-radius: 8px !important;
+}
+
+/* Popovers con bordes redondeados */
+[data-theme="dark"] .popover {
+  border-radius: 10px !important;
+}
+
+/* Progress bars con bordes redondeados */
+[data-theme="dark"] .progress {
+  border-radius: 8px !important;
+}
+
+[data-theme="dark"] .progress-bar {
+  border-radius: 8px !important;
+}
+
+/* List groups con bordes redondeados */
+[data-theme="dark"] .list-group {
+  border-radius: 10px !important;
+  overflow: hidden !important;
+}
+
+[data-theme="dark"] .list-group-item:first-child {
+  border-radius: 10px 10px 0 0 !important;
+}
+
+[data-theme="dark"] .list-group-item:last-child {
+  border-radius: 0 0 10px 10px !important;
+}
+
+/* Formularios con bordes redondeados */
+[data-theme="dark"] .form-floating > .form-control,
+[data-theme="dark"] .form-floating > .form-select {
+  border-radius: 8px !important;
+}
+
+[data-theme="dark"] .form-floating > label {
+  border-radius: 8px !important;
+}
+
+/* Input groups con bordes redondeados */
+[data-theme="dark"] .input-group .form-control,
+[data-theme="dark"] .input-group .form-select {
+  border-radius: 8px !important;
+}
+
+[data-theme="dark"] .input-group > .form-control:not(:last-child),
+[data-theme="dark"] .input-group > .form-select:not(:last-child) {
+  border-top-right-radius: 0 !important;
+  border-bottom-right-radius: 0 !important;
+}
+
+[data-theme="dark"] .input-group > .form-control:not(:first-child),
+[data-theme="dark"] .input-group > .form-select:not(:first-child) {
+  border-top-left-radius: 0 !important;
+  border-bottom-left-radius: 0 !important;
+}  

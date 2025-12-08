@@ -1,0 +1,1951 @@
+{% extends 'home/base_main.html' %}
+{% load humanize %}
+{% load static %}
+{% load table_tags %}
+
+{% block title %}Productos - Inventario{% endblock %}
+
+{% block content %}
+<h1 class="fw-bold mb-0 mt-6 mb-2">Productos</h1>
+
+<div class="action-bar d-flex align-items-center justify-content-between mb-3">
+  <div class="d-flex align-items-center gap-2">
+    <button
+      type="button"
+      class="btn btn-primary"
+      id="addProductoBtn"
+      title="Agregar producto"
+    >
+      <i class="bi bi-plus-circle"></i>
+    </button>
+
+    <button
+      type="button"
+      class="btn btn-secondary"
+      id="scanCodeBtn"
+      title="Escanear código"
+    >
+      <i class="bi bi-upc-scan"></i>
+    </button>
+
+    <button
+      type="button"
+      class="btn btn-outline-primary"
+      id="filterBtn"
+      title="Filtrar por marca y categoría"
+      onclick="toggleFilterPanel()"
+    >
+      <i class="bi bi-sliders me-1"></i>
+      <span>Filtros</span>
+      <span class="ms-1" id="filterCount">({{ filter_marcas|length|add:filter_categorias|length|add:filter_estados|length }})</span>
+    </button>
+
+    <form method="get" action="" class="d-inline">
+      {% if sort_field %}
+        <input type="hidden" name="sort" value="{{ sort_field }}">
+      {% endif %}
+      {% if order %}
+        <input type="hidden" name="order" value="{{ order }}">
+      {% endif %}
+      {% if request.GET.per_page %}
+        <input type="hidden" name="per_page" value="{{ request.GET.per_page }}">
+      {% endif %}
+      {% for marca in filter_marcas %}
+        <input type="hidden" name="filter_marca" value="{{ marca }}">
+      {% endfor %}
+      {% for categoria in filter_categorias %}
+        <input type="hidden" name="filter_categoria" value="{{ categoria }}">
+      {% endfor %}
+      {% for estado in filter_estados %}
+        <input type="hidden" name="filter_estado" value="{{ estado }}">
+      {% endfor %}
+      <input
+        type="text"
+        class="form-control"
+        name="search"
+        placeholder="Buscar producto..."
+        aria-label="Buscar producto"
+        id="searchProductos"
+        value="{{ search_query }}"
+        style="max-width: 300px;"
+      />
+    </form>
+    
+    {% if filter_marcas or filter_categorias or filter_estados %}
+      <div class="d-flex align-items-center gap-2 ms-2 flex-wrap">
+        {% for marca in filter_marcas %}
+          <span class="badge bg-primary">
+            Marca: {{ marca }}
+            <a href="?{% if search_query %}search={{ search_query }}&{% endif %}{% if sort_field %}sort={{ sort_field }}&order={{ order }}&{% endif %}{% for m in filter_marcas %}{% if m != marca %}filter_marca={{ m }}&{% endif %}{% endfor %}{% for c in filter_categorias %}filter_categoria={{ c }}&{% endfor %}{% for e in filter_estados %}filter_estado={{ e }}&{% endfor %}{% if request.GET.per_page %}per_page={{ request.GET.per_page }}{% endif %}" class="text-white ms-1" style="text-decoration: none;">×</a>
+          </span>
+        {% endfor %}
+        {% for categoria_id in filter_categorias %}
+          {% for cat in categorias %}
+            {% if cat.id_categoria|stringformat:"s" == categoria_id %}
+              <span class="badge bg-primary">
+                Categoría: {{ cat.nombre }}
+                <a href="?{% if search_query %}search={{ search_query }}&{% endif %}{% if sort_field %}sort={{ sort_field }}&order={{ order }}&{% endif %}{% for m in filter_marcas %}filter_marca={{ m }}&{% endfor %}{% for c in filter_categorias %}{% if c != categoria_id %}filter_categoria={{ c }}&{% endif %}{% endfor %}{% for e in filter_estados %}filter_estado={{ e }}&{% endfor %}{% if request.GET.per_page %}per_page={{ request.GET.per_page }}{% endif %}" class="text-white ms-1" style="text-decoration: none;">×</a>
+              </span>
+            {% endif %}
+          {% endfor %}
+        {% endfor %}
+        {% for estado in filter_estados %}
+          {% if estado == 'sin_stock' %}
+            <span class="badge bg-danger">
+              Estado: Sin stock
+              <a href="?{% if search_query %}search={{ search_query }}&{% endif %}{% if sort_field %}sort={{ sort_field }}&order={{ order }}&{% endif %}{% for m in filter_marcas %}filter_marca={{ m }}&{% endfor %}{% for c in filter_categorias %}filter_categoria={{ c }}&{% endfor %}{% for e in filter_estados %}{% if e != estado %}filter_estado={{ e }}&{% endif %}{% endfor %}{% if request.GET.per_page %}per_page={{ request.GET.per_page }}{% endif %}" class="text-white ms-1" style="text-decoration: none;">×</a>
+            </span>
+          {% elif estado == 'poco_stock' %}
+            <span class="badge bg-warning text-dark">
+              Estado: Poco stock
+              <a href="?{% if search_query %}search={{ search_query }}&{% endif %}{% if sort_field %}sort={{ sort_field }}&order={{ order }}&{% endif %}{% for m in filter_marcas %}filter_marca={{ m }}&{% endfor %}{% for c in filter_categorias %}filter_categoria={{ c }}&{% endfor %}{% for e in filter_estados %}{% if e != estado %}filter_estado={{ e }}&{% endif %}{% endfor %}{% if request.GET.per_page %}per_page={{ request.GET.per_page }}{% endif %}" class="text-dark ms-1" style="text-decoration: none;">×</a>
+            </span>
+          {% elif estado == 'en_stock' %}
+            <span class="badge bg-success">
+              Estado: En stock
+              <a href="?{% if search_query %}search={{ search_query }}&{% endif %}{% if sort_field %}sort={{ sort_field }}&order={{ order }}&{% endif %}{% for m in filter_marcas %}filter_marca={{ m }}&{% endfor %}{% for c in filter_categorias %}filter_categoria={{ c }}&{% endfor %}{% for e in filter_estados %}{% if e != estado %}filter_estado={{ e }}&{% endif %}{% endfor %}{% if request.GET.per_page %}per_page={{ request.GET.per_page }}{% endif %}" class="text-white ms-1" style="text-decoration: none;">×</a>
+            </span>
+          {% endif %}
+        {% endfor %}
+      </div>
+    {% endif %}
+  </div>
+</div>
+
+{% if productos %}
+  <div class="unified-table-wrapper" id="table-wrapper">
+    {% include 'producto/partials/table_content.html' %}
+  </div>
+{% else %}
+  <div class="card shadow-lg border-0">
+    <div class="card-body text-center px-4 py-4">
+      <div class="alert alert-info mb-0">No hay productos registrados.</div>
+    </div>
+  </div>
+{% endif %}
+
+<!-- Modal Escanear Código -->
+<div class="modal fade" id="scanCodeModal" tabindex="-1" aria-labelledby="scanCodeModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-sm">
+    <div class="modal-content text-center p-4" id="scanModalContent">
+      <!-- Contenido inicial: botones para elegir -->
+      <div id="scanOptions">
+        <h5 class="mb-3">Selecciona una opción</h5>
+        <div class="d-grid gap-2">
+          <button type="button" class="btn btn-primary" id="btnAddScan">
+            <i class="bi bi-plus-circle me-2"></i>Añadir producto por escáner
+          </button>
+          <button type="button" class="btn btn-secondary" id="btnSearchScan">
+            <i class="bi bi-search me-2"></i>Buscar producto por escáner
+          </button>
+        </div>
+      </div>
+
+      <!-- Contenido para escanear, oculto inicialmente -->
+      <div id="scanCodeUI" style="display:none;">
+        <i class="bi bi-upc-scan" style="font-size: 3rem;"></i>
+        <p class="mt-3 mb-2">Escanea el código de barras</p>
+        <p id="scanMessage" class="mt-3 text-danger small" style="display: none;"></p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Añadir Producto -->
+<div class="modal fade" id="addProductModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content border-0 shadow-lg rounded-4">
+      <form method="post" action="{% url 'agregar_producto' %}">
+        {% csrf_token %}
+        <div class="modal-header bg-primary text-white rounded-top-4">
+          <h5 class="modal-title fw-bold"><i class="bi bi-plus-circle me-2"></i> Añadir Nuevo Producto</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body px-4 py-3">
+          <div class="row">
+            <div class="col-12 col-md-6 mb-3">
+            <label for="add-nombre" class="form-label fw-semibold">Nombre</label>
+            <input type="text" id="add-nombre" name="nombre" class="form-control rounded px-3" required placeholder="Producto A, Item B, Artículo C" />
+          </div>
+            <div class="col-12 col-md-6 mb-3">
+            <label for="add-marca" class="form-label fw-semibold">Marca</label>
+            <input type="text" id="add-marca" name="marca" class="form-control rounded px-3" required placeholder="Marca X, Marca Y, Marca Z" />
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-12 col-md-6 mb-3 position-relative">
+            <label for="add-categoria" class="form-label fw-semibold">Categorías</label>
+            <div class="input-group position-relative" id="add-categoria-container" style="cursor: pointer; min-height: calc(1.5em + 0.75rem + 2px); padding: 0.375rem 45px 0.375rem 0.75rem; border: 1px solid #ced4da; border-radius: 0.375rem; background-color: #fff; display: flex; flex-wrap: wrap; align-items: center; gap: 4px;">
+              <div id="add-categorias-selected" class="d-flex flex-wrap gap-2" style="width: 100%; margin-bottom: 0;"></div>
+              <input type="text" id="add-categoria" class="form-control border-0" placeholder="Seleccionar Categoría(s)..." autocomplete="off" readonly style="cursor: pointer; background-color: transparent; flex: 1 1 auto; min-width: 150px; border: none !important; box-shadow: none !important; padding: 0.375rem 0.5rem !important; font-size: 1rem; line-height: 1.5;" />
+              <button type="button" class="btn btn-outline-secondary rounded-pill" id="add-categoria-btn" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); z-index: 5; border: none; background: transparent; pointer-events: auto; padding: 0.375rem 0.5rem;">
+                <i class="bi bi-chevron-down"></i>
+              </button>
+              <div id="add-categoria-options" class="list-group position-absolute" style="z-index: 1060; display: none; max-height: 300px; overflow-y: auto; border: 1px solid #dee2e6; border-radius: 0.5rem; box-shadow: 0 4px 12px rgba(0,0,0,0.1); background: white; margin-top: 2px; left: 0; box-sizing: border-box; width: 100%;"></div>
+            </div>
+            <input type="hidden" id="add-categorias-hidden" />
+            </div>
+            <div class="col-12 col-md-6 mb-3">
+            <label for="add-codigo" class="form-label fw-semibold">Código SKU</label>
+            <input type="text" id="add-codigo" name="codigo" class="form-control rounded px-3" placeholder="SKU12345" />
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-12 col-md-4 mb-3">
+            <label for="add-precio" class="form-label fw-semibold">Precio</label>
+            <input type="number" id="add-precio" name="precio_unitario" step="1" class="form-control rounded px-3" required placeholder="15000" />
+            <div class="invalid-feedback"></div>
+          </div>
+            <div class="col-12 col-md-4 mb-3">
+            <label for="add-stock" class="form-label fw-semibold">Stock Actual</label>
+            <input type="number" id="add-stock" name="stock_actual" min="0" class="form-control rounded px-3" required placeholder="20" />
+          </div>
+            <div class="col-12 col-md-4 mb-3">
+            <label for="add-stockmin" class="form-label fw-semibold">Stock Mínimo</label>
+            <input type="number" id="add-stockmin" name="stock_minimo" min="0" class="form-control rounded px-3" required placeholder="5" />
+            </div>
+          </div>
+          <div class="mb-3">
+            <label for="add-descripcion" class="form-label fw-semibold">Descripción</label>
+            <textarea id="add-descripcion" name="descripcion" class="form-control rounded-3 px-3" rows="3" maxlength="200" placeholder="Descripción detallada del producto, características principales, especificaciones técnicas"></textarea>
+            <div class="form-text text-end">
+              <span id="add-descripcion-counter">0</span>/200
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer px-4 pb-4">
+          <div class="d-grid gap-2 d-md-flex justify-content-md-end w-100">
+            <button type="submit" class="btn btn-primary btn-sm rounded px-3 fw-semibold">
+              Guardar
+            </button>
+            <button type="button" class="btn btn-outline-secondary btn-sm rounded px-3" data-bs-dismiss="modal">
+              Cerrar
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Editar Producto -->
+<div class="modal fade" id="editProductModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content border-0 shadow-lg rounded-4">
+      <form method="post" id="editProductForm">
+        {% csrf_token %}
+        <div class="modal-header bg-warning text-dark rounded-top-4">
+          <h5 class="modal-title fw-bold"><i class="bi bi-pencil me-2"></i> Editar Producto</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body px-4 py-3">
+          <input type="hidden" name="id" id="edit-id" />
+          <div class="row">
+            <div class="col-12 col-md-6 mb-3">
+            <label for="edit-nombre" class="form-label fw-semibold">Nombre</label>
+            <input type="text" id="edit-nombre" name="nombre" class="form-control rounded px-3" required />
+          </div>
+            <div class="col-12 col-md-6 mb-3">
+            <label for="edit-marca" class="form-label fw-semibold">Marca</label>
+            <input type="text" id="edit-marca" name="marca" class="form-control rounded px-3" required />
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-12 col-md-6 mb-3 position-relative">
+            <label for="edit-categoria" class="form-label fw-semibold">Categorías</label>
+            <div class="input-group position-relative" id="edit-categoria-container" style="cursor: pointer; min-height: calc(1.5em + 0.75rem + 2px); padding: 0.375rem 45px 0.375rem 0.75rem; border: 1px solid #ced4da; border-radius: 0.375rem; background-color: #fff; display: flex; flex-wrap: wrap; align-items: center; gap: 4px;">
+              <div id="edit-categorias-selected" class="d-flex flex-wrap gap-2" style="width: 100%; margin-bottom: 0;"></div>
+              <input type="text" id="edit-categoria" class="form-control border-0" placeholder="Seleccionar Categoría(s)..." autocomplete="off" readonly style="cursor: pointer; background-color: transparent; flex: 1 1 auto; min-width: 150px; border: none !important; box-shadow: none !important; padding: 0.375rem 0.5rem !important; font-size: 1rem; line-height: 1.5;" />
+              <button type="button" class="btn btn-outline-secondary rounded-pill" id="edit-categoria-btn" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); z-index: 5; border: none; background: transparent; pointer-events: auto; padding: 0.375rem 0.5rem;">
+                <i class="bi bi-chevron-down"></i>
+              </button>
+              <div id="edit-categoria-options" class="list-group position-absolute" style="z-index: 1060; display: none; max-height: 300px; overflow-y: auto; border: 1px solid #dee2e6; border-radius: 0.5rem; box-shadow: 0 4px 12px rgba(0,0,0,0.1); background: white; margin-top: 2px; left: 0; box-sizing: border-box; width: 100%;"></div>
+            </div>
+            <input type="hidden" id="edit-categorias-hidden" />
+            </div>
+            <div class="col-12 col-md-6 mb-3">
+            <label for="edit-codigo" class="form-label fw-semibold">Código SKU</label>
+            <input type="text" id="edit-codigo" name="codigo" class="form-control rounded px-3" />
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-12 col-md-4 mb-3">
+            <label for="edit-precio" class="form-label fw-semibold">Precio</label>
+            <input type="number" id="edit-precio" name="precio_unitario" step="1" class="form-control rounded px-3" required />
+            <div class="invalid-feedback"></div>
+          </div>
+            <div class="col-12 col-md-4 mb-3">
+            <label for="edit-stock" class="form-label fw-semibold">Stock Actual</label>
+            <input type="number" id="edit-stock" name="stock_actual" min="0" class="form-control rounded px-3" required />
+          </div>
+            <div class="col-12 col-md-4 mb-3">
+            <label for="edit-stockmin" class="form-label fw-semibold">Stock Mínimo</label>
+            <input type="number" id="edit-stockmin" name="stock_minimo" min="0" class="form-control rounded px-3" required />
+            </div>
+          </div>
+          <div class="mb-3">
+            <label for="edit-descripcion" class="form-label fw-semibold">Descripción</label>
+            <textarea id="edit-descripcion" name="descripcion" class="form-control rounded-3 px-3" rows="3" maxlength="200"></textarea>
+            <div class="form-text text-end">
+              <span id="edit-descripcion-counter">0</span>/200
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer px-4 pb-4">
+          <div class="d-grid gap-2 d-md-flex justify-content-md-end w-100">
+            <button type="submit" class="btn btn-warning btn-sm rounded px-3 fw-semibold">
+              Guardar
+            </button>
+            <button type="button" class="btn btn-outline-secondary btn-sm rounded px-3" data-bs-dismiss="modal">
+              Cerrar
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Panel de Filtros Lateral -->
+<div class="filter-panel-overlay" id="filterOverlay" onclick="toggleFilterPanel()" style="display: none;"></div>
+<div class="filter-panel" id="filterPanel" style="display: none;">
+  <div class="filter-panel-header">
+    <h5 class="filter-panel-title fw-bold">
+      <i class="bi bi-sliders me-2"></i> Filtrar
+    </h5>
+    <div class="d-flex align-items-center gap-2">
+      <a href="?{% if search_query %}search={{ search_query }}&{% endif %}{% if sort_field %}sort={{ sort_field }}&order={{ order }}&{% endif %}{% if request.GET.per_page %}per_page={{ request.GET.per_page }}{% endif %}" class="text-primary text-decoration-none fw-semibold" onclick="event.stopPropagation();">Limpiar filtros</a>
+      <button type="button" class="btn-close" onclick="toggleFilterPanel()" aria-label="Cerrar"></button>
+    </div>
+  </div>
+  <form method="get" action="" id="filterForm" class="filter-panel-body">
+    {% if sort_field %}
+      <input type="hidden" name="sort" value="{{ sort_field }}">
+    {% endif %}
+    {% if order %}
+      <input type="hidden" name="order" value="{{ order }}">
+    {% endif %}
+    {% if request.GET.per_page %}
+      <input type="hidden" name="per_page" value="{{ request.GET.per_page }}">
+    {% endif %}
+    {% if search_query %}
+      <input type="hidden" name="search" value="{{ search_query }}">
+    {% endif %}
+    
+    <!-- Sección Marca -->
+    <div class="filter-section">
+      <div class="filter-section-header" onclick="toggleFilterSection('marca')">
+        <span class="filter-section-title">Marca</span>
+        <i class="bi bi-chevron-down filter-section-icon" id="marca-icon"></i>
+      </div>
+      <div class="filter-section-content" id="marca-content" style="display: none;">
+        <div class="filter-search-box mb-3">
+          <input type="text" class="form-control" id="marca-search" placeholder="Buscar marca" onkeyup="filterMarcaOptions(this.value)">
+          <i class="bi bi-search filter-search-icon"></i>
+        </div>
+        <div class="filter-options-list" id="marca-options">
+          {% for marca in marcas %}
+            <label class="filter-option">
+              <input type="checkbox" name="filter_marca" value="{{ marca }}" 
+                     {% if marca in filter_marcas %}checked{% endif %}
+                     onchange="updateFilterBadge()">
+              <span>{{ marca }}</span>
+            </label>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+    
+    <!-- Sección Categoría -->
+    <div class="filter-section">
+      <div class="filter-section-header" onclick="toggleFilterSection('categoria')">
+        <span class="filter-section-title">Categoría</span>
+        <i class="bi bi-chevron-down filter-section-icon" id="categoria-icon"></i>
+      </div>
+      <div class="filter-section-content" id="categoria-content" style="display: none;">
+        <div class="filter-search-box mb-3">
+          <input type="text" class="form-control" id="categoria-search" placeholder="Buscar categoría" onkeyup="filterCategoriaOptions(this.value)">
+          <i class="bi bi-search filter-search-icon"></i>
+        </div>
+        <div class="filter-options-list" id="categoria-options">
+          {% for categoria in categorias %}
+            <label class="filter-option">
+              <input type="checkbox" name="filter_categoria" value="{{ categoria.id_categoria }}" 
+                     {% if categoria.id_categoria|stringformat:"s" in filter_categorias %}checked{% endif %}
+                     onchange="updateFilterBadge()">
+              <span>{{ categoria.nombre }}</span>
+            </label>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+    
+    <!-- Sección Estado -->
+    <div class="filter-section">
+      <div class="filter-section-header" onclick="toggleFilterSection('estado')">
+        <span class="filter-section-title">Estado</span>
+        <i class="bi bi-chevron-down filter-section-icon" id="estado-icon"></i>
+      </div>
+      <div class="filter-section-content" id="estado-content" style="display: none;">
+        <div class="filter-options-list" id="estado-options">
+          <label class="filter-option">
+            <input type="checkbox" name="filter_estado" value="en_stock" 
+                   {% if 'en_stock' in filter_estados %}checked{% endif %}
+                   onchange="updateFilterBadge()">
+            <span>En stock</span>
+          </label>
+          <label class="filter-option">
+            <input type="checkbox" name="filter_estado" value="poco_stock" 
+                   {% if 'poco_stock' in filter_estados %}checked{% endif %}
+                   onchange="updateFilterBadge()">
+            <span>Poco stock</span>
+          </label>
+          <label class="filter-option">
+            <input type="checkbox" name="filter_estado" value="sin_stock" 
+                   {% if 'sin_stock' in filter_estados %}checked{% endif %}
+                   onchange="updateFilterBadge()">
+            <span>Sin stock</span>
+          </label>
+        </div>
+      </div>
+    </div>
+    
+    <div class="filter-panel-footer">
+      <button type="submit" class="btn btn-primary rounded px-4 fw-semibold w-100">Aplicar Filtros</button>
+    </div>
+  </form>
+</div>
+
+<!-- Modal Ver Detalles del Producto -->
+<div class="modal fade" id="verDetallesProductoModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content border-0 shadow-lg rounded-4">
+      <div class="modal-header bg-primary text-white rounded-top-4">
+        <h5 class="modal-title fw-bold"><i class="bi bi-info-circle me-2"></i> Detalles del Producto</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body px-4 py-4">
+        <div class="row">
+          <div class="col-12 col-md-6 mb-3">
+            <strong><i class="bi bi-box-seam me-2"></i>Nombre:</strong>
+            <p id="detalle-nombre" class="mb-0"></p>
+          </div>
+          <div class="col-12 col-md-6 mb-3">
+            <strong><i class="bi bi-tag me-2"></i>Marca:</strong>
+            <p id="detalle-marca" class="mb-0"></p>
+          </div>
+          <div class="col-12 col-md-6 mb-3">
+            <strong><i class="bi bi-tags me-2"></i>Categorías:</strong>
+            <div id="detalle-categorias" class="d-flex flex-wrap gap-2 mt-2">
+              <!-- Las categorías se cargarán aquí -->
+            </div>
+            <div id="detalle-sin-categorias" class="text-muted fst-italic mt-2" style="display: none;">
+              Sin categorías asignadas
+            </div>
+          </div>
+          <div class="col-12 col-md-6 mb-3">
+            <strong><i class="bi bi-upc-scan me-2"></i>Código SKU:</strong>
+            <p id="detalle-codigo" class="mb-0"></p>
+          </div>
+          <div class="col-6 col-md-4 mb-3">
+            <strong><i class="bi bi-currency-dollar me-2"></i>Precio Unitario:</strong>
+            <p id="detalle-precio" class="mb-0"></p>
+          </div>
+          <div class="col-6 col-md-4 mb-3">
+            <strong><i class="bi bi-box me-2"></i>Stock Actual:</strong>
+            <p id="detalle-stock-actual" class="mb-0"></p>
+          </div>
+          <div class="col-6 col-md-4 mb-3">
+            <strong><i class="bi bi-info-circle me-2"></i>Estado:</strong>
+            <p id="detalle-estado" class="mb-0"></p>
+          </div>
+          <div class="col-6 col-md-4 mb-3">
+            <strong><i class="bi bi-exclamation-triangle me-2"></i>Stock Mínimo:</strong>
+            <p id="detalle-stock-minimo" class="mb-0"></p>
+          </div>
+          <div class="col-12 mb-3">
+            <strong><i class="bi bi-file-text me-2"></i>Descripción:</strong>
+            <p id="detalle-descripcion" class="mb-0 mt-2" style="white-space: pre-wrap; word-wrap: break-word;"></p>
+            <div id="detalle-sin-descripcion" class="text-muted fst-italic mt-2" style="display: none;">
+              Sin descripción
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer px-4 pb-4">
+        <button type="button" class="btn btn-outline-secondary btn-sm rounded px-3" data-bs-dismiss="modal">Cerrar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Eliminar Producto -->
+<div class="modal fade" id="deleteProductModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content border-0 shadow-lg rounded-4">
+      <form method="post" id="deleteProductForm">
+        {% csrf_token %}
+        <div class="modal-header bg-danger text-white rounded-top-4">
+          <h5 class="modal-title fw-bold"><i class="bi bi-trash me-2"></i> Confirmar Eliminación</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body px-4 py-3">
+          <input type="hidden" name="id" id="delete-id" />
+          <div id="modalContentNormal" style="display: none;">
+          <p>¿Está seguro que desea eliminar el producto <strong id="delete-product-name"></strong>?</p>
+          </div>
+          <div id="modalContentError" style="display: none;">
+            <div class="alert alert-warning mb-0">
+              <i class="bi bi-exclamation-triangle me-2"></i>
+              <strong>No se puede eliminar el producto</strong>
+              <p class="mb-0 mt-2" id="error-message">El producto está asociado a ventas o compras y no puede ser eliminado.</p>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer px-4 pb-4">
+          <button type="submit" class="btn btn-danger btn-sm rounded px-3 fw-semibold" id="btnConfirmarEliminar" style="display: none;">Eliminar</button>
+          <button type="button" class="btn btn-outline-secondary btn-sm rounded px-3" data-bs-dismiss="modal">Cerrar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<style>
+.card-header.bg-gradient {
+  background: #fff !important;
+  color: #222 !important;
+  font-weight: 600;
+  font-size: 1.08rem;
+  padding: 1rem 1.5rem;
+  border-radius: 0.75rem 0.75rem 0 0;
+  border-bottom: 1.5px solid #e5e7eb;
+  letter-spacing: 0.01em;
+  box-shadow: none;
+}
+
+/* Ancho fijo para la columna de acciones - igual que categoría */
+#tablaProductos th:last-child,
+#tablaProductos td:last-child {
+  width: 180px !important;
+  min-width: 180px !important;
+  max-width: 180px !important;
+  padding: 0.5rem !important;
+}
+
+/* Asegurar que los botones se ajusten bien */
+#tablaProductos td:last-child .btn-group {
+  display: flex;
+  width: 100%;
+  justify-content: center;
+}
+
+#tablaProductos td:last-child .btn-group .btn {
+  width: 60px !important;
+  min-width: 60px !important;
+  max-width: 60px !important;
+  padding: 0.25rem 0.5rem;
+  flex-shrink: 0;
+}
+
+/* Compactar botones de acción solo en productos */
+#tablaProductos .btn-group {
+  display: inline-flex;
+  vertical-align: middle;
+}
+
+#tablaProductos .btn-group .btn {
+  margin-right: 0 !important;
+  margin-left: 0 !important;
+  border-radius: 0 !important;
+  white-space: nowrap;
+  overflow: visible;
+}
+
+#tablaProductos .btn-group .btn:first-child {
+  border-top-left-radius: 0.5rem !important;
+  border-bottom-left-radius: 0.5rem !important;
+}
+
+#tablaProductos .btn-group .btn:last-child {
+  border-top-right-radius: 0.5rem !important;
+  border-bottom-right-radius: 0.5rem !important;
+}
+
+/* Iconos en negro en los botones de acciones - modo claro */
+#tablaProductos .btn-group .btn i {
+  color: #000 !important;
+}
+
+/* Iconos en blanco en modo oscuro */
+[data-theme="dark"] #tablaProductos .btn-group .btn i {
+  color: #fff !important;
+}
+
+/* Estilos para opciones de categorías con checkboxes */
+#add-categoria-options,
+#edit-categoria-options {
+  position: absolute !important;
+  top: 100% !important;
+  left: 0 !important;
+  z-index: 1060 !important;
+  width: 100% !important;
+  max-height: 300px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  border: 1px solid #dee2e6;
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  background: white !important;
+  margin-top: 2px;
+  box-sizing: border-box;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+/* Asegurar que el contenedor padre no corte las opciones */
+#add-categoria-container,
+#edit-categoria-container {
+  overflow: visible !important;
+}
+
+/* Asegurar que el modal-body no corte las opciones */
+.modal-body {
+  overflow: visible !important;
+}
+
+/* Asegurar que el col-md-6 no corte las opciones */
+.col-md-6.position-relative {
+  overflow: visible !important;
+}
+
+#add-categoria-options .list-group-item,
+#edit-categoria-options .list-group-item {
+  border: none;
+  border-bottom: 1px solid #f8f9fa;
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+#add-categoria-options .list-group-item:last-child,
+#edit-categoria-options .list-group-item:last-child {
+  border-bottom: none;
+}
+
+#add-categoria-options .list-group-item:hover,
+#edit-categoria-options .list-group-item:hover {
+  background-color: #f8f9fa;
+}
+
+#add-categoria-options .form-check-input,
+#edit-categoria-options .form-check-input {
+  cursor: pointer;
+  margin-top: 0.25rem;
+}
+
+#add-categoria-options .form-check-label,
+#edit-categoria-options .form-check-label {
+  cursor: pointer;
+  user-select: none;
+}
+
+/* Estilos para el botón de flecha de categorías */
+#add-categoria-container,
+#edit-categoria-container {
+  position: relative;
+}
+
+#add-categoria-btn,
+#edit-categoria-btn {
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+/* Animación de rotación para la flecha de categoría */
+#add-categoria-btn i,
+#edit-categoria-btn i {
+  transition: transform 0.3s ease !important;
+  display: inline-block;
+  transform: rotate(0deg) !important;
+}
+
+#add-categoria-btn.open i,
+#edit-categoria-btn.open i {
+  transform: rotate(180deg) !important;
+}
+
+/* Evitar que el hover mueva el icono */
+#add-categoria-btn:hover i,
+#edit-categoria-btn:hover i {
+  transform: rotate(0deg) !important;
+}
+
+#add-categoria-btn.open:hover i,
+#edit-categoria-btn.open:hover i {
+  transform: rotate(180deg) !important;
+}
+
+/* Estilos para las etiquetas dentro del contenedor de categorías */
+#add-categoria-container,
+#edit-categoria-container {
+  min-height: calc(1.5em + 0.75rem + 2px);
+}
+
+#add-categoria-container #add-categorias-selected,
+#edit-categoria-container #edit-categorias-selected {
+  flex-wrap: wrap;
+  width: 100%;
+  order: -1;
+}
+
+#add-categoria-container #add-categorias-selected:not(:empty),
+#edit-categoria-container #edit-categorias-selected:not(:empty) {
+  margin-bottom: 4px;
+}
+
+#add-categoria-container #add-categorias-selected .badge,
+#edit-categoria-container #edit-categorias-selected .badge {
+  margin: 0;
+  flex-shrink: 0;
+}
+
+/* Ajustar el input cuando hay categorías seleccionadas */
+#add-categoria-container:has(#add-categorias-selected .badge) #add-categoria,
+#edit-categoria-container:has(#edit-categorias-selected .badge) #edit-categoria {
+  display: none !important;
+}
+
+/* ===== ESTILOS PARA MODO OSCURO ===== */
+[data-theme="dark"] #add-categoria-container,
+[data-theme="dark"] #edit-categoria-container {
+  background-color: #23272b !important;
+  border: 2px solid #444 !important;
+  color: #fff !important;
+}
+
+[data-theme="dark"] #add-categoria-container #add-categoria,
+[data-theme="dark"] #edit-categoria-container #edit-categoria {
+  background-color: transparent !important;
+  color: var(--text-color, #f1f5f9) !important;
+}
+
+[data-theme="dark"] #add-categoria-container #add-categoria::placeholder,
+[data-theme="dark"] #edit-categoria-container #edit-categoria::placeholder {
+  color: var(--input-placeholder, #94a3b8) !important;
+}
+
+[data-theme="dark"] #add-categoria-container #add-categoria-btn,
+[data-theme="dark"] #edit-categoria-container #edit-categoria-btn {
+  color: var(--text-color, #f1f5f9) !important;
+  background-color: transparent !important;
+  border: none !important;
+}
+
+/* Efecto hover para el botón de categoría - círculo gris claro */
+/* Desactivar animación de movimiento en hover para estos botones */
+#add-categoria-container #add-categoria-btn:hover,
+#edit-categoria-container #edit-categoria-btn:hover {
+  background-color: #e9ecef !important;
+  border-radius: 50% !important;
+  transition: background-color 0.2s ease !important;
+  color: inherit !important;
+  transform: translateY(-50%) !important; /* Mantener posición original */
+}
+
+#add-categoria-container #add-categoria-btn.open:hover,
+#edit-categoria-container #edit-categoria-btn.open:hover {
+  transform: translateY(-50%) !important; /* Mantener posición original */
+}
+
+[data-theme="dark"] #add-categoria-container #add-categoria-btn:hover,
+[data-theme="dark"] #edit-categoria-container #edit-categoria-btn:hover {
+  background-color: #444 !important;
+  color: var(--text-color, #f1f5f9) !important;
+}
+
+[data-theme="dark"] #add-categoria-options,
+[data-theme="dark"] #edit-categoria-options {
+  background-color: #23272b !important;
+  border: 2px solid #444 !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4) !important;
+}
+
+[data-theme="dark"] #add-categoria-options .list-group-item,
+[data-theme="dark"] #edit-categoria-options .list-group-item {
+  background-color: #23272b !important;
+  border-color: #444 !important;
+  color: #fff !important;
+}
+
+[data-theme="dark"] #add-categoria-options .list-group-item:hover,
+[data-theme="dark"] #edit-categoria-options .list-group-item:hover {
+  background-color: #444 !important;
+}
+
+[data-theme="dark"] #add-categoria-options .form-check-label,
+[data-theme="dark"] #edit-categoria-options .form-check-label {
+  color: var(--text-color, #f1f5f9) !important;
+}
+
+[data-theme="dark"] #add-categoria-options .form-check-input,
+[data-theme="dark"] #edit-categoria-options .form-check-input {
+  background-color: var(--input-bg, #1e293b) !important;
+  border-color: var(--input-border, #475569) !important;
+}
+
+[data-theme="dark"] #add-categoria-options .form-check-input:checked,
+[data-theme="dark"] #edit-categoria-options .form-check-input:checked {
+  background-color: var(--primary-color, #60a5fa) !important;
+  border-color: var(--primary-color, #60a5fa) !important;
+}
+
+/* Contadores de caracteres visibles en modo oscuro */
+[data-theme="dark"] .form-text {
+  color: #adb5bd !important;
+}
+
+[data-theme="dark"] .form-text span {
+  color: #f1f5f9 !important;
+}
+
+/* ===== ESTILOS RESPONSIVE PARA MÓVIL ===== */
+@media (max-width: 768px) {
+  /* Estilos para hacer que los modales sean scrolleables en móviles */
+  #addProductModal.show,
+  #editProductModal.show {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    z-index: 1055 !important;
+    padding: 0 !important;
+    overflow: auto !important;
+  }
+  
+  /* Asegurar que el modal-dialog sea visible y scrolleable */
+  #addProductModal.show .modal-dialog,
+  #editProductModal.show .modal-dialog {
+    display: flex !important;
+    align-items: flex-start !important;
+    justify-content: center !important;
+    min-height: calc(100% - 1rem) !important;
+    max-width: calc(100% - 1rem) !important;
+    margin: 0.5rem auto !important;
+    pointer-events: none !important;
+  }
+  
+  /* Asegurar que el modal-content sea visible */
+  #addProductModal.show .modal-content,
+  #editProductModal.show .modal-content {
+    pointer-events: auto !important;
+    background-color: #fff !important;
+    border-radius: 0.5rem !important;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+    max-height: calc(100vh - 1rem) !important;
+    display: flex !important;
+    flex-direction: column !important;
+  }
+  
+  /* Hacer que el modal-body sea scrolleable */
+  #addProductModal .modal-body,
+  #editProductModal .modal-body {
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    max-height: calc(100vh - 200px) !important;
+    flex: 1 1 auto !important;
+  }
+  
+  /* Asegurar que el contenido del modal sea visible */
+  #addProductModal .modal-dialog,
+  #editProductModal .modal-dialog {
+    z-index: 1056 !important;
+    position: relative !important;
+  }
+
+  #add-categoria-container,
+  #edit-categoria-container {
+    min-height: calc(1.5em + 1rem + 2px);
+    padding: 0.5rem 50px 0.5rem 0.75rem !important;
+    position: relative !important;
+  }
+  
+  #add-categoria-options,
+  #edit-categoria-options {
+    z-index: 1060 !important;
+    width: 100% !important;
+    position: absolute !important;
+    top: 100% !important;
+    left: 0 !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    background: white !important;
+  }
+  
+  #add-categoria-container,
+  #edit-categoria-container {
+    overflow: visible !important;
+  }
+  
+  /* Permitir scroll en modal-body solo para los modales de producto */
+  #addProductModal .modal-body,
+  #editProductModal .modal-body {
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+  }
+  
+  /* Mantener visible para otros elementos */
+  .col-md-6.position-relative {
+    overflow: visible !important;
+  }
+  
+  #add-categoria-container #add-categorias-selected,
+  #edit-categoria-container #edit-categorias-selected {
+    gap: 0.5rem;
+  }
+  
+  #add-categoria-container #add-categorias-selected .badge,
+  #edit-categoria-container #edit-categorias-selected .badge {
+    font-size: 0.8rem !important;
+    padding: 0.35em 0.65em !important;
+  }
+  
+  #add-categoria-container #add-categoria,
+  #edit-categoria-container #edit-categoria {
+    font-size: 0.9rem !important;
+    min-width: 120px !important;
+  }
+  
+  #add-categoria-container #add-categoria-btn,
+  #edit-categoria-container #edit-categoria-btn {
+    right: 10px !important;
+    padding: 0.5rem 0.4rem !important;
+  }
+  
+  #add-categoria-options,
+  #edit-categoria-options {
+    max-height: 250px !important;
+    font-size: 0.9rem;
+  }
+  
+  #add-categoria-options .list-group-item,
+  #edit-categoria-options .list-group-item {
+    padding: 0.6rem 0.75rem !important;
+  }
+  
+  #add-categoria-options .form-check-label,
+  #edit-categoria-options .form-check-label {
+    font-size: 0.9rem;
+  }
+  
+  /* Botones del modal footer en móvil - ocupar todo el ancho y apilarse */
+  #addProductModal .modal-footer,
+  #editProductModal .modal-footer,
+  #deleteProductModal .modal-footer {
+    padding: 1rem !important;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  #addProductModal .modal-footer .btn,
+  #editProductModal .modal-footer .btn,
+  #deleteProductModal .modal-footer .btn {
+    width: 100%;
+    margin: 0;
+  }
+}
+
+@media (max-width: 480px) {
+  /* Ajustes adicionales para pantallas muy pequeñas */
+  #addProductModal.show .modal-dialog,
+  #editProductModal.show .modal-dialog {
+    max-width: calc(100% - 0.5rem) !important;
+    margin: 0.25rem auto !important;
+  }
+  
+  #addProductModal .modal-body,
+  #editProductModal .modal-body {
+    max-height: calc(100vh - 150px) !important;
+    padding: 1rem !important;
+  }
+  
+  #addProductModal .modal-content,
+  #editProductModal .modal-content {
+    max-height: calc(100vh - 0.5rem) !important;
+  }
+
+  #add-categoria-container,
+  #edit-categoria-container {
+    padding: 0.5rem 45px 0.5rem 0.6rem !important;
+  }
+  
+  #add-categoria-container #add-categorias-selected .badge,
+  #edit-categoria-container #edit-categorias-selected .badge {
+    font-size: 0.75rem !important;
+    padding: 0.3em 0.55em !important;
+  }
+  
+  #add-categoria-container #add-categoria,
+  #edit-categoria-container #edit-categoria {
+    font-size: 0.85rem !important;
+    min-width: 100px !important;
+  }
+  
+  #add-categoria-options,
+  #edit-categoria-options {
+    max-height: 200px !important;
+  }
+}
+
+/* Mostrar el input cuando no hay categorías */
+#add-categoria-container:not(:has(#add-categorias-selected .badge)) #add-categoria,
+#edit-categoria-container:not(:has(#edit-categorias-selected .badge)) #edit-categoria {
+  display: block !important;
+}
+
+/* Asegurar que el input tenga el tamaño correcto */
+#add-categoria,
+#edit-categoria {
+  height: auto !important;
+  min-height: 30px !important;
+}
+
+/* Asegurar que el contenedor de sugerencias tenga el ancho exacto del input */
+.position-relative {
+  position: relative;
+}
+
+/* Ajustar el z-index para que las sugerencias aparezcan sobre otros elementos */
+#add-categoria-suggestions,
+#edit-categoria-suggestions {
+  z-index: 1050;
+}
+
+/* Asegurar que las sugerencias tengan exactamente el ancho del input */
+#add-categoria-suggestions,
+#edit-categoria-suggestions {
+  width: 100%;
+  max-width: none;
+}
+.modal-alert {
+  text-align: center !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+  display: block !important;
+}
+input.form-control.is-invalid,
+input.form-control.is-invalid:focus,
+input.form-control.rounded-pill.is-invalid,
+input.form-control.rounded-pill.is-invalid:focus {
+  border: 3px solid #dc3545 !important;
+  background-color: #fff0f3 !important;
+  box-shadow: 0 0 0 0.2rem rgba(220,53,69,.25) !important;
+}
+.categoria-desc-truncada {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  white-space: normal;
+  font-size: 0.95em;
+  line-height: 1.2em;
+  min-height: 2.4em;
+}
+
+/* Estilos para filas clickeables */
+#tablaProductos tbody tr.producto-row:hover {
+  background-color: rgba(0, 123, 255, 0.05) !important;
+  transition: background-color 0.2s;
+}
+
+/* Estilos para badges de categorías */
+#tablaProductos .badge.bg-primary.rounded-pill {
+  border-radius: 50rem !important;
+  padding: 0.4em 0.75em !important;
+  font-size: 0.85rem !important;
+  font-weight: 500 !important;
+  display: inline-block !important;
+  margin-right: 0.25rem !important;
+  margin-bottom: 0.25rem !important;
+}
+
+/* Estilos para badges de categorías en modales */
+#add-categorias-selected .badge,
+#edit-categorias-selected .badge {
+  border-radius: 50rem !important;
+  padding: 0.4em 0.75em !important;
+  font-size: 0.85rem !important;
+  font-weight: 500 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 0.25em !important;
+}
+
+#add-categorias-selected .badge .btn-close,
+#edit-categorias-selected .badge .btn-close {
+  font-size: 0.7em !important;
+  opacity: 0.8 !important;
+  padding: 0.2em !important;
+}
+
+#add-categorias-selected .badge .btn-close:hover,
+#edit-categorias-selected .badge .btn-close:hover {
+  opacity: 1 !important;
+}
+
+/* Estilos para badges de estado de stock */
+#tablaProductos .badge.bg-success,
+#tablaProductos .badge.bg-warning,
+#tablaProductos .badge.bg-danger {
+  border-radius: 0.375rem !important; /* Diseño más cuadrado */
+  padding: 0.4em 0.75em !important;
+  font-size: 0.85rem !important;
+  font-weight: 500 !important;
+  display: inline-block !important;
+  color: #fff !important; /* Todas las letras en blanco */
+  width: 120px !important; /* Mismo ancho para todos */
+  text-align: center !important;
+  box-sizing: border-box !important;
+}
+
+#tablaProductos .badge.bg-success {
+  background-color: #198754 !important;
+}
+
+#tablaProductos .badge.bg-warning {
+  background-color: #ffc107 !important;
+}
+
+#tablaProductos .badge.bg-danger {
+  background-color: #dc3545 !important;
+}
+
+/* Estilos para badges de estado en el panel de filtros */
+#estado-options .filter-option {
+  display: flex !important;
+  align-items: center !important;
+}
+
+#estado-options .filter-option span {
+  flex: 0 0 auto !important;
+  width: auto !important;
+  max-width: none !important;
+}
+
+#estado-options .badge.bg-success,
+#estado-options .badge.bg-warning,
+#estado-options .badge.bg-danger {
+  border-radius: 0.375rem !important;
+  padding: 0.4em 0.75em !important;
+  font-size: 0.85rem !important;
+  font-weight: 500 !important;
+  display: inline-block !important;
+  width: auto !important;
+  min-width: auto !important;
+  max-width: none !important;
+  flex-shrink: 0 !important;
+}
+
+/* Asegurar que el texto de los badges tenga el color blanco */
+#estado-options .badge.bg-success,
+#estado-options .badge.bg-warning,
+#estado-options .badge.bg-danger {
+  color: #fff !important;
+}
+
+#estado-options .badge.bg-success {
+  background-color: #198754 !important;
+}
+
+#estado-options .badge.bg-warning {
+  background-color: #ffc107 !important;
+}
+
+#estado-options .badge.bg-danger {
+  background-color: #dc3545 !important;
+}
+
+/* Animación del botón de filtros igual que otros botones */
+#filterBtn {
+  transition: all 0.15s ease-in-out !important;
+}
+
+#filterBtn:hover {
+  background-color: transparent !important;
+  border-color: #0d6efd !important;
+  color: #0d6efd !important;
+  transform: translateY(-1px) !important;
+}
+
+#filterBtn:active {
+  transform: scale(0.95) !important;
+}
+
+/* Estilos responsivos para modal de detalles en móviles */
+@media (max-width: 768px) {
+  #verDetallesProductoModal .modal-dialog {
+    margin: 0.5rem;
+    max-width: calc(100% - 1rem);
+  }
+  
+  #verDetallesProductoModal .modal-content {
+    border-radius: 1rem !important;
+  }
+  
+  #verDetallesProductoModal .modal-header {
+    padding: 1rem;
+    border-radius: 1rem 1rem 0 0 !important;
+  }
+  
+  #verDetallesProductoModal .modal-title {
+    font-size: 1rem;
+  }
+  
+  #verDetallesProductoModal .modal-body {
+    padding: 1rem !important;
+  }
+  
+  #verDetallesProductoModal .modal-body .row > div {
+    margin-bottom: 1rem !important;
+  }
+  
+  #verDetallesProductoModal .modal-body strong {
+    font-size: 0.9rem;
+    display: block;
+    margin-bottom: 0.25rem;
+  }
+  
+  #verDetallesProductoModal .modal-body p {
+    font-size: 0.9rem;
+    margin-bottom: 0;
+  }
+  
+  #verDetallesProductoModal .modal-footer {
+    padding: 1rem !important;
+  }
+  
+  #verDetallesProductoModal .modal-footer .btn {
+    width: 100%;
+    margin: 0;
+  }
+  
+  #verDetallesProductoModal .col-md-6,
+  #verDetallesProductoModal .col-md-4 {
+    flex: 0 0 100%;
+    max-width: 100%;
+  }
+}
+
+/* Estilos para panel de filtros lateral */
+.filter-panel-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  z-index: 1040;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.filter-panel-overlay.active {
+  opacity: 1;
+  visibility: visible;
+}
+
+.filter-panel {
+  position: fixed;
+  top: 0;
+  right: -40%;
+  width: 40%;
+  max-width: 380px;
+  height: 100vh;
+  background-color: #fff;
+  box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1);
+  z-index: 1050;
+  transition: right 0.3s ease;
+  display: none;
+  flex-direction: column;
+  overflow: hidden;
+  overflow-x: hidden;
+  border-radius: 1rem 0 0 1rem;
+}
+
+.filter-panel.active {
+  right: 0;
+}
+
+.filter-panel-header {
+  padding: 1.5rem;
+  border-bottom: 1px solid #e5e7eb;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #fff;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.filter-panel-title {
+  margin: 0;
+  color: #222;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.filter-panel-body {
+  flex: 1;
+  padding: 1rem 1.5rem;
+  overflow-y: auto;
+  overflow-x: hidden;
+  width: 100%;
+  max-width: 100%;
+}
+
+.filter-panel-footer {
+  padding: 1.5rem;
+  border-top: 1px solid #e5e7eb;
+  background-color: #fff;
+  position: sticky;
+  bottom: 0;
+  z-index: 10;
+}
+
+/* Secciones de filtro */
+.filter-section {
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  margin-bottom: 1rem;
+  background-color: #fff;
+  overflow: hidden;
+  overflow-x: hidden;
+  width: 100%;
+  max-width: 100%;
+}
+
+.filter-section-header {
+  padding: 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  user-select: none;
+  transition: background-color 0.2s;
+}
+
+.filter-section-header:hover {
+  background-color: #f8f9fa;
+}
+
+.filter-section-title {
+  font-weight: 600;
+  color: #222;
+  font-size: 0.95rem;
+}
+
+.filter-section-icon {
+  color: #6b7280;
+  font-size: 0.875rem;
+  transition: transform 0.2s;
+}
+
+.filter-section-content {
+  padding: 0 1rem 1rem 1rem;
+  max-height: 400px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  width: 100%;
+  max-width: 100%;
+}
+
+.filter-search-box {
+  position: relative;
+}
+
+.filter-search-box .form-control {
+  padding-right: 2.5rem;
+  border-radius: 0.5rem;
+  border: 1px solid #d1d5db;
+  font-size: 0.875rem;
+}
+
+.filter-search-box .form-control:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.filter-search-icon {
+  position: absolute;
+  right: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #9ca3af;
+  pointer-events: none;
+}
+
+.filter-options-list {
+  max-height: 300px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  width: 100%;
+  max-width: 100%;
+}
+
+.filter-group {
+  margin-bottom: 0.5rem;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+.filter-group-header {
+  font-weight: 600;
+  color: #374151;
+  font-size: 0.875rem;
+  padding: 0.5rem 0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.filter-option {
+  display: flex;
+  align-items: center;
+  padding: 0.5rem 0;
+  cursor: pointer;
+  user-select: none;
+  transition: background-color 0.2s;
+  border-radius: 0.25rem;
+  padding-left: 0.5rem;
+  margin-left: -0.5rem;
+  margin-right: -0.5rem;
+}
+
+.filter-option:hover {
+  background-color: #f9fafb;
+}
+
+.filter-option input[type="checkbox"] {
+  margin-right: 0.75rem;
+  width: 1.125rem;
+  height: 1.125rem;
+  cursor: pointer;
+  accent-color: #3b82f6;
+}
+
+.filter-option span {
+  color: #374151;
+  font-size: 0.875rem;
+  flex: 1;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  max-width: 100%;
+}
+
+/* Estilos para modo oscuro */
+[data-theme="dark"] .filter-panel {
+  background-color: #282828 !important;
+  box-shadow: -2px 0 10px rgba(0, 0, 0, 0.3) !important;
+}
+
+[data-theme="dark"] .filter-panel-header {
+  background-color: #323232 !important;
+  border-bottom: 1px solid #444 !important;
+}
+
+[data-theme="dark"] .filter-panel-title {
+  color: #fff !important;
+}
+
+[data-theme="dark"] .filter-panel-body {
+  background-color: #282828 !important;
+}
+
+[data-theme="dark"] .filter-panel-footer {
+  background-color: #282828 !important;
+  border-top: 1px solid #444 !important;
+}
+
+[data-theme="dark"] .filter-section {
+  background-color: #323232 !important;
+  border: 1px solid #444 !important;
+}
+
+[data-theme="dark"] .filter-section-header {
+  background-color: #323232 !important;
+}
+
+[data-theme="dark"] .filter-section-header:hover {
+  background-color: #3a3a3a !important;
+}
+
+[data-theme="dark"] .filter-section-title {
+  color: #fff !important;
+}
+
+[data-theme="dark"] .filter-section-icon {
+  color: #9ca3af !important;
+}
+
+[data-theme="dark"] .filter-search-box .form-control {
+  background-color: #23272b !important;
+  border: 1px solid #444 !important;
+  color: #fff !important;
+}
+
+[data-theme="dark"] .filter-search-box .form-control:focus {
+  background-color: #23272b !important;
+  border-color: #3b82f6 !important;
+  color: #fff !important;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2) !important;
+}
+
+[data-theme="dark"] .filter-search-box .form-control::placeholder {
+  color: #9ca3af !important;
+}
+
+[data-theme="dark"] .filter-search-icon {
+  color: #9ca3af !important;
+}
+
+[data-theme="dark"] .filter-option {
+  color: #fff !important;
+}
+
+[data-theme="dark"] .filter-option:hover {
+  background-color: #3a3a3a !important;
+}
+
+[data-theme="dark"] .filter-option span {
+  color: #e4e6eb !important;
+}
+
+[data-theme="dark"] .filter-panel-header .text-primary {
+  color: #60a5fa !important;
+}
+
+[data-theme="dark"] .filter-panel-header .text-primary:hover {
+  color: #93c5fd !important;
+}
+
+[data-theme="dark"] .filter-panel-header .btn-close {
+  filter: brightness(0) invert(1) !important;
+}
+
+/* Responsive para móviles */
+@media (max-width: 768px) {
+  .filter-panel {
+    width: 100%;
+    right: -100%;
+    border-radius: 0;
+  }
+  
+  .filter-panel.active {
+    right: 0;
+  }
+}
+
+/* Desactivar scroll-behavior para evitar movimiento durante actualizaciones AJAX */
+#table-wrapper {
+  scroll-behavior: auto !important;
+}
+
+#table-wrapper .unified-table,
+#table-wrapper .table-responsive {
+  scroll-behavior: auto !important;
+}
+
+/* Clase temporal para desactivar transiciones durante actualización AJAX */
+#table-wrapper.updating {
+  transition: none !important;
+  animation: none !important;
+}
+
+#table-wrapper.updating * {
+  transition: none !important;
+  animation: none !important;
+}
+
+/* Mantener transiciones de hover del card cuando NO está actualizando */
+/* Las transiciones de hover están definidas en styles.css */
+</style>
+<script>
+  const validarCodigoUrl = "{% url 'validar_codigo' %}";
+</script>
+<script src="{% static 'home/js/unified-table.js' %}"></script>
+<script src="{% static 'producto/js/productos.js' %}"></script>
+<script>
+// Script directo para manejar clics en encabezados de ordenamiento
+(function() {
+    function handleSortClick(e) {
+        // Buscar el th.sortable más cercano
+        let target = e.target;
+        let th = null;
+        
+        while (target && target !== document.body) {
+            if (target.tagName === 'TH' && target.classList && target.classList.contains('sortable')) {
+                th = target;
+                break;
+            }
+            target = target.parentElement;
+        }
+        
+        if (th) {
+            e.preventDefault();
+            e.stopPropagation();
+            e.stopImmediatePropagation();
+            const sortField = th.getAttribute('data-sort');
+            
+            if (sortField && typeof sortTable === 'function') {
+                sortTable(sortField);
+            }
+            return false;
+        }
+    }
+    
+    // Agregar listener inmediatamente con captura
+    document.addEventListener('click', handleSortClick, true);
+    
+    // También inicializar cuando el DOM esté listo
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', function() {
+            if (typeof initializeTableEvents === 'function') {
+                initializeTableEvents();
+            }
+        });
+    } else {
+        if (typeof initializeTableEvents === 'function') {
+            initializeTableEvents();
+        }
+    }
+    
+    // También inicializar cuando se actualiza la tabla mediante AJAX
+    const originalUpdateTableContent = window.updateTableContent;
+    if (originalUpdateTableContent) {
+        window.updateTableContent = function(url, searchValue, cursorPosition, restoreFocus) {
+            // Agregar clase para desactivar transiciones durante la actualización
+            const tableWrapper = document.getElementById('table-wrapper');
+            if (tableWrapper) {
+                tableWrapper.classList.add('updating');
+                tableWrapper.style.scrollBehavior = 'auto';
+            }
+            
+            // Llamar a la función original
+            const result = originalUpdateTableContent(url, searchValue, cursorPosition, restoreFocus);
+            
+            // Remover clase después de la actualización para restaurar hover
+            setTimeout(function() {
+                if (tableWrapper) {
+                    tableWrapper.classList.remove('updating');
+                }
+                
+                // Asegurar que los eventos se reinicialicen después de actualizar
+                if (typeof initializeTableEvents === 'function') {
+                    initializeTableEvents();
+                }
+            }, 300);
+            
+            return result;
+        };
+    }
+})();
+</script>
+<script>
+// Actualizar badge de filtros
+function updateFilterBadge() {
+  const filterCount = document.getElementById('filterCount');
+  
+  // Verificar si hay filtros activos en la URL
+  const urlParams = new URLSearchParams(window.location.search);
+  const marcasCount = urlParams.getAll('filter_marca').length;
+  const categoriasCount = urlParams.getAll('filter_categoria').length;
+  const estadosCount = urlParams.getAll('filter_estado').length;
+  const totalFilters = marcasCount + categoriasCount + estadosCount;
+  
+  if (filterCount) {
+    filterCount.textContent = `(${totalFilters})`;
+  }
+}
+
+// Función para abrir/cerrar el panel de filtros
+function toggleFilterPanel() {
+  const panel = document.getElementById('filterPanel');
+  const overlay = document.getElementById('filterOverlay');
+  
+  if (panel && overlay) {
+    const isActive = panel.classList.contains('active');
+    if (isActive) {
+      panel.classList.remove('active');
+      overlay.classList.remove('active');
+      document.body.style.overflow = '';
+      // Ocultar completamente después de la animación
+      setTimeout(() => {
+        panel.style.display = 'none';
+        overlay.style.display = 'none';
+      }, 300);
+    } else {
+      panel.style.display = 'flex';
+      overlay.style.display = 'block';
+      document.body.style.overflow = 'hidden';
+      // Pequeño delay para asegurar que el display se aplique antes de la animación
+      setTimeout(() => {
+        panel.classList.add('active');
+        overlay.classList.add('active');
+      }, 10);
+    }
+  }
+}
+
+// Función para abrir/cerrar secciones de filtro
+function toggleFilterSection(sectionId) {
+  const content = document.getElementById(sectionId + '-content');
+  const icon = document.getElementById(sectionId + '-icon');
+  
+  if (content && icon) {
+    const isOpen = content.style.display !== 'none';
+    content.style.display = isOpen ? 'none' : 'block';
+    icon.classList.toggle('bi-chevron-up', !isOpen);
+    icon.classList.toggle('bi-chevron-down', isOpen);
+  }
+}
+
+// Función para filtrar opciones de marca
+function filterMarcaOptions(searchTerm) {
+  const options = document.querySelectorAll('#marca-options .filter-option');
+  const term = searchTerm.toLowerCase();
+  
+  options.forEach(option => {
+    const text = option.querySelector('span').textContent.toLowerCase();
+    if (text.includes(term)) {
+      option.style.display = 'flex';
+    } else {
+      option.style.display = 'none';
+    }
+  });
+}
+
+// Función para filtrar opciones de categoría
+function filterCategoriaOptions(searchTerm) {
+  const options = document.querySelectorAll('#categoria-options .filter-option');
+  const term = searchTerm.toLowerCase();
+  
+  options.forEach(option => {
+    const text = option.querySelector('span').textContent.toLowerCase();
+    if (text.includes(term)) {
+      option.style.display = 'flex';
+    } else {
+      option.style.display = 'none';
+    }
+  });
+}
+
+// Manejar el formulario de filtros
+document.addEventListener('DOMContentLoaded', function() {
+  // Asegurar que el panel de filtros esté oculto al cargar
+  const panel = document.getElementById('filterPanel');
+  const overlay = document.getElementById('filterOverlay');
+  if (panel) {
+    panel.style.display = 'none';
+    panel.classList.remove('active');
+  }
+  if (overlay) {
+    overlay.style.display = 'none';
+    overlay.classList.remove('active');
+  }
+  
+  updateFilterBadge();
+  
+  const filterForm = document.getElementById('filterForm');
+  if (filterForm) {
+    filterForm.addEventListener('submit', function(e) {
+      e.preventDefault();
+      
+      const formData = new FormData(filterForm);
+      const url = new URL(window.location.href);
+      
+      // Limpiar filtros anteriores
+      url.searchParams.delete('filter_marca');
+      url.searchParams.delete('filter_categoria');
+      url.searchParams.delete('filter_estado');
+      url.searchParams.set('page', '1'); // Resetear a página 1
+      
+      // Agregar nuevos filtros (múltiples valores)
+      const marcas = formData.getAll('filter_marca');
+      const categorias = formData.getAll('filter_categoria');
+      const estados = formData.getAll('filter_estado');
+      
+      marcas.forEach(marca => {
+        if (marca) {
+          url.searchParams.append('filter_marca', marca);
+        }
+      });
+      
+      categorias.forEach(categoria => {
+        if (categoria) {
+          url.searchParams.append('filter_categoria', categoria);
+        }
+      });
+      
+      estados.forEach(estado => {
+        if (estado) {
+          url.searchParams.append('filter_estado', estado);
+        }
+      });
+      
+      // Preservar otros parámetros
+      const search = formData.get('search');
+      if (search) {
+        url.searchParams.set('search', search);
+      }
+      
+      const sort = formData.get('sort');
+      if (sort) {
+        url.searchParams.set('sort', sort);
+      }
+      
+      const order = formData.get('order');
+      if (order) {
+        url.searchParams.set('order', order);
+      }
+      
+      const perPage = formData.get('per_page');
+      if (perPage) {
+        url.searchParams.set('per_page', perPage);
+      }
+      
+      // Cerrar panel y recargar página para actualizar filtros y badges
+      toggleFilterPanel();
+      
+      // Recargar página para actualizar filtros y badges
+      window.location.href = url.toString();
+    });
+  }
+  
+  // Cerrar panel con ESC
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+      const panel = document.getElementById('filterPanel');
+      if (panel && panel.classList.contains('active')) {
+        toggleFilterPanel();
+      }
+    }
+  });
+});
+
+// NOTA: La función updateTableContent está definida en unified-table.js
+// No sobrescribirla aquí para que el ordenamiento funcione correctamente
+
+// Función para mostrar todos los detalles de un producto
+function mostrarDetallesProducto(productoId) {
+  const url = `/producto/${productoId}/detalles/`;
+  fetch(url)
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        mostrarModalDetalles(data.producto);
+      } else {
+        alert(data.message || 'Error al cargar los detalles del producto');
+      }
+    })
+    .catch(error => {
+      console.error('Error al obtener detalles:', error);
+      alert('Error al cargar los detalles del producto');
+    });
+}
+
+function mostrarModalDetalles(producto) {
+  const modal = new bootstrap.Modal(document.getElementById('verDetallesProductoModal'));
+  
+  // Llenar los campos del modal
+  document.getElementById('detalle-nombre').textContent = producto.nombre;
+  document.getElementById('detalle-marca').textContent = producto.marca;
+  document.getElementById('detalle-codigo').textContent = producto.codigo;
+  document.getElementById('detalle-precio').textContent = `$${producto.precio_unitario.toLocaleString('es-CL')}`;
+  document.getElementById('detalle-stock-actual').textContent = `${producto.stock_actual} ${producto.stock_actual === 1 ? 'unidad' : 'unidades'}`;
+  
+  // Mostrar estado del stock con badge
+  const estadoElement = document.getElementById('detalle-estado');
+  const estado = producto.estado_stock || 'sin_stock';
+  const estadoDisplay = producto.estado_stock_display || 'Sin stock';
+  
+  if (estado === 'en_stock') {
+    estadoElement.innerHTML = '<span class="badge bg-success rounded-pill">En stock</span>';
+  } else if (estado === 'poco_stock') {
+    estadoElement.innerHTML = '<span class="badge bg-warning rounded-pill text-dark">Poco stock</span>';
+  } else {
+    estadoElement.innerHTML = '<span class="badge bg-danger rounded-pill">Sin stock</span>';
+  }
+  
+  // Mostrar stock mínimo (si existe)
+  const stockMinimoElement = document.getElementById('detalle-stock-minimo');
+  if (producto.stock_minimo !== null && producto.stock_minimo !== undefined) {
+    stockMinimoElement.textContent = `${producto.stock_minimo} ${producto.stock_minimo === 1 ? 'unidad' : 'unidades'}`;
+  } else {
+    stockMinimoElement.textContent = 'No definido';
+  }
+  
+  // Descripción
+  const descripcionDiv = document.getElementById('detalle-descripcion');
+  const sinDescripcionDiv = document.getElementById('detalle-sin-descripcion');
+  if (producto.descripcion && producto.descripcion.trim() !== '') {
+    descripcionDiv.textContent = producto.descripcion;
+    descripcionDiv.style.display = 'block';
+    sinDescripcionDiv.style.display = 'none';
+  } else {
+    descripcionDiv.style.display = 'none';
+    sinDescripcionDiv.style.display = 'block';
+  }
+  
+  // Categorías
+  const categoriasDiv = document.getElementById('detalle-categorias');
+  const sinCategoriasDiv = document.getElementById('detalle-sin-categorias');
+  categoriasDiv.innerHTML = '';
+  
+  if (producto.categorias && producto.categorias.length > 0) {
+    sinCategoriasDiv.style.display = 'none';
+    producto.categorias.forEach(categoria => {
+      const badge = document.createElement('span');
+      badge.className = 'badge bg-primary rounded-pill';
+      badge.textContent = categoria.nombre;
+      categoriasDiv.appendChild(badge);
+    });
+  } else {
+    sinCategoriasDiv.style.display = 'block';
+  }
+  
+  modal.show();
+}
+
+</script>
+<script>
+  // Completar campos "Stock Mínimo" en el modal editar cuando se abre
+  document.getElementById('editProductModal').addEventListener('show.bs.modal', function (event) {
+    var button = event.relatedTarget
+    var stockMin = button.getAttribute('data-stockmin') || 0
+    var modal = this
+
+    modal.querySelector('#edit-stockmin').value = stockMin
+  })
+</script>
+
+
+{% endblock %}
+
+
+
+
+

@@ -1,0 +1,1 @@
+web: cd proyecto_principal && gunicorn proyecto_principal.wsgi:application --bind 0.0.0.0:$PORT 

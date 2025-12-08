@@ -1,0 +1,359 @@
+{% extends "usuario/base_login.html" %}
+
+{% block title %}Crear Usuario Inicial{% endblock %}
+
+{% block heading %}Crear Usuario Inicial{% endblock %}
+
+{% block messages %}{% endblock %}
+
+{% block form_fields %}
+  {% if total_usuarios is not None %}
+    <div class="alert alert-info text-center">
+      Usuarios detectados en la base de datos: {{ total_usuarios }}
+    </div>
+  {% endif %}
+  <div class="mb-3">
+    <label for="username" class="form-label">Nombre de usuario</label>
+    <input
+      type="text"
+      class="form-control"
+      id="username"
+      name="username"
+      required
+      placeholder="Ingresa un nombre de usuario"
+      autocomplete="off"
+    />
+  </div>
+
+  <div class="mb-3">
+    <label for="email" class="form-label">Correo electrónico</label>
+    <input
+      type="email"
+      class="form-control"
+      id="email"
+      name="email"
+      required
+      placeholder="Ingresa tu correo electrónico"
+      autocomplete="off"
+    />
+    <div id="email-error" class="mt-1" style="display: none;">
+      <small class="text-danger">
+        <i class="bi bi-x-circle me-1"></i> El correo electrónico no es válido
+      </small>
+    </div>
+  </div>
+
+  <div class="mb-3">
+    <label for="password" class="form-label">Contraseña</label>
+    <input
+      type="password"
+      class="form-control"
+      id="password"
+      name="password"
+      required
+      minlength="8"
+      maxlength="50"
+      placeholder="Contraseña123"
+      autocomplete="off"
+    />
+    <div id="password-help" class="form-text">
+      <i class="bi bi-shield-lock me-1"></i>
+      Mínimo 8 caracteres, al menos una mayúscula y un número
+    </div>
+    <div id="password-requirements" class="mt-2">
+      <small id="req-length" class="d-block text-muted">
+        <i class="bi bi-circle me-1"></i> Mínimo 8 caracteres
+      </small>
+      <small id="req-uppercase" class="d-block text-muted">
+        <i class="bi bi-circle me-1"></i> Al menos una letra mayúscula
+      </small>
+      <small id="req-number" class="d-block text-muted">
+        <i class="bi bi-circle me-1"></i> Al menos un número
+      </small>
+    </div>
+  </div>
+
+  <div class="mb-3">
+    <label for="password2" class="form-label">Confirmar contraseña</label>
+    <input
+      type="password"
+      class="form-control"
+      id="password2"
+      name="password2"
+      required
+      placeholder="Contraseña123"
+      autocomplete="off"
+    />
+    <div id="password2-help" class="form-text">
+      <i class="bi bi-check-circle me-1"></i>
+      Debe coincidir con la contraseña
+    </div>
+    <div id="password-match" class="mt-1" style="display: none;">
+      <small class="text-danger">
+        <i class="bi bi-x-circle me-1"></i> Las contraseñas no coinciden
+      </small>
+    </div>
+  </div>
+
+  <div class="form-check mb-3">
+    <input class="form-check-input" type="checkbox" id="showPassword" />
+    <label class="form-check-label" for="showPassword">
+      Mostrar contraseñas
+    </label>
+  </div>
+
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const showPasswordCheckbox = document.getElementById('showPassword');
+      const passwordInput = document.getElementById('password');
+      const password2Input = document.getElementById('password2');
+      const emailInput = document.getElementById('email');
+      const emailError = document.getElementById('email-error');
+      const reqLength = document.getElementById('req-length');
+      const reqUppercase = document.getElementById('req-uppercase');
+      const reqNumber = document.getElementById('req-number');
+      const passwordMatch = document.getElementById('password-match');
+      const passwordHelp = document.getElementById('password-help');
+      const password2Help = document.getElementById('password2-help');
+      
+      // Verificar que los elementos existan
+      if (!passwordInput || !password2Input) {
+        console.error('Los campos de contraseña no se encontraron');
+      }
+      
+      // Función para actualizar el estado visual de un requisito (verde si válido, gris si no)
+      function updateRequirement(element, isValid) {
+        if (!element) return;
+        if (isValid) {
+          element.classList.remove('text-muted', 'text-danger');
+          element.classList.add('text-success');
+          const icon = element.querySelector('i');
+          if (icon) {
+            icon.className = 'bi bi-check-circle-fill me-1';
+          }
+        } else {
+          element.classList.remove('text-success', 'text-danger');
+          element.classList.add('text-muted');
+          const icon = element.querySelector('i');
+          if (icon) {
+            icon.className = 'bi bi-circle me-1';
+          }
+        }
+      }
+      
+      // Función para marcar requisito como error (rojo)
+      function markRequirementError(element) {
+        if (!element) return;
+        element.classList.remove('text-muted', 'text-success');
+        element.classList.add('text-danger');
+        const icon = element.querySelector('i');
+        if (icon) {
+          icon.className = 'bi bi-x-circle-fill me-1';
+        }
+      }
+      
+      // Función para validar la contraseña y mostrar indicadores visuales
+      function validatePasswordVisual() {
+        if (!passwordInput) return false;
+        const password = passwordInput.value;
+        let allValid = true;
+        
+        // Validar longitud (mínimo 8 caracteres)
+        const lengthValid = password.length >= 8;
+        if (reqLength) updateRequirement(reqLength, lengthValid);
+        if (!lengthValid) allValid = false;
+        
+        // Validar mayúscula
+        const upperValid = /[A-Z]/.test(password);
+        if (reqUppercase) updateRequirement(reqUppercase, upperValid);
+        if (!upperValid) allValid = false;
+        
+        // Validar número
+        const numberValid = /[0-9]/.test(password);
+        if (reqNumber) updateRequirement(reqNumber, numberValid);
+        if (!numberValid) allValid = false;
+        
+        return allValid;
+      }
+      
+      // Validar requisitos mientras se escribe la contraseña
+      if (passwordInput) {
+        passwordInput.addEventListener('input', function() {
+          validatePasswordVisual();
+          // También verificar si las contraseñas coinciden cuando se cambia la primera
+          if (password2Input && password2Input.value) {
+            checkPasswordMatchVisual();
+          }
+        });
+        
+        // Validar inicialmente si hay algún valor
+        if (passwordInput.value) {
+          validatePasswordVisual();
+        }
+      }
+      
+      // Función para verificar si las contraseñas coinciden (visual)
+      function checkPasswordMatchVisual() {
+        if (!passwordInput || !password2Input) return false;
+        const password = passwordInput.value;
+        const password2 = password2Input.value;
+        
+        if (password2.length === 0) {
+          if (passwordMatch) passwordMatch.style.display = 'none';
+          password2Input.classList.remove('is-invalid');
+          if (password2Help) password2Help.style.display = 'block';
+          return true;
+        }
+        
+        if (password === password2) {
+          if (passwordMatch) passwordMatch.style.display = 'none';
+          password2Input.classList.remove('is-invalid');
+          password2Input.classList.add('is-valid');
+          if (password2Help) password2Help.style.display = 'block';
+          return true;
+        } else {
+          if (passwordMatch) passwordMatch.style.display = 'block';
+          password2Input.classList.remove('is-valid');
+          password2Input.classList.add('is-invalid');
+          if (password2Help) password2Help.style.display = 'none';
+          return false;
+        }
+      }
+      
+      // Validar coincidencia de contraseñas mientras se escribe
+      if (password2Input) {
+        password2Input.addEventListener('input', function() {
+          checkPasswordMatchVisual();
+        });
+      }
+      
+      // Función para validar formato de email
+      function isValidEmail(email) {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return emailRegex.test(email);
+      }
+      
+      // Función para mostrar error de email
+      function showEmailError() {
+        emailError.style.display = 'block';
+        emailInput.classList.add('is-invalid');
+      }
+      
+      // Función para limpiar error de email
+      function clearEmailError() {
+        emailError.style.display = 'none';
+        emailInput.classList.remove('is-invalid');
+      }
+      
+      // Limpiar error de email al escribir
+      if (emailInput) {
+        emailInput.addEventListener('input', clearEmailError);
+      }
+      
+      // Mostrar/ocultar contraseñas
+      if (showPasswordCheckbox) {
+        showPasswordCheckbox.addEventListener('change', function() {
+          const type = this.checked ? 'text' : 'password';
+          if (passwordInput) {
+          passwordInput.type = type;
+          }
+          if (password2Input) {
+          password2Input.type = type;
+          }
+        });
+      } else {
+        console.warn('El checkbox de mostrar contraseña no se encontró');
+      }
+      
+      // Manejar envío del formulario con AJAX
+      const form = document.getElementById('login-form');
+      const submitButton = document.querySelector('button[type="submit"]');
+      
+      if (form && submitButton) {
+      form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        // Validación del lado del cliente antes de enviar
+        const username = document.getElementById('username').value.trim();
+        const email = document.getElementById('email').value.trim();
+        const password = passwordInput.value;
+        const password2 = password2Input.value;
+        
+        // Validar campos vacíos
+        if (!username || !email || !password || !password2) {
+          return;
+        }
+        
+        // Validar formato de email
+        if (!isValidEmail(email)) {
+          showEmailError();
+          return;
+        }
+        
+        // Validar requisitos de contraseña y mostrar indicadores visuales
+        const lengthValid = password.length >= 8;
+        const upperValid = /[A-Z]/.test(password);
+        const numberValid = /[0-9]/.test(password);
+        
+        // Actualizar indicadores visuales
+        validatePasswordVisual();
+        
+        // Si no cumple todos los requisitos, no enviar
+        if (!lengthValid || !upperValid || !numberValid) {
+          // Marcar en rojo los que no cumplen
+          if (!lengthValid && reqLength) markRequirementError(reqLength);
+          if (!upperValid && reqUppercase) markRequirementError(reqUppercase);
+          if (!numberValid && reqNumber) markRequirementError(reqNumber);
+          return;
+        }
+        
+        // Validar contraseñas coinciden y mostrar indicadores visuales
+        const passwordsMatch = checkPasswordMatchVisual();
+        if (!passwordsMatch) {
+          return;
+        }
+        
+        // Deshabilitar botón mientras se envía
+        submitButton.disabled = true;
+        
+        // Enviar formulario con AJAX
+        const formData = new FormData(form);
+        
+        fetch(form.action || window.location.href, {
+          method: 'POST',
+          body: formData,
+          headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+          }
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            if (data.redirect) {
+              window.location.href = data.redirect;
+            } else {
+              window.location.href = '/verificar-primer-usuario/';
+            }
+          } else {
+            submitButton.disabled = false;
+          }
+        })
+        .catch(error => {
+          console.error('Error al enviar el formulario:', error);
+          submitButton.disabled = false;
+        });
+        });
+      } else {
+        console.error('El formulario o el botón de envío no se encontraron');
+      }
+    });
+  </script>
+{% endblock %}
+
+{% block button_text %}<i class="bi bi-person-plus"></i> Crear Usuario{% endblock %}
+
+{% block bottom_text %}
+  ¿Ya tienes una cuenta?
+  <a href="{% url 'login' %}" class="fw-semibold text-primary ms-1">Iniciar Sesión</a>
+{% endblock %} 

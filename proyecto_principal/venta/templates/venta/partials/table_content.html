@@ -1,0 +1,295 @@
+{% load humanize %}
+{% load static %}
+
+<!-- Action Bar -->
+<div class="action-bar d-flex align-items-center justify-content-between mb-3">
+  <div class="d-flex align-items-center gap-2">
+    <button
+      type="button"
+      class="btn btn-outline-primary"
+      id="filterBtn"
+      title="Filtrar por fecha"
+    >
+      <i class="bi bi-sliders me-1"></i>
+      <span>Filtros</span>
+      <span class="ms-1" id="filterCount">(0)</span>
+    </button>
+
+    <form method="get" action="" class="d-flex align-items-center gap-2">
+      {% if request.GET.mostrar %}
+        <input type="hidden" name="mostrar" value="{{ request.GET.mostrar }}">
+      {% endif %}
+      {% if request.GET.orden %}
+        <input type="hidden" name="orden" value="{{ request.GET.orden }}">
+      {% endif %}
+      {% if request.GET.fecha_inicio %}
+        <input type="hidden" name="fecha_inicio" value="{{ request.GET.fecha_inicio }}">
+      {% endif %}
+      {% if request.GET.fecha_fin %}
+        <input type="hidden" name="fecha_fin" value="{{ request.GET.fecha_fin }}">
+      {% endif %}
+      {% for estado in filter_estados %}
+        <input type="hidden" name="filter_estado" value="{{ estado }}">
+      {% endfor %}
+      <input
+        type="text"
+        class="form-control"
+        name="search"
+        placeholder="Buscar por Producto..."
+        aria-label="Buscar venta"
+        id="searchVentas"
+        value="{{ request.GET.search|default_if_none:'' }}"
+        style="max-width: 300px;"
+      />
+    </form>
+  </div>
+</div>
+
+<!-- Informaciรณn de pรกgina y selector de elementos por pรกgina -->
+{% if page_obj %}
+<div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-3">
+  <div class="d-flex align-items-center gap-3">
+    <div class="table-info">
+      <span class="text-muted">
+        Pรกgina {{ page_obj.number }} de {{ page_obj.paginator.num_pages }} | 
+        Total {{ page_obj.paginator.count }} venta(s)
+      </span>
+    </div>
+    <div class="d-flex align-items-center gap-2">
+      <label class="mb-0 table-info"><span class="text-muted">Mostrar:</span></label>
+      <form method="get" class="d-inline">
+        {% if request.GET.search %}
+          <input type="hidden" name="search" value="{{ request.GET.search }}">
+        {% endif %}
+        {% if request.GET.fecha_inicio %}
+          <input type="hidden" name="fecha_inicio" value="{{ request.GET.fecha_inicio }}">
+        {% endif %}
+        {% if request.GET.fecha_fin %}
+          <input type="hidden" name="fecha_fin" value="{{ request.GET.fecha_fin }}">
+        {% endif %}
+        {% if request.GET.orden %}
+          <input type="hidden" name="orden" value="{{ request.GET.orden }}">
+        {% endif %}
+        {% for estado in filter_estados %}
+          <input type="hidden" name="filter_estado" value="{{ estado }}">
+        {% endfor %}
+        <select name="mostrar" class="form-select form-select-sm" style="width: auto;">
+          <option value="5" {% if mostrar == 5 %}selected{% endif %}>5</option>
+          <option value="10" {% if mostrar == 10 %}selected{% endif %}>10</option>
+          <option value="20" {% if mostrar == 20 %}selected{% endif %}>20</option>
+          <option value="50" {% if mostrar == 50 %}selected{% endif %}>50</option>
+        </select>
+      </form>
+    </div>
+  </div>
+  
+  <!-- Controles de paginaciรณn -->
+  <ul class="pagination justify-content-center mb-0">
+    {% if page_obj.has_previous %}
+      <li class="page-item">
+        <a class="page-link" href="?page={{ page_obj.previous_page_number }}&mostrar={{ mostrar }}&orden={{ orden }}{% if request.GET.fecha_inicio %}&fecha_inicio={{ request.GET.fecha_inicio }}{% endif %}{% if request.GET.fecha_fin %}&fecha_fin={{ request.GET.fecha_fin }}{% endif %}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% for estado in filter_estados %}&filter_estado={{ estado }}{% endfor %}" aria-label="Pรกgina anterior">
+          <i class="bi bi-chevron-left" aria-hidden="true"></i>
+        </a>
+      </li>
+    {% else %}
+      <li class="page-item disabled">
+        <span class="page-link">
+          <i class="bi bi-chevron-left" aria-hidden="true"></i>
+        </span>
+      </li>
+    {% endif %}
+
+    {% for num in page_obj.paginator.page_range %}
+      {% if num >= page_obj.number|add:'-2' and num <= page_obj.number|add:'2' %}
+        {% if page_obj.number == num %}
+          <li class="page-item active" aria-current="page">
+            <span class="page-link">{{ num }}</span>
+          </li>
+        {% else %}
+          <li class="page-item">
+            <a class="page-link" href="?page={{ num }}&mostrar={{ mostrar }}&orden={{ orden }}{% if request.GET.fecha_inicio %}&fecha_inicio={{ request.GET.fecha_inicio }}{% endif %}{% if request.GET.fecha_fin %}&fecha_fin={{ request.GET.fecha_fin }}{% endif %}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% for estado in filter_estados %}&filter_estado={{ estado }}{% endfor %}">{{ num }}</a>
+          </li>
+        {% endif %}
+      {% endif %}
+    {% endfor %}
+
+    {% if page_obj.has_next %}
+      <li class="page-item">
+        <a class="page-link" href="?page={{ page_obj.next_page_number }}&mostrar={{ mostrar }}&orden={{ orden }}{% if request.GET.fecha_inicio %}&fecha_inicio={{ request.GET.fecha_inicio }}{% endif %}{% if request.GET.fecha_fin %}&fecha_fin={{ request.GET.fecha_fin }}{% endif %}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% for estado in filter_estados %}&filter_estado={{ estado }}{% endfor %}" aria-label="Pรกgina siguiente">
+          <i class="bi bi-chevron-right" aria-hidden="true"></i>
+        </a>
+      </li>
+    {% else %}
+      <li class="page-item disabled">
+        <span class="page-link">
+          <i class="bi bi-chevron-right" aria-hidden="true"></i>
+        </span>
+      </li>
+    {% endif %}
+  </ul>
+</div>
+{% endif %}
+
+{% if ventas_con_detalles %}
+  <div class="accordion" id="ventasAccordion">
+    {% for grupo in ventas_con_detalles %}
+    <div class="accordion-item mb-2">
+      <h2 class="accordion-header" id="heading{{ grupo.venta.id_venta }}">
+        <div class="d-flex align-items-center justify-content-between w-100">
+          <button class="accordion-button collapsed flex-grow-1 d-flex align-items-center gap-2" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ grupo.venta.id_venta }}" aria-expanded="false" aria-controls="collapse{{ grupo.venta.id_venta }}">
+            <span class="fw-bold" style="min-width: 170px;"><i class="bi bi-receipt"></i>Salida #{{ grupo.venta.numero_venta|default:grupo.venta.id_venta }}</span>
+            <span class="me-3" style="min-width: 120px;"><i class="bi bi-calendar3"></i> Solicitud: {{ grupo.venta.fecha|date:'d/m/Y' }}</span>
+            <span class="me-3" style="min-width: 205px; display: inline-block;">
+              {% if grupo.venta.fecha_entrega %}
+                <i class="bi bi-truck"></i> Envío: {{ grupo.venta.fecha_entrega|date:'d/m/Y' }}
+              {% else %}
+                <i class="bi bi-clock"></i> <span class="text-muted">No enviado</span>
+              {% endif %}
+            </span>
+            <span class="me-3" style="min-width: 140px;"><i class="bi bi-cash-coin"></i> ${{ grupo.total_venta|floatformat:0|intcomma }}</span>
+            <span>
+              <span class="badge badge-estado {% if grupo.venta.estado == 'ENVIADO' %}bg-success{% elif grupo.venta.estado == 'NO_ENVIADO' or grupo.venta.estado == 'PENDIENTE' or not grupo.venta.fecha_entrega %}bg-warning{% elif grupo.venta.estado == 'ANULADA' %}bg-danger{% else %}bg-secondary{% endif %}">
+                {% if grupo.venta.estado == 'ENVIADO' %}ENVIADO{% elif grupo.venta.estado == 'NO_ENVIADO' or grupo.venta.estado == 'PENDIENTE' or not grupo.venta.fecha_entrega %}NO ENVIADO{% elif grupo.venta.estado == 'ANULADA' %}ANULADA{% else %}{{ grupo.venta.estado|upper }}{% endif %}
+              </span>
+            </span>
+          </button>
+          <div class="btn-group me-3" role="group" onclick="event.stopPropagation();">
+            <a href="{% url 'editar_venta' grupo.venta.id_venta %}" class="btn btn-warning btn-sm" title="Editar venta">
+              <i class="bi bi-pencil"></i>
+            </a>
+
+            {% if not grupo.venta.fecha_entrega %}
+            <button 
+              type="button" 
+              class="btn btn-success btn-sm" 
+              title="Confirmar envío" 
+              data-bs-toggle="modal" 
+              data-bs-target="#confirmarEntregaModal" 
+              data-id="{{ grupo.venta.id_venta }}"
+            >
+              <i class="bi bi-check-circle"></i>
+            </button>
+            {% else %}
+            <span class="btn btn-secondary btn-sm" title="Enviado el {{ grupo.venta.fecha_entrega|date:'d/m/Y' }}">
+              <i class="bi bi-check-circle-fill"></i>
+            </span>
+            {% endif %}
+
+            <button 
+              type="button"
+              class="btn btn-danger btn-sm"
+              data-bs-toggle="modal"
+              data-bs-target="#deleteVentaModal"
+              data-id="{{ grupo.venta.id_venta }}"
+              title="Deshacer venta"
+            >
+              <i class="bi bi-arrow-counterclockwise"></i>
+            </button>
+          </div>
+        </div>
+      </h2>
+      <div id="collapse{{ grupo.venta.id_venta }}" class="accordion-collapse collapse" aria-labelledby="heading{{ grupo.venta.id_venta }}" data-bs-parent="#ventasAccordion">
+        <div class="accordion-body px-4 py-4">
+          <div class="row">
+            <div class="col-12 col-md-8">
+              <h6 class="fw-bold text-primary mb-3"><i class="bi bi-box-seam me-2"></i>Productos enviados</h6>
+              <div class="table-responsive">
+                <table class="unified-table mb-0">
+                  <thead>
+                    <tr>
+                      <th class="text-left">Producto</th>
+                      <th class="text-left">Cรณdigo SKU</th>
+                      <th class="text-center">Cantidad</th>
+                      <th class="text-center">Precio unitario</th>
+                      <th class="text-center">Subtotal</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for detalle in grupo.detalles %}
+                    <tr>
+                      <td class="text-left">
+                        {% if detalle.producto.nombre and detalle.producto.nombre != '---' and detalle.producto.nombre != 'โ��' and detalle.producto.nombre != '' %}
+                          {{ detalle.producto.nombre }}
+                        {% else %}
+                          <span class="text-muted fst-italic">Sin nombre</span>
+                        {% endif %}
+                      </td>
+                      <td class="text-left">
+                        {% with cod=detalle.producto.codigo_set.first %}
+                          {% if cod %}{{ cod.codigo }}{% else %}<span class="text-muted fst-italic">Sin cรณdigo</span>{% endif %}
+                        {% endwith %}
+                      </td>
+                      <td class="text-center"><span class="badge bg-secondary rounded-pill">{{ detalle.cantidad }} {% if detalle.cantidad == 1 %}unidad{% else %}unid.{% endif %}</span></td>
+                      <td class="text-center">${{ detalle.precio_unitario|floatformat:0|intcomma }}</td>
+                      <td class="text-center">${{ detalle.subtotal|floatformat:0|intcomma }}</td>
+                    </tr>
+                    {% endfor %}
+                  </tbody>
+                  <tfoot>
+                    <tr>
+                      <th colspan="4" class="text-end">Total venta:</th>
+                      <th class="text-center">${{ grupo.total_venta|floatformat:0|intcomma }}</th>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            </div>
+            <div class="col-12 col-md-4">
+              <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                  <h6 class="fw-bold text-primary mb-3"><i class="bi bi-info-circle me-2"></i>Informaciรณn de la salida</h6>
+                  <div class="mb-2">
+                    <strong><i class="bi bi-calendar3 me-2"></i>Fecha:</strong>
+                    <p class="mb-0">{{ grupo.venta.fecha|date:'d/m/Y H:i' }}</p>
+                  </div>
+                  {% if grupo.venta.bodega_salida %}
+                  <div class="mb-2">
+                    <strong><i class="bi bi-box-arrow-up me-2"></i>Lugar de salida:</strong>
+                    <p class="mb-0">{{ grupo.venta.bodega_salida.nombre }}</p>
+                  </div>
+                  {% endif %}
+                  {% if grupo.venta.tienda_llegada %}
+                  <div class="mb-2">
+                    <strong><i class="bi bi-box-arrow-down me-2"></i>Lugar de llegada:</strong>
+                    <p class="mb-0">{{ grupo.venta.tienda_llegada.nombre }}</p>
+                  </div>
+                  {% endif %}
+                  {% if grupo.venta.fecha_entrega %}
+                  <div class="mb-2">
+                    <strong><i class="bi bi-truck me-2"></i>Fecha de envío:</strong>
+                    <p class="mb-0">{{ grupo.venta.fecha_entrega|date:'d/m/Y H:i' }}</p>
+                  </div>
+                  {% if grupo.venta.usuario_confirmo_entrega %}
+                  <div class="mb-2">
+                    <strong><i class="bi bi-person-check me-2"></i>Usuario que confirmรณ la entrega:</strong>
+                    <p class="mb-0">{{ grupo.venta.usuario_confirmo_entrega.nombre_usuario }}</p>
+                  </div>
+                  {% endif %}
+                  {% endif %}
+                  {% if grupo.venta.observaciones %}
+                  <div class="mb-2">
+                    <strong><i class="bi bi-chat-left-text me-2"></i>Observaciones:</strong>
+                    <p class="mb-0">{{ grupo.venta.observaciones }}</p>
+                  </div>
+                  {% endif %}
+                  <div class="mb-2">
+                    <strong><i class="bi bi-tag me-2"></i>Estado:</strong>
+                    <p class="mb-0">
+                      <span class="badge {% if grupo.venta.estado == 'ENVIADO' %}bg-success{% elif grupo.venta.estado == 'NO_ENVIADO' or grupo.venta.estado == 'PENDIENTE' or not grupo.venta.fecha_entrega %}bg-warning{% elif grupo.venta.estado == 'ANULADA' %}bg-danger{% else %}bg-secondary{% endif %}">
+                        {% if grupo.venta.estado == 'ENVIADO' %}ENVIADO{% elif grupo.venta.estado == 'NO_ENVIADO' or grupo.venta.estado == 'PENDIENTE' or not grupo.venta.fecha_entrega %}NO ENVIADO{% elif grupo.venta.estado == 'ANULADA' %}ANULADA{% else %}{{ grupo.venta.estado|upper }}{% endif %}
+                      </span>
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+{% else %}
+  <div class="alert alert-info mb-0">No hay ventas registradas.</div>
+{% endif %}
+

@@ -1,0 +1,1216 @@
+/* ===== ESTILOS PARA SISTEMA DE TABLAS UNIFICADO ===== */
+/* Anular transiciones globales para elementos sortable - DEBE IR PRIMERO */
+.unified-table thead th.sortable,
+.unified-table thead th.sortable *,
+.unified-table thead th.sortable *::before,
+.unified-table thead th.sortable *::after,
+.unified-table thead th.sortable:hover,
+.unified-table thead th.sortable:active,
+.unified-table thead th.sortable:focus,
+.unified-table thead th.sortable:visited,
+.unified-table thead th.sortable:link {
+  transition: none !important;
+  animation: none !important;
+  transform: none !important;
+  will-change: auto !important;
+}
+
+/* Anular reglas de styles.css que afectan .table th */
+.unified-table thead th.sortable {
+  transition: none !important;
+  animation: none !important;
+  border-color: inherit !important;
+}
+
+/* Anular regla global * { transition: ... } de styles.css */
+.unified-table thead th.sortable,
+.unified-table thead th.sortable * {
+  transition: none !important;
+  animation: none !important;
+}
+
+.unified-table-wrapper {
+  margin-bottom: 2rem;
+  scroll-behavior: auto !important;
+}
+
+#table-wrapper {
+  scroll-behavior: auto !important;
+}
+
+.unified-table-wrapper * {
+  scroll-behavior: auto !important;
+}
+
+/* Permitir border-radius en el card pero mantener tabla con bordes rectos */
+.unified-table-wrapper .card {
+  overflow: hidden !important;
+  /* El card puede tener border-radius por defecto de Bootstrap */
+}
+
+[data-theme="dark"] .unified-table-wrapper .card {
+  background-color: #212529 !important;
+  border-color: #495057 !important;
+}
+
+.unified-table-wrapper .card-body {
+  padding: 1rem !important;
+  /* El card-body puede tener border-radius si es necesario */
+}
+
+[data-theme="dark"] .unified-table-wrapper .card-body {
+  background-color: #212529 !important;
+}
+
+.unified-table-wrapper .table-responsive {
+  overflow-x: auto !important;
+  overflow-y: visible !important;
+  border: none !important;
+  border-radius: 0 !important;
+  -webkit-overflow-scrolling: touch !important;
+}
+
+/* Asegurar que la tabla y todos sus elementos tengan bordes rectos */
+.unified-table-wrapper .card .unified-table,
+.unified-table-wrapper .card .table-responsive .unified-table,
+.unified-table-wrapper .card .unified-table *,
+.unified-table-wrapper .card .table-responsive .unified-table * {
+  border-radius: 0 !important;
+}
+
+.table-controls {
+  background: var(--card-bg);
+  padding: 1rem;
+  border-radius: 12px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  margin-bottom: 1rem;
+  transition: background-color var(--transition-speed), box-shadow var(--transition-speed);
+}
+
+[data-theme="dark"] .table-controls {
+  background: var(--table-bg);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.table-info {
+  font-size: 0.95rem;
+  color: #6c757d !important;
+  transition: color var(--transition-speed);
+}
+
+.table-info .text-muted,
+.table-info span.text-muted,
+.table-info label,
+.table-info label span.text-muted {
+  color: #6c757d !important;
+}
+
+.unified-table-wrapper .table-info,
+.unified-table-wrapper .table-info .text-muted,
+.unified-table-wrapper .table-info span.text-muted,
+.unified-table-wrapper .table-info label,
+.unified-table-wrapper .table-info label span.text-muted {
+  color: #6c757d !important;
+}
+
+[data-theme="dark"] .table-info {
+  color: #adb5bd !important;
+}
+
+[data-theme="dark"] .table-info .text-muted,
+[data-theme="dark"] .table-info span.text-muted,
+[data-theme="dark"] .table-info label,
+[data-theme="dark"] .table-info label span.text-muted {
+  color: #adb5bd !important;
+}
+
+[data-theme="dark"] .unified-table-wrapper .table-info,
+[data-theme="dark"] .unified-table-wrapper .table-info .text-muted,
+[data-theme="dark"] .unified-table-wrapper .table-info span.text-muted,
+[data-theme="dark"] .unified-table-wrapper .table-info label,
+[data-theme="dark"] .unified-table-wrapper .table-info label span.text-muted {
+  color: #adb5bd !important;
+}
+
+.unified-table {
+  background: #fff !important;
+  color: #212529 !important;
+  border-radius: 0 !important;
+  overflow: visible !important;
+  box-shadow: none !important;
+  border-collapse: collapse !important;
+  border-spacing: 0 !important;
+  font-size: 0.9rem !important;
+  margin-bottom: 0 !important;
+  width: 100% !important;
+  min-width: 800px !important;
+  border: 1px solid #dee2e6 !important;
+  border-radius: 0 !important;
+}
+
+.unified-table * {
+  border-radius: 0 !important;
+}
+
+.unified-table.table-bordered,
+.unified-table.table-striped,
+.unified-table.table-hover {
+  border-collapse: collapse !important;
+  border-spacing: 0 !important;
+}
+
+.unified-table thead {
+  background-color: #f8f9fa !important;
+}
+
+.unified-table thead th {
+  background-color: #f8f9fa !important;
+  color: #212529 !important;
+  font-weight: 600 !important;
+  font-size: 0.9rem !important;
+  text-transform: none !important;
+  letter-spacing: normal !important;
+  padding: 0.5rem 0.75rem !important;
+  border: 1px solid #dee2e6 !important;
+  vertical-align: middle !important;
+  text-align: left !important;
+  border-radius: 0 !important;
+  transition: none !important;
+  animation: none !important;
+}
+
+/* Reglas específicas para sortable - anular TODAS las transiciones */
+.unified-table thead th.sortable,
+.unified-table thead th.sortable *,
+.unified-table thead th.sortable span,
+.unified-table thead th.sortable .sort-icon,
+.unified-table thead th.sortable .sorting {
+  transition: none !important;
+  animation: none !important;
+  will-change: auto !important;
+  border-color: inherit !important;
+}
+
+/* Los pseudo-elementos necesitan mantener transform para posicionamiento */
+.unified-table thead th.sortable *::before,
+.unified-table thead th.sortable *::after,
+.unified-table thead th.sortable .sorting::before,
+.unified-table thead th.sortable .sorting::after {
+  transition: none !important;
+  animation: none !important;
+  will-change: auto !important;
+}
+
+.unified-table thead th:last-child {
+  border-right: 1px solid #dee2e6 !important;
+  text-align: center !important;
+}
+
+/* Ancho de columnas específicas */
+/* Por defecto, todas las columnas tienen ancho automático */
+.unified-table {
+  table-layout: auto !important;
+}
+
+.unified-table thead th,
+.unified-table tbody td {
+  width: auto !important;
+}
+
+/* Columna Nombre (primera columna) - ancho mínimo para que no se comprima */
+.unified-table thead th:first-child,
+.unified-table tbody td:first-child {
+  min-width: 120px !important;
+}
+
+/* Columna Descripción - para tablas de productos (4ta columna) */
+#tablaProductos thead th:nth-child(4),
+#tablaProductos tbody td:nth-child(4) {
+  min-width: 180px !important;
+  max-width: 350px !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+/* Columna Descripción - para tablas de categorías (2da columna) */
+#tablaCategorias thead th:nth-child(2),
+#tablaCategorias tbody td:nth-child(2) {
+  min-width: 250px !important;
+  max-width: 500px !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+/* Columnas de texto corto para productos (Código SKU, Precio, Stock) */
+#tablaProductos thead th:nth-child(5),
+#tablaProductos tbody td:nth-child(5),
+#tablaProductos thead th:nth-child(6),
+#tablaProductos tbody td:nth-child(6),
+#tablaProductos thead th:nth-child(7),
+#tablaProductos tbody td:nth-child(7),
+#tablaProductos thead th:nth-child(8),
+#tablaProductos tbody td:nth-child(8) {
+  min-width: 90px !important;
+  white-space: nowrap !important;
+}
+
+/* Columna Acciones (última columna) - igual que categorías */
+.unified-table thead th:last-child,
+.unified-table tbody td:last-child {
+  width: 180px !important;
+  min-width: 180px !important;
+  max-width: 180px !important;
+  padding: 0.5rem !important;
+  white-space: nowrap !important;
+}
+
+.unified-table tbody tr {
+  background-color: #fff !important;
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  transition: none !important;
+  margin-bottom: 0 !important;
+}
+
+.unified-table tbody tr:nth-child(even) {
+  background-color: #f8f9fa !important;
+}
+
+.unified-table tbody tr:nth-child(even) td {
+  background-color: #f8f9fa !important;
+}
+
+.unified-table tbody tr:hover {
+  box-shadow: none !important;
+  border: none !important;
+  background-color: #e9ecef !important;
+}
+
+.unified-table tbody tr:hover td {
+  background-color: #e9ecef !important;
+}
+
+.unified-table tbody td {
+  padding: 0.5rem 0.75rem !important;
+  border: 1px solid #dee2e6 !important;
+  vertical-align: middle !important;
+  background-color: inherit !important;
+  border-radius: 0 !important;
+}
+
+.unified-table tbody td:last-child {
+  border-right: 1px solid #dee2e6 !important;
+  padding: 0.5rem !important;
+}
+
+.unified-table thead th:last-child {
+  padding: 0.5rem !important;
+}
+
+.unified-table tbody td:first-child {
+  border-radius: 0 !important;
+}
+
+.unified-table tbody td:last-child {
+  border-radius: 0 !important;
+}
+
+[data-theme="dark"] .unified-table {
+  background: #212529 !important;
+  color: #e9ecef !important;
+  border-color: #495057 !important;
+}
+
+[data-theme="dark"] .unified-table thead {
+  background-color: #343a40 !important;
+}
+
+[data-theme="dark"] .unified-table thead th {
+  background-color: #343a40 !important;
+  color: #e9ecef !important;
+  border-color: #495057 !important;
+  border-radius: 0 !important;
+}
+
+[data-theme="dark"] .unified-table thead th:last-child {
+  text-align: center !important;
+}
+
+[data-theme="dark"] .unified-table tbody tr {
+  background-color: #212529 !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+[data-theme="dark"] .unified-table tbody tr:nth-child(even) {
+  background-color: #2c3034 !important;
+}
+
+[data-theme="dark"] .unified-table tbody tr:nth-child(even) td {
+  background-color: #2c3034 !important;
+}
+
+[data-theme="dark"] .unified-table tbody tr:hover {
+  box-shadow: none !important;
+  border: none !important;
+  background-color: #3d4146 !important;
+}
+
+[data-theme="dark"] .unified-table tbody tr:hover td {
+  background-color: #3d4146 !important;
+}
+
+[data-theme="dark"] .unified-table tbody td {
+  background-color: inherit !important;
+  border-color: #495057 !important;
+  border-radius: 0 !important;
+  color: #e9ecef !important;
+}
+
+.unified-table thead th.sortable {
+  cursor: pointer;
+  user-select: none;
+  transition: none !important;
+  animation: none !important;
+  will-change: auto !important;
+  position: relative;
+  white-space: nowrap;
+  text-align: left;
+  border-color: inherit !important;
+}
+
+.unified-table thead th.sortable *,
+.unified-table thead th.sortable span,
+.unified-table thead th.sortable .sort-icon,
+.unified-table thead th.sortable .sorting {
+  transition: none !important;
+  animation: none !important;
+  will-change: auto !important;
+}
+
+/* Los pseudo-elementos necesitan mantener transform para posicionamiento */
+.unified-table thead th.sortable *::before,
+.unified-table thead th.sortable *::after,
+.unified-table thead th.sortable .sorting::before,
+.unified-table thead th.sortable .sorting::after {
+  transition: none !important;
+  animation: none !important;
+  will-change: auto !important;
+}
+
+.unified-table thead th.sortable:hover {
+  background-color: transparent !important;
+  color: #495057 !important;
+  transition: none !important;
+  animation: none !important;
+  will-change: auto !important;
+}
+
+.unified-table thead th.sortable:active {
+  transition: none !important;
+  animation: none !important;
+  will-change: auto !important;
+}
+
+.unified-table thead th.sortable:focus {
+  transition: none !important;
+  animation: none !important;
+  will-change: auto !important;
+  outline: none !important;
+}
+
+[data-theme="dark"] .unified-table thead th.sortable:hover {
+  background-color: transparent !important;
+  color: #e9ecef !important;
+  transition: none !important;
+  animation: none !important;
+  will-change: auto !important;
+}
+
+[data-theme="dark"] .unified-table thead th.sortable:active {
+  transition: none !important;
+  animation: none !important;
+  will-change: auto !important;
+}
+
+[data-theme="dark"] .unified-table thead th.sortable:focus {
+  transition: none !important;
+  animation: none !important;
+  will-change: auto !important;
+  outline: none !important;
+}
+
+/* Iconos de ordenamiento estilo DataTables - inline con el texto */
+.unified-table thead th.sortable .sort-icon {
+  display: inline-block;
+  margin-left: 6px;
+  vertical-align: middle;
+  position: relative;
+  width: 20px;
+  height: 20px;
+  line-height: 1;
+  transition: none !important;
+  animation: none !important;
+  will-change: auto !important;
+}
+
+.unified-table thead th.sortable .sort-icon * {
+  transition: none !important;
+  animation: none !important;
+  will-change: auto !important;
+}
+
+.unified-table thead th.sortable .sorting {
+  display: inline-block;
+  position: relative;
+  width: 20px;
+  height: 20px;
+  vertical-align: middle;
+  line-height: 1;
+  transition: none !important;
+  animation: none !important;
+  will-change: auto !important;
+}
+
+.unified-table thead th.sortable .sorting * {
+  transition: none !important;
+  animation: none !important;
+  will-change: auto !important;
+}
+
+.unified-table thead th.sortable .sorting::before {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-bottom: 6px solid #6c757d;
+  opacity: 0.4;
+  transition: none !important;
+  animation: none !important;
+  will-change: auto !important;
+}
+
+.unified-table thead th.sortable .sorting::after {
+  content: '';
+  position: absolute;
+  bottom: 2px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-top: 6px solid #6c757d;
+  opacity: 0.4;
+  transition: none !important;
+  animation: none !important;
+  will-change: auto !important;
+}
+
+.unified-table thead th.sortable .sorting_asc::before {
+  opacity: 1;
+  border-bottom-color: #495057;
+}
+
+.unified-table thead th.sortable .sorting_asc::after {
+  opacity: 0.3;
+}
+
+.unified-table thead th.sortable .sorting_desc::before {
+  opacity: 0.3;
+}
+
+.unified-table thead th.sortable .sorting_desc::after {
+  opacity: 1;
+  border-top-color: #495057;
+}
+
+[data-theme="dark"] .unified-table thead th.sortable {
+  color: #e9ecef !important;
+}
+
+[data-theme="dark"] .unified-table thead th.sortable:hover {
+  background-color: #3d4146 !important;
+  color: #fff !important;
+}
+
+[data-theme="dark"] .unified-table thead th.sortable .sorting::before {
+  border-bottom-color: #adb5bd;
+  opacity: 0.4;
+}
+
+[data-theme="dark"] .unified-table thead th.sortable .sorting::after {
+  border-top-color: #adb5bd;
+  opacity: 0.4;
+}
+
+[data-theme="dark"] .unified-table thead th.sortable .sorting_asc::before {
+  opacity: 1;
+  border-bottom-color: #e9ecef;
+}
+
+[data-theme="dark"] .unified-table thead th.sortable .sorting_desc::after {
+  opacity: 1;
+  border-top-color: #e9ecef;
+}
+
+/* Estilos de hover ya definidos arriba */
+
+/* Selector "Mostrar" - diseño minimalista como en la imagen */
+/* Primero eliminar cualquier background-image de Bootstrap */
+.unified-table-wrapper select[name="per_page"],
+.unified-table-wrapper select[name="per_page"].form-select,
+.unified-table-wrapper select[name="per_page"].form-select-sm,
+.unified-table-wrapper .form-select-sm[name="per_page"],
+.unified-table-wrapper form select[name="per_page"],
+.unified-table-wrapper form select[name="per_page"].form-select,
+.unified-table-wrapper form select[name="per_page"].form-select-sm,
+.unified-table-wrapper form .form-select-sm[name="per_page"] {
+  display: inline-block !important;
+  width: auto !important;
+  min-width: 65px !important;
+  padding: 0.4rem 1.75rem 0.4rem 0.6rem !important;
+  font-size: 0.9rem !important;
+  font-weight: 400 !important;
+  color: #495057 !important;
+  background-color: #fff !important;
+  background-image: none !important; /* Primero eliminar cualquier imagen existente */
+  background-repeat: no-repeat !important;
+  background-position: right 0.5rem center !important;
+  background-size: 16px 12px !important;
+  border: 1px solid #d0d0d0 !important;
+  border-radius: 0.375rem !important;
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  -moz-appearance: none !important;
+  transition: border-color 0.15s ease-in-out !important;
+  line-height: 1.5 !important;
+}
+
+/* Luego aplicar nuestra flecha personalizada */
+.unified-table-wrapper select[name="per_page"],
+.unified-table-wrapper select[name="per_page"].form-select,
+.unified-table-wrapper select[name="per_page"].form-select-sm,
+.unified-table-wrapper .form-select-sm[name="per_page"],
+.unified-table-wrapper form select[name="per_page"],
+.unified-table-wrapper form select[name="per_page"].form-select,
+.unified-table-wrapper form select[name="per_page"].form-select-sm,
+.unified-table-wrapper form .form-select-sm[name="per_page"] {
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23343a40' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e") !important;
+}
+
+/* Eliminar cualquier flecha adicional de Bootstrap y navegadores */
+.unified-table-wrapper select[name="per_page"]::-ms-expand,
+.unified-table-wrapper select[name="per_page"].form-select::-ms-expand,
+.unified-table-wrapper select[name="per_page"].form-select-sm::-ms-expand,
+.unified-table-wrapper .form-select-sm[name="per_page"]::-ms-expand {
+  display: none !important;
+}
+
+/* Forzar solo una flecha - sobrescribir cualquier estilo de Bootstrap */
+.unified-table-wrapper form select[name="per_page"],
+.unified-table-wrapper form select[name="per_page"].form-select,
+.unified-table-wrapper form select[name="per_page"].form-select-sm,
+.unified-table-wrapper form .form-select-sm[name="per_page"],
+.unified-table-wrapper .d-flex select[name="per_page"],
+.unified-table-wrapper .d-flex select[name="per_page"].form-select,
+.unified-table-wrapper .d-flex select[name="per_page"].form-select-sm,
+.unified-table-wrapper .d-flex .form-select-sm[name="per_page"] {
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23343a40' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e") !important;
+  background-repeat: no-repeat !important;
+  background-position: right 0.5rem center !important;
+  background-size: 16px 12px !important;
+}
+
+.unified-table-wrapper select[name="per_page"]:hover,
+.unified-table-wrapper select[name="per_page"].form-select:hover,
+.unified-table-wrapper select[name="per_page"].form-select-sm:hover,
+.unified-table-wrapper .form-select-sm[name="per_page"]:hover {
+  border-color: #adb5bd !important;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23343a40' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e") !important;
+}
+
+.unified-table-wrapper select[name="per_page"]:focus,
+.unified-table-wrapper select[name="per_page"].form-select:focus,
+.unified-table-wrapper select[name="per_page"].form-select-sm:focus,
+.unified-table-wrapper .form-select-sm[name="per_page"]:focus {
+  border-color: #86b7fe !important;
+  outline: 0 !important;
+  box-shadow: 0 0 0 0.15rem rgba(13, 110, 253, 0.1) !important;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23343a40' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e") !important;
+}
+
+[data-theme="dark"] .unified-table-wrapper select[name="per_page"],
+[data-theme="dark"] .unified-table-wrapper select[name="per_page"].form-select,
+[data-theme="dark"] .unified-table-wrapper select[name="per_page"].form-select-sm,
+[data-theme="dark"] .unified-table-wrapper .form-select-sm[name="per_page"],
+[data-theme="dark"] .unified-table-wrapper form select[name="per_page"],
+[data-theme="dark"] .unified-table-wrapper form select[name="per_page"].form-select,
+[data-theme="dark"] .unified-table-wrapper form select[name="per_page"].form-select-sm,
+[data-theme="dark"] .unified-table-wrapper form .form-select-sm[name="per_page"] {
+  background-color: #2d2d2d !important;
+  color: #e9ecef !important;
+  border-color: #495057 !important;
+  background-image: none !important; /* Primero eliminar cualquier imagen existente */
+  background-repeat: no-repeat !important;
+  background-position: right 0.5rem center !important;
+  background-size: 16px 12px !important;
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  -moz-appearance: none !important;
+}
+
+/* Luego aplicar la flecha personalizada en modo oscuro */
+[data-theme="dark"] .unified-table-wrapper select[name="per_page"],
+[data-theme="dark"] .unified-table-wrapper select[name="per_page"].form-select,
+[data-theme="dark"] .unified-table-wrapper select[name="per_page"].form-select-sm,
+[data-theme="dark"] .unified-table-wrapper .form-select-sm[name="per_page"],
+[data-theme="dark"] .unified-table-wrapper form select[name="per_page"],
+[data-theme="dark"] .unified-table-wrapper form select[name="per_page"].form-select,
+[data-theme="dark"] .unified-table-wrapper form select[name="per_page"].form-select-sm,
+[data-theme="dark"] .unified-table-wrapper form .form-select-sm[name="per_page"] {
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23e9ecef' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e") !important;
+}
+
+[data-theme="dark"] .unified-table-wrapper select[name="per_page"]:hover,
+[data-theme="dark"] .unified-table-wrapper select[name="per_page"].form-select:hover,
+[data-theme="dark"] .unified-table-wrapper select[name="per_page"].form-select-sm:hover,
+[data-theme="dark"] .unified-table-wrapper .form-select-sm[name="per_page"]:hover,
+[data-theme="dark"] .unified-table-wrapper form select[name="per_page"]:hover,
+[data-theme="dark"] .unified-table-wrapper form select[name="per_page"].form-select:hover,
+[data-theme="dark"] .unified-table-wrapper form select[name="per_page"].form-select-sm:hover,
+[data-theme="dark"] .unified-table-wrapper form .form-select-sm[name="per_page"]:hover {
+  border-color: #6c757d !important;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23e9ecef' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e") !important;
+}
+
+[data-theme="dark"] .unified-table-wrapper select[name="per_page"]:focus,
+[data-theme="dark"] .unified-table-wrapper select[name="per_page"].form-select:focus,
+[data-theme="dark"] .unified-table-wrapper select[name="per_page"].form-select-sm:focus,
+[data-theme="dark"] .unified-table-wrapper .form-select-sm[name="per_page"]:focus,
+[data-theme="dark"] .unified-table-wrapper form select[name="per_page"]:focus,
+[data-theme="dark"] .unified-table-wrapper form select[name="per_page"].form-select:focus,
+[data-theme="dark"] .unified-table-wrapper form select[name="per_page"].form-select-sm:focus,
+[data-theme="dark"] .unified-table-wrapper form .form-select-sm[name="per_page"]:focus {
+  border-color: #86b7fe !important;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23e9ecef' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e") !important;
+}
+
+/* Eliminar flecha nativa en modo oscuro para todos los navegadores */
+[data-theme="dark"] .unified-table-wrapper select[name="per_page"]::-ms-expand,
+[data-theme="dark"] .unified-table-wrapper select[name="per_page"].form-select::-ms-expand,
+[data-theme="dark"] .unified-table-wrapper select[name="per_page"].form-select-sm::-ms-expand,
+[data-theme="dark"] .unified-table-wrapper .form-select-sm[name="per_page"]::-ms-expand {
+  display: none !important;
+}
+
+/* Botones de acción en la tabla */
+.unified-table .btn-group {
+  gap: 0 !important;
+  display: inline-flex !important;
+}
+
+/* Estilos base para todos los botones en tablas unificadas */
+.unified-table tbody td .btn,
+.unified-table tbody td .btn-sm,
+.unified-table tbody td a.btn,
+.unified-table tbody td a.btn-sm {
+  padding: 0.4rem 0.75rem !important;
+  font-size: 0.875rem !important;
+  border-radius: 0.375rem !important;
+  border: 1px solid transparent !important;
+  transition: all 0.15s ease !important;
+  margin: 0 !important;
+  margin-left: 0 !important;
+  min-height: 32px !important;
+  height: auto !important;
+  line-height: 1.5 !important;
+  width: auto !important;
+  min-width: 38px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+/* Botones dentro de btn-group - ajustar bordes para que se vean juntos */
+.unified-table .btn-group {
+  gap: 0 !important;
+  display: inline-flex !important;
+}
+
+.unified-table .btn-group .btn,
+.unified-table .btn-group .btn-sm,
+.unified-table .btn-group a.btn,
+.unified-table .btn-group a.btn-sm {
+  border-radius: 0 !important;
+  border-right: 1px solid rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Primer botón en btn-group - redondeado a la izquierda */
+.unified-table .btn-group .btn:first-child,
+.unified-table .btn-group .btn-sm:first-child,
+.unified-table .btn-group a.btn:first-child,
+.unified-table .btn-group a.btn-sm:first-child {
+  border-top-left-radius: 0.375rem !important;
+  border-bottom-left-radius: 0.375rem !important;
+}
+
+/* Último botón en btn-group - redondeado a la derecha */
+.unified-table .btn-group .btn:last-child,
+.unified-table .btn-group .btn-sm:last-child,
+.unified-table .btn-group a.btn:last-child,
+.unified-table .btn-group a.btn-sm:last-child {
+  border-top-right-radius: 0.375rem !important;
+  border-bottom-right-radius: 0.375rem !important;
+  border-right: none !important;
+}
+
+/* Cuando hay un solo botón en el btn-group - todos los bordes redondeados */
+.unified-table .btn-group .btn:first-child:last-child,
+.unified-table .btn-group .btn-sm:first-child:last-child,
+.unified-table .btn-group a.btn:first-child:last-child,
+.unified-table .btn-group a.btn-sm:first-child:last-child {
+  border-radius: 0.375rem !important;
+  border-right: none !important;
+}
+
+.unified-table .btn-group .btn:hover {
+  transform: none !important;
+  box-shadow: none !important;
+  opacity: 0.9 !important;
+}
+
+.unified-table .btn-group .btn-warning {
+  background-color: #ffc107;
+  border-color: #ffc107;
+  color: #000;
+}
+
+.unified-table .btn-group .btn-warning:hover {
+  background-color: #ffca2c;
+  border-color: #ffc720;
+}
+
+.unified-table .btn-group .btn-info {
+  background-color: #0dcaf0;
+  border-color: #0dcaf0;
+  color: #000;
+}
+
+.unified-table .btn-group .btn-info:hover {
+  background-color: #31d2f2;
+  border-color: #25cff2;
+}
+
+.unified-table .btn-group .btn-danger {
+  background-color: #dc3545;
+  border-color: #dc3545;
+  color: #fff;
+}
+
+.unified-table .btn-group .btn-danger:hover {
+  background-color: #bb2d3b;
+  border-color: #b02a37;
+}
+
+/* Paginación unificada - diseño con botones separados estilo imagen */
+.unified-table-wrapper .pagination {
+  margin-bottom: 0 !important;
+  gap: 6px !important;
+  border: none !important;
+  background: transparent !important;
+  display: inline-flex !important;
+  overflow: visible !important;
+}
+
+.unified-table-wrapper .pagination .page-item {
+  margin: 0 !important;
+}
+
+.unified-table-wrapper .pagination .page-link {
+  width: 34px !important;
+  height: 34px !important;
+  min-width: 34px !important;
+  min-height: 34px !important;
+  max-width: 34px !important;
+  max-height: 34px !important;
+  border-radius: 6px !important;
+  background-color: #e9ecef !important;
+  color: #495057 !important;
+  border: 1px solid #ced4da !important;
+  box-shadow: none !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-family: var(--bs-font-sans-serif) !important;
+  font-size: 0.9rem !important;
+  font-weight: 500 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease !important;
+  user-select: auto !important;
+  text-align: center !important;
+  line-height: 1 !important;
+  position: relative !important;
+}
+
+.unified-table-wrapper .pagination .page-link span[aria-hidden="true"] {
+  font-size: 0.9rem !important;
+  font-weight: 500 !important;
+  color: inherit !important;
+}
+
+/* Icono de flecha Bootstrap Icons - FORZAR visualización */
+.unified-table-wrapper .pagination .page-link i,
+.unified-table-wrapper .pagination .page-link i.bi,
+.unified-table-wrapper .pagination .page-link i.bi-chevron-left,
+.unified-table-wrapper .pagination .page-link i.bi-chevron-right {
+  display: inline-flex !important;
+  font-size: 0.9rem !important;
+  color: inherit !important;
+  line-height: 1 !important;
+}
+
+.unified-table-wrapper .pagination .page-item:not(.active):not(.disabled) .page-link:hover {
+  color: #495057 !important;
+  background-color: #dee2e6 !important;
+  border-color: #adb5bd !important;
+  z-index: 2 !important;
+}
+
+.unified-table-wrapper .pagination .page-item:not(.active):not(.disabled) .page-link:hover span,
+.unified-table-wrapper .pagination .page-item:not(.active):not(.disabled) .page-link:hover i,
+.unified-table-wrapper .pagination .page-item:not(.active):not(.disabled) .page-link:hover {
+  color: #495057 !important;
+}
+
+.unified-table-wrapper .pagination .page-item.active .page-link {
+  background-color: #6c757d !important;
+  border-color: #6c757d !important;
+  color: #fff !important;
+  z-index: 3 !important;
+  font-weight: 500 !important;
+}
+
+.unified-table-wrapper .pagination .page-item.active .page-link:hover {
+  background-color: #5c636a !important;
+  border-color: #5c636a !important;
+  color: #fff !important;
+}
+
+.unified-table-wrapper .pagination .page-item.disabled .page-link {
+  color: #6c757d !important;
+  opacity: 0.5 !important;
+  cursor: not-allowed !important;
+  background-color: #e9ecef !important;
+  border: 1px solid #ced4da !important;
+  pointer-events: none !important;
+}
+
+.unified-table-wrapper .pagination .page-item.disabled .page-link span[aria-hidden="true"],
+.unified-table-wrapper .pagination .page-item.disabled .page-link i {
+  color: #6c757d !important;
+}
+
+.unified-table-wrapper .pagination .page-link span {
+  display: inline !important;
+  align-items: normal !important;
+  justify-content: normal !important;
+  font-family: inherit !important;
+  font-size: inherit !important;
+  font-weight: inherit !important;
+  line-height: inherit !important;
+  color: inherit !important;
+  height: auto !important;
+  width: auto !important;
+}
+
+[data-theme="dark"] .unified-table-wrapper .pagination .page-link {
+  background-color: #343a40 !important;
+  color: #e9ecef !important;
+  border-color: #495057 !important;
+}
+
+[data-theme="dark"] .unified-table-wrapper .pagination .page-link span[aria-hidden="true"],
+[data-theme="dark"] .unified-table-wrapper .pagination .page-link i {
+  color: #e9ecef !important;
+}
+
+[data-theme="dark"] .unified-table-wrapper .pagination .page-item:not(.active):not(.disabled) .page-link:hover {
+  background-color: #495057 !important;
+  color: #e9ecef !important;
+  border-color: #6c757d !important;
+}
+
+[data-theme="dark"] .unified-table-wrapper .pagination .page-item.active .page-link {
+  background-color: #e9ecef !important;
+  border-color: #e9ecef !important;
+  color: #212529 !important;
+}
+
+[data-theme="dark"] .unified-table-wrapper .pagination .page-item.disabled .page-link {
+  background-color: #343a40 !important;
+  border-color: #495057 !important;
+  color: #6c757d !important;
+  opacity: 1 !important;
+}
+
+[data-theme="dark"] .unified-table-wrapper .pagination .page-item.disabled .page-link span[aria-hidden="true"],
+[data-theme="dark"] .unified-table-wrapper .pagination .page-item.disabled .page-link i {
+  color: #6c757d !important;
+}
+
+/* Responsive para tablas unificadas */
+/* Pantallas pequeñas de PC (laptops pequeños, tablets grandes) */
+@media (max-width: 1200px) {
+  /* Asegurar que table-responsive tenga scroll horizontal */
+  .unified-table-wrapper .table-responsive {
+    overflow-x: auto !important;
+    overflow-y: visible !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+  
+  /* Tabla de productos - ajustar columnas para que quepan mejor */
+  #tablaProductos {
+    font-size: 0.85rem !important;
+    min-width: 900px !important;
+  }
+  
+  #tablaProductos thead th,
+  #tablaProductos tbody td {
+    padding: 0.4rem 0.5rem !important;
+  }
+  
+  /* Reducir ancho mínimo de algunas columnas */
+  #tablaProductos thead th:nth-child(4),
+  #tablaProductos tbody td:nth-child(4) {
+    min-width: 150px !important;
+    max-width: 300px !important;
+  }
+  
+  #tablaProductos thead th:first-child,
+  #tablaProductos tbody td:first-child {
+    min-width: 120px !important;
+  }
+  
+  /* Columnas cortas más compactas */
+  #tablaProductos thead th:nth-child(5),
+  #tablaProductos tbody td:nth-child(5),
+  #tablaProductos thead th:nth-child(6),
+  #tablaProductos tbody td:nth-child(6),
+  #tablaProductos thead th:nth-child(7),
+  #tablaProductos tbody td:nth-child(7),
+  #tablaProductos thead th:nth-child(8),
+  #tablaProductos tbody td:nth-child(8) {
+    min-width: 80px !important;
+  }
+}
+
+/* Tablets y pantallas medianas */
+@media (max-width: 992px) {
+  /* Asegurar scroll horizontal */
+  .unified-table-wrapper .table-responsive {
+    overflow-x: auto !important;
+    overflow-y: visible !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+  
+  .unified-table {
+    font-size: 0.85rem !important;
+    min-width: 800px !important;
+  }
+  
+  .unified-table thead th,
+  .unified-table tbody td {
+    padding: 0.45rem 0.6rem !important;
+  }
+  
+  /* Tabla de productos - hacer columnas más compactas */
+  #tablaProductos {
+    min-width: 850px !important;
+  }
+  
+  #tablaProductos thead th:nth-child(4),
+  #tablaProductos tbody td:nth-child(4) {
+    min-width: 120px !important;
+    max-width: 250px !important;
+  }
+  
+  #tablaProductos thead th:first-child,
+  #tablaProductos tbody td:first-child {
+    min-width: 100px !important;
+  }
+  
+  /* Columna de acciones */
+  .unified-table thead th:last-child,
+  .unified-table tbody td:last-child {
+    min-width: 160px !important;
+    max-width: 180px !important;
+  }
+}
+
+/* Tablets pequeñas y móviles grandes */
+@media (max-width: 768px) {
+  /* Contenedor de información y controles */
+  .unified-table-wrapper .d-flex.justify-content-between {
+    flex-direction: column !important;
+    gap: 1rem !important;
+    align-items: flex-start !important;
+  }
+  
+  .unified-table-wrapper .d-flex.align-items-center.gap-3 {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 0.75rem !important;
+    width: 100%;
+  }
+  
+  /* Información de tabla */
+  .table-info {
+    font-size: 0.8rem !important;
+    margin-bottom: 0 !important;
+  }
+  
+  /* Selector "Mostrar" */
+  .unified-table-wrapper .d-flex.align-items-center.gap-2 {
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 0.5rem !important;
+  }
+  
+  .unified-table-wrapper select[name="per_page"] {
+    min-width: 60px !important;
+    padding: 0.35rem 1.5rem 0.35rem 0.5rem !important;
+    font-size: 0.85rem !important;
+  }
+  
+  /* Tabla */
+  .unified-table {
+    font-size: 0.8rem !important;
+  }
+  
+  .unified-table thead th {
+    padding: 0.5rem 0.4rem !important;
+    font-size: 0.75rem !important;
+  }
+  
+  .unified-table tbody td {
+    padding: 0.5rem 0.4rem !important;
+    font-size: 0.8rem !important;
+  }
+  
+  /* Botones de acción más pequeños */
+  .unified-table .btn-group .btn {
+    padding: 0.25rem 0.5rem !important;
+    font-size: 0.75rem !important;
+  }
+  
+  .unified-table .btn-group .btn i {
+    font-size: 0.85rem !important;
+  }
+  
+  /* Paginación */
+  .unified-table-wrapper .pagination {
+    flex-wrap: wrap !important;
+    justify-content: center !important;
+    margin-top: 1rem !important;
+  }
+  
+  .unified-table-wrapper .pagination .page-link {
+    width: 32px !important;
+    height: 32px !important;
+    min-width: 32px !important;
+    min-height: 32px !important;
+    max-width: 32px !important;
+    max-height: 32px !important;
+    font-size: 0.75rem !important;
+    padding: 0 !important;
+  }
+  
+  .unified-table-wrapper .pagination .page-link span[aria-hidden="true"] {
+    font-size: 0.85rem !important;
+  }
+  
+  /* Card */
+  .unified-table-wrapper .card-body {
+    padding: 0.75rem !important;
+  }
+  
+  /* Table responsive - asegurar scroll horizontal */
+  .unified-table-wrapper .table-responsive {
+    overflow-x: auto !important;
+    overflow-y: visible !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+  
+  /* Ancho de columnas en móvil */
+  .unified-table thead th:first-child,
+  .unified-table tbody td:first-child {
+    min-width: 120px !important;
+    max-width: 150px !important;
+    width: auto !important;
+  }
+  
+  .unified-table thead th:nth-child(2),
+  .unified-table tbody td:nth-child(2) {
+    min-width: 150px !important;
+    max-width: 250px !important;
+  }
+  
+  .unified-table thead th:last-child,
+  .unified-table tbody td:last-child {
+    min-width: 200px !important;
+    width: auto !important;
+  }
+}
+
+/* Responsive para teléfonos pequeños */
+@media (max-width: 480px) {
+  .table-info {
+    font-size: 0.75rem !important;
+  }
+  
+  .unified-table {
+    font-size: 0.75rem !important;
+  }
+  
+  .unified-table thead th {
+    padding: 0.4rem 0.3rem !important;
+    font-size: 0.7rem !important;
+  }
+  
+  .unified-table tbody td {
+    padding: 0.4rem 0.3rem !important;
+    font-size: 0.75rem !important;
+  }
+  
+  .unified-table .btn-group .btn {
+    padding: 0.2rem 0.4rem !important;
+    font-size: 0.7rem !important;
+  }
+  
+  .unified-table-wrapper .pagination .page-link {
+    width: 28px !important;
+    height: 28px !important;
+    min-width: 28px !important;
+    min-height: 28px !important;
+    max-width: 28px !important;
+    max-height: 28px !important;
+    font-size: 0.7rem !important;
+  }
+  
+  .unified-table-wrapper select[name="per_page"] {
+    min-width: 55px !important;
+    padding: 0.3rem 1.25rem 0.3rem 0.4rem !important;
+    font-size: 0.75rem !important;
+  }
+}
+

@@ -1,0 +1,248 @@
+{% extends "usuario/base_login.html" %}
+
+{% block title %}Verificar Correo - Crear Usuario{% endblock %}
+
+{% block heading %}Verificar Correo Electrónico{% endblock %}
+
+{% block messages %}{% endblock %}
+
+{% block form_fields %}
+  <div class="alert alert-info mb-3">
+    <i class="bi bi-envelope-check me-2"></i>
+    Se ha enviado un código de verificación a <strong>{{ correo }}</strong>
+  </div>
+
+  <p class="text-muted mb-3">Ingresa el código de 6 dígitos que recibiste en tu correo electrónico para confirmar tu cuenta.</p>
+
+  <div class="mb-3">
+    <label class="form-label">Código de Verificación</label>
+    <div class="d-flex justify-content-center mb-2" id="codigo-container" style="gap: 0.35rem; flex-wrap: nowrap;">
+      <input
+        type="text"
+        id="codigo-0"
+        class="form-control text-center fw-bold codigo-input"
+        maxlength="1"
+        pattern="[0-9]"
+        inputmode="numeric"
+        autocomplete="one-time-code"
+        style="width: 50px; height: 55px; font-size: 1.5rem; flex: 0 0 auto;"
+        autofocus
+      />
+      <input
+        type="text"
+        id="codigo-1"
+        class="form-control text-center fw-bold codigo-input"
+        maxlength="1"
+        pattern="[0-9]"
+        inputmode="numeric"
+        autocomplete="one-time-code"
+        style="width: 50px; height: 55px; font-size: 1.5rem; flex: 0 0 auto;"
+      />
+      <input
+        type="text"
+        id="codigo-2"
+        class="form-control text-center fw-bold codigo-input"
+        maxlength="1"
+        pattern="[0-9]"
+        inputmode="numeric"
+        autocomplete="one-time-code"
+        style="width: 50px; height: 55px; font-size: 1.5rem; flex: 0 0 auto;"
+      />
+      <input
+        type="text"
+        id="codigo-3"
+        class="form-control text-center fw-bold codigo-input"
+        maxlength="1"
+        pattern="[0-9]"
+        inputmode="numeric"
+        autocomplete="one-time-code"
+        style="width: 50px; height: 55px; font-size: 1.5rem; flex: 0 0 auto;"
+      />
+      <input
+        type="text"
+        id="codigo-4"
+        class="form-control text-center fw-bold codigo-input"
+        maxlength="1"
+        pattern="[0-9]"
+        inputmode="numeric"
+        autocomplete="one-time-code"
+        style="width: 50px; height: 55px; font-size: 1.5rem; flex: 0 0 auto;"
+      />
+      <input
+        type="text"
+        id="codigo-5"
+        class="form-control text-center fw-bold codigo-input"
+        maxlength="1"
+        pattern="[0-9]"
+        inputmode="numeric"
+        autocomplete="one-time-code"
+        style="width: 50px; height: 55px; font-size: 1.5rem; flex: 0 0 auto;"
+      />
+    </div>
+    <input type="hidden" id="codigo" name="codigo" />
+    <div id="codigo-help" class="form-text">
+      <i class="bi bi-info-circle me-1"></i>
+      Revisa también tu carpeta de spam si no encuentras el correo.
+    </div>
+    <div id="codigo-error" class="mt-1" style="display: none;">
+      <small class="text-danger">
+        <i class="bi bi-x-circle me-1"></i> <span class="error-text"></span>
+      </small>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const codigoError = document.getElementById('codigo-error');
+      const codigoHelp = document.getElementById('codigo-help');
+      const form = document.getElementById('login-form');
+      const submitButton = document.querySelector('button[type="submit"]');
+      
+      // Manejar código de verificación con 6 bloques
+      const codigoInputs = [];
+      for (let i = 0; i < 6; i++) {
+        const input = document.getElementById(`codigo-${i}`);
+        if (input) {
+          codigoInputs.push(input);
+          
+          // Manejar input de números
+          input.addEventListener('input', function(e) {
+            const value = e.target.value.replace(/[^0-9]/g, '');
+            e.target.value = value;
+            
+            // Actualizar campo hidden con el código completo
+            updateCodigoHidden();
+            
+            // Limpiar errores
+            if (codigoError) codigoError.style.display = 'none';
+            if (codigoHelp) codigoHelp.style.display = 'block';
+            
+            // Auto-avance al siguiente campo si hay valor
+            if (value && i < 5) {
+              codigoInputs[i + 1].focus();
+            }
+          });
+          
+          // Manejar tecla Backspace
+          input.addEventListener('keydown', function(e) {
+            if (e.key === 'Backspace' && !e.target.value && i > 0) {
+              codigoInputs[i - 1].focus();
+            }
+          });
+          
+          // Manejar flechas
+          input.addEventListener('keydown', function(e) {
+            if (e.key === 'ArrowLeft' && i > 0) {
+              e.preventDefault();
+              codigoInputs[i - 1].focus();
+            } else if (e.key === 'ArrowRight' && i < 5) {
+              e.preventDefault();
+              codigoInputs[i + 1].focus();
+            }
+          });
+          
+          // Manejar pegar
+          input.addEventListener('paste', function(e) {
+            e.preventDefault();
+            const pastedData = (e.clipboardData || window.clipboardData).getData('text').replace(/[^0-9]/g, '').slice(0, 6);
+            
+            if (pastedData.length > 0) {
+              // Llenar los campos con los datos pegados
+              for (let j = 0; j < pastedData.length && (i + j) < 6; j++) {
+                codigoInputs[i + j].value = pastedData[j];
+              }
+              
+              // Enfocar el siguiente campo vacío o el último
+              const nextEmptyIndex = Math.min(i + pastedData.length, 5);
+              codigoInputs[nextEmptyIndex].focus();
+              
+              // Actualizar campo hidden
+              updateCodigoHidden();
+              
+              // Limpiar errores
+              if (codigoError) codigoError.style.display = 'none';
+              if (codigoHelp) codigoHelp.style.display = 'block';
+            }
+          });
+        }
+      }
+      
+      // Función para actualizar el campo hidden con el código completo
+      function updateCodigoHidden() {
+        const codigoCompleto = codigoInputs.map(input => input.value || '').join('');
+        const hiddenInput = document.getElementById('codigo');
+        if (hiddenInput) {
+          hiddenInput.value = codigoCompleto;
+        }
+      }
+
+      // Función para mostrar error
+      function showError(message) {
+        if (codigoError) {
+          codigoError.querySelector('.error-text').textContent = message;
+          codigoError.style.display = 'block';
+        }
+        if (codigoHelp) codigoHelp.style.display = 'none';
+      }
+
+      // Manejar envío del formulario con AJAX
+      form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        // Actualizar campo hidden antes de validar
+        updateCodigoHidden();
+        
+        const codigo = document.getElementById('codigo').value.trim();
+        
+        // Limpiar errores anteriores
+        if (codigoError) codigoError.style.display = 'none';
+        if (codigoHelp) codigoHelp.style.display = 'block';
+        
+        // Validar código vacío
+        if (!codigo) {
+          showError('Ingresa el código de verificación');
+          return;
+        }
+        
+        // Validar que sea de 6 dígitos
+        if (!/^\d{6}$/.test(codigo)) {
+          showError('El código debe ser de 6 dígitos numéricos');
+          return;
+        }
+        
+        // Deshabilitar botón mientras se envía
+        submitButton.disabled = true;
+        
+        // Enviar formulario con AJAX
+        const formData = new FormData(form);
+        
+        fetch(form.action || window.location.href, {
+          method: 'POST',
+          body: formData,
+          headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+          }
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            window.location.href = data.redirect || '/';
+          } else {
+            showError(data.message || 'Código incorrecto');
+            submitButton.disabled = false;
+          }
+        })
+        .catch(error => {
+          showError('Error de conexión. Intenta nuevamente.');
+          submitButton.disabled = false;
+        });
+      });
+    });
+  </script>
+{% endblock %}
+
+{% block button_text %}<i class="bi bi-check-circle me-2"></i>Verificar y Crear Usuario{% endblock %}
+
+{% block bottom_text %}
+{% endblock %}
+

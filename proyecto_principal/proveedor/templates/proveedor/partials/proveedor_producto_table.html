@@ -1,0 +1,264 @@
+{% load table_tags %}
+{% load static %}
+{% load humanize %}
+
+<!-- Información de página y selector de elementos por página - ARRIBA DE LA TABLA -->
+{% if page_obj %}
+<div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-3">
+  <div class="d-flex align-items-center gap-3">
+    <div class="table-info">
+      <span class="text-muted">
+        Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }} | 
+        Total {{ page_obj.paginator.count }} producto(s)
+      </span>
+    </div>
+    <div class="d-flex align-items-center gap-2">
+      <label class="mb-0 table-info"><span class="text-muted">Mostrar:</span></label>
+      <form method="get" class="d-inline">
+        {% if search_query %}
+          <input type="hidden" name="search" value="{{ search_query }}">
+        {% endif %}
+        {% if sort_field %}
+          <input type="hidden" name="sort" value="{{ sort_field }}">
+        {% endif %}
+        {% if order %}
+          <input type="hidden" name="order" value="{{ order }}">
+        {% endif %}
+        <select name="per_page" class="form-select form-select-sm" style="width: auto;">
+          <option value="5" {% if request.GET.per_page == '5' or not request.GET.per_page %}selected{% endif %}>5</option>
+          <option value="10" {% if request.GET.per_page == '10' or not request.GET.per_page %}selected{% endif %}>10</option>
+          <option value="25" {% if request.GET.per_page == '25' %}selected{% endif %}>25</option>
+          <option value="50" {% if request.GET.per_page == '50' %}selected{% endif %}>50</option>
+        </select>
+      </form>
+    </div>
+  </div>
+  
+  <!-- Controles de paginación -->
+  <ul class="pagination justify-content-center mb-0">
+    {% if page_obj.has_previous %}
+      <li class="page-item">
+        <a class="page-link" href="{% build_table_url request page=page_obj.previous_page_number %}" aria-label="Página anterior">
+          <i class="bi bi-chevron-left" aria-hidden="true"></i>
+        </a>
+      </li>
+    {% else %}
+      <li class="page-item disabled">
+        <span class="page-link">
+          <i class="bi bi-chevron-left" aria-hidden="true"></i>
+        </span>
+      </li>
+    {% endif %}
+
+    {% if page_obj.number == 1 %}
+      {# Si estamos en la primera página, mostrar 1, 2, 3 #}
+      {% for num in page_obj.paginator.page_range %}
+        {% if num >= 1 and num <= 3 %}
+          {% if page_obj.number == num %}
+            <li class="page-item active" aria-current="page">
+              <span class="page-link">{{ num }}</span>
+            </li>
+          {% else %}
+            <li class="page-item">
+              <a class="page-link" href="{% build_table_url request page=num %}">{{ num }}</a>
+            </li>
+          {% endif %}
+        {% endif %}
+      {% endfor %}
+    {% elif page_obj.number == page_obj.paginator.num_pages %}
+      {# Si estamos en la última página, mostrar las 2 anteriores y la última #}
+      {% for num in page_obj.paginator.page_range %}
+        {% if num >= page_obj.number|add:'-2' and num <= page_obj.number %}
+          {% if page_obj.number == num %}
+            <li class="page-item active" aria-current="page">
+              <span class="page-link">{{ num }}</span>
+            </li>
+          {% else %}
+            <li class="page-item">
+              <a class="page-link" href="{% build_table_url request page=num %}">{{ num }}</a>
+            </li>
+          {% endif %}
+        {% endif %}
+      {% endfor %}
+    {% else %}
+      {# En el medio, mostrar anterior, actual, siguiente (siempre 3 con actual en medio) #}
+      {% for num in page_obj.paginator.page_range %}
+        {% if num >= page_obj.number|add:'-1' and num <= page_obj.number|add:'1' %}
+          {% if page_obj.number == num %}
+            <li class="page-item active" aria-current="page">
+              <span class="page-link">{{ num }}</span>
+            </li>
+          {% else %}
+            <li class="page-item">
+              <a class="page-link" href="{% build_table_url request page=num %}">{{ num }}</a>
+            </li>
+          {% endif %}
+        {% endif %}
+      {% endfor %}
+    {% endif %}
+
+    {% if page_obj.has_next %}
+      <li class="page-item">
+        <a class="page-link" href="{% build_table_url request page=page_obj.next_page_number %}" aria-label="Página siguiente">
+          <i class="bi bi-chevron-right" aria-hidden="true"></i>
+        </a>
+      </li>
+    {% else %}
+      <li class="page-item disabled">
+        <span class="page-link">
+          <i class="bi bi-chevron-right" aria-hidden="true"></i>
+        </span>
+      </li>
+    {% endif %}
+  </ul>
+</div>
+{% endif %}
+
+<!-- Tabla -->
+<div class="card shadow-lg border-0 mb-4">
+  <div class="card-header bg-gradient text-white fw-bold" style="background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);">
+    <i class="bi bi-box-seam me-2"></i>Productos del Proveedor
+  </div>
+  <div class="card-body px-4 py-4">
+    <div class="table-responsive">
+      <table class="unified-table">
+        <thead>
+          <tr>
+            <th class="text-left sortable" 
+                data-sort="nombre"
+                style="cursor: pointer;">
+              Nombre
+              <span class="sort-icon">
+                {% if sort_field == 'nombre' %}
+                  {% if order == 'asc' %}
+                    <span class="sorting sorting_asc"></span>
+                  {% else %}
+                    <span class="sorting sorting_desc"></span>
+                  {% endif %}
+                {% else %}
+                  <span class="sorting"></span>
+                {% endif %}
+              </span>
+            </th>
+            <th class="text-left">Código SKU</th>
+            <th class="text-left">
+              Marca
+            </th>
+            <th class="text-center sortable" 
+                data-sort="stock"
+                style="cursor: pointer;">
+              Stock
+              <span class="sort-icon">
+                {% if sort_field == 'stock' %}
+                  {% if order == 'asc' %}
+                    <span class="sorting sorting_asc"></span>
+                  {% else %}
+                    <span class="sorting sorting_desc"></span>
+                  {% endif %}
+                {% else %}
+                  <span class="sorting"></span>
+                {% endif %}
+              </span>
+            </th>
+            <th class="text-center sortable" 
+                data-sort="precio_venta"
+                style="cursor: pointer;">
+              Precio Venta
+              <span class="sort-icon">
+                {% if sort_field == 'precio_venta' %}
+                  {% if order == 'asc' %}
+                    <span class="sorting sorting_asc"></span>
+                  {% else %}
+                    <span class="sorting sorting_desc"></span>
+                  {% endif %}
+                {% else %}
+                  <span class="sorting"></span>
+                {% endif %}
+              </span>
+            </th>
+            <th class="text-center sortable" 
+                data-sort="precio_proveedor"
+                style="cursor: pointer;">
+              Precio Proveedor
+              <span class="sort-icon">
+                {% if sort_field == 'precio_proveedor' %}
+                  {% if order == 'asc' %}
+                    <span class="sorting sorting_asc"></span>
+                  {% else %}
+                    <span class="sorting sorting_desc"></span>
+                  {% endif %}
+                {% else %}
+                  <span class="sorting"></span>
+                {% endif %}
+              </span>
+            </th>
+            <th class="text-center">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for producto_proveedor in producto_proveedores %}
+          <tr>
+            <td class="text-left">
+              {% if producto_proveedor.id_producto.nombre %}
+                {{ producto_proveedor.id_producto.nombre }}
+              {% else %}
+                <span class="text-muted fst-italic">Sin nombre</span>
+              {% endif %}
+            </td>
+            <td class="text-left">
+              {% with codigo=producto_proveedor.id_producto.codigo_set.first %}
+                {% if codigo %}
+                  {{ codigo.codigo }}
+                {% else %}
+                  <span class="text-muted fst-italic">Sin código</span>
+                {% endif %}
+              {% endwith %}
+            </td>
+            <td class="text-left">
+              {% if producto_proveedor.id_producto.marca %}
+                {{ producto_proveedor.id_producto.marca }}
+              {% else %}
+                <span class="text-muted fst-italic">Sin marca</span>
+              {% endif %}
+            </td>
+            <td class="text-center">{{ producto_proveedor.id_producto.stock_actual }} {% if producto_proveedor.id_producto.stock_actual == 1 %}unidad{% else %}unidades{% endif %}</td>
+            <td class="text-center">${{ producto_proveedor.id_producto.precio_unitario|floatformat:0|intcomma }}</td>
+            <td class="text-center">${{ producto_proveedor.precio_proveedor|floatformat:0|intcomma }}</td>
+            <td class="text-center" style="white-space: nowrap;">
+              <div class="btn-group" role="group">
+                <button
+                  type="button"
+                  class="btn btn-sm btn-warning btn-edit-precio"
+                  data-bs-toggle="modal"
+                  data-bs-target="#editarPrecioModal"
+                  data-producto-id="{{ producto_proveedor.id_producto.id_producto }}"
+                  data-producto-nombre="{{ producto_proveedor.id_producto.nombre }}"
+                  data-precio-actual="{{ producto_proveedor.precio_proveedor }}"
+                  data-url="{% url 'editar_precio_proveedor' proveedor.id_proveedor producto_proveedor.id_producto.id_producto %}"
+                  title="Editar precio"
+                >
+                  <i class="bi bi-pencil"></i>
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-sm btn-danger btn-delete-producto"
+                  data-bs-toggle="modal"
+                  data-bs-target="#deleteProductoModal"
+                  data-producto-id="{{ producto_proveedor.id_producto.id_producto }}"
+                  data-proveedor-id="{{ proveedor.id_proveedor }}"
+                  data-producto-nombre="{{ producto_proveedor.id_producto.nombre }}"
+                  data-url="{% url 'eliminar_producto_proveedor' proveedor.id_proveedor producto_proveedor.id_producto.id_producto %}"
+                  title="Eliminar producto"
+                >
+                  <i class="bi bi-trash"></i>
+                </button>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+

@@ -1,0 +1,738 @@
+{% extends 'home/base_main.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}Editar Salida{% endblock %}
+
+{% block extra_scripts %}
+<style>
+.card-header.bg-gradient {
+  background: #fff !important;
+  color: #222 !important;
+  font-weight: 600;
+  font-size: 1.08rem;
+  padding: 1rem 1.5rem;
+  border-radius: 0.75rem 0.75rem 0 0;
+  border-bottom: 1.5px solid #e5e7eb;
+  letter-spacing: 0.01em;
+  box-shadow: none;
+}
+
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+[data-theme="dark"] .input-group input[type='number'].form-control {
+  background: #23272b !important;
+  color: #fff !important;
+  border-color: #444 !important;
+}
+[data-theme="dark"] .input-group input[type='number'].form-control:focus {
+  background: #23272b !important;
+  color: #fff !important;
+  border-color: #0d6efd !important;
+  box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.15) !important;
+}
+[data-theme="dark"] textarea#observaciones.form-control {
+  background: #23272b !important;
+  color: #fff !important;
+  border-color: #444 !important;
+}
+[data-theme="dark"] textarea#observaciones.form-control:focus {
+  background: #23272b !important;
+  color: #fff !important;
+  border-color: #0d6efd !important;
+  box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.15) !important;
+}
+[data-theme="dark"] table tr th,
+[data-theme="dark"] table tr td {
+  background: #23272b !important;
+  color: #fff !important;
+  border-color: #444 !important;
+}
+
+/* Línea vertical separadora antes de la columna Subtotal - baja hasta el final (igual que acordeones) */
+#tabla-productos-edit thead th:nth-child(7),
+#tabla-productos-edit tbody td:nth-child(7) {
+  border-left: 1px solid #dee2e6 !important;
+}
+
+/* Asegurar que la línea continúe en todas las filas del tbody */
+#tabla-productos-edit tbody tr td:nth-child(7) {
+  border-left: 1px solid #dee2e6 !important;
+}
+
+/* Aplicar borde también a la celda del precio total en tfoot */
+#tabla-productos-edit tfoot tr th.text-center:last-child,
+#tabla-productos-edit tfoot tr th:last-child {
+  border-left: 1px solid #dee2e6 !important;
+}
+
+/* Agregar padding-right a la celda que contiene "Total venta:" y "Total a reembolsar:" para separarla de la línea */
+#tabla-productos-edit tfoot tr th.text-end {
+  padding-right: 1.5rem !important;
+}
+
+/* Estilos responsive para móviles */
+@media (max-width: 768px) {
+  .card-body {
+    padding: 1rem !important;
+  }
+  
+  /* Tabla responsive */
+  .table-responsive {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  #tabla-productos-edit {
+    font-size: 0.85rem;
+    min-width: 800px; /* Ancho mínimo para mantener legibilidad */
+  }
+  
+  #tabla-productos-edit th,
+  #tabla-productos-edit td {
+    padding: 0.5rem 0.4rem;
+    white-space: nowrap;
+  }
+  
+  #tabla-productos-edit th {
+    font-size: 0.8rem;
+  }
+  
+  /* Inputs más grandes en móviles */
+  #tabla-productos-edit .input-group input[type="number"] {
+    font-size: 1rem;
+    padding: 0.4rem 0.5rem;
+    min-width: 70px;
+  }
+  
+  #tabla-productos-edit .input-group-text {
+    font-size: 0.85rem;
+    padding: 0.4rem 0.5rem;
+  }
+  
+  /* Badges más pequeños */
+  #tabla-productos-edit .badge {
+    font-size: 0.75rem;
+    padding: 0.3rem 0.5rem;
+  }
+  
+  /* Ajustar columnas específicas */
+  #tabla-productos-edit th.text-center,
+  #tabla-productos-edit td.text-center {
+    text-align: center !important;
+  }
+  
+    font-size: 0.7rem !important;
+    margin-top: 0.25rem !important;
+  }
+  
+  /* Footer de tabla */
+  #tabla-productos-edit tfoot th {
+    font-size: 0.85rem;
+    padding: 0.6rem 0.4rem;
+  }
+  
+  /* Observaciones y botón */
+  .row.g-3 {
+    margin-bottom: 1rem !important;
+  }
+  
+  .col-md-10,
+  .col-md-2 {
+    margin-bottom: 1rem;
+  }
+  
+  .col-md-2.d-grid {
+    margin-bottom: 0;
+  }
+  
+  textarea#observaciones {
+    font-size: 0.9rem;
+  }
+  
+  button.btn-warning {
+    font-size: 0.9rem;
+    padding: 0.6rem 1rem;
+  }
+}
+
+/* Estilos para pantallas muy pequeñas (menos de 576px) */
+@media (max-width: 575px) {
+  .container {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+  }
+  
+  h1 {
+    font-size: 1.5rem !important;
+  }
+  
+  .card-header {
+    padding: 0.75rem 1rem !important;
+    font-size: 1rem !important;
+  }
+  
+  h4 {
+    font-size: 1.1rem !important;
+  }
+  
+  #tabla-productos-edit {
+    font-size: 0.8rem;
+    min-width: 700px;
+  }
+  
+  #tabla-productos-edit th,
+  #tabla-productos-edit td {
+    padding: 0.4rem 0.3rem;
+  }
+  
+  #tabla-productos-edit .input-group input[type="number"] {
+    font-size: 0.95rem;
+    padding: 0.35rem 0.4rem;
+    min-width: 60px;
+  }
+  
+  /* Alert de instrucciones más compacto */
+  .alert {
+    padding: 0.75rem 1rem !important;
+    font-size: 0.9rem;
+  }
+  
+  .alert ul {
+    margin-bottom: 0.5rem;
+    padding-left: 1.2rem;
+  }
+  
+  .alert ul li {
+    margin-bottom: 0.3rem;
+  }
+  
+  .alert-warning {
+    padding: 0.5rem 0.75rem !important;
+    font-size: 0.85rem;
+  }
+}
+
+/* Estilos mejorados para botón de volver */
+.btn-back {
+  background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
+  color: #fff !important;
+  border: none;
+  padding: 0.6rem 1.2rem;
+  border-radius: 8px;
+  font-weight: 500;
+  font-size: 0.95rem;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(108, 117, 125, 0.2);
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+}
+
+.btn-back:hover {
+  background: linear-gradient(135deg, #5a6268 0%, #495057 100%);
+  color: #fff !important;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(108, 117, 125, 0.3);
+  text-decoration: none;
+}
+
+.btn-back:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 6px rgba(108, 117, 125, 0.25);
+}
+
+.btn-back i {
+  transition: transform 0.3s ease;
+}
+
+.btn-back:hover i {
+  transform: translateX(-3px);
+}
+
+/* Modo oscuro */
+[data-theme="dark"] .btn-back {
+  background: linear-gradient(135deg, #495057 0%, #3d4146 100%);
+  color: #fff !important;
+}
+
+[data-theme="dark"] .btn-back:hover {
+  background: linear-gradient(135deg, #3d4146 0%, #343a40 100%);
+  color: #fff !important;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+  <!-- Header con título y botones -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="fw-bold mb-0 mt-6 mb-2">Editar Salida #{{ venta.numero_venta|default:venta.id_venta }}</h1>
+  </div>
+  
+  <!-- Información importante -->
+  <div class="alert alert-info mb-4">
+    <h5 class="alert-heading"><i class="bi bi-info-circle me-2"></i>Instrucciones para editar salida</h5>
+    <p class="mb-2"><strong>Para modificar la cantidad:</strong></p>
+    <ul class="mb-0">
+      <li>Ingresa la cantidad que deseas <strong>mantener</strong> en la salida</li>
+      <li>Si reduces la cantidad, se devolverán las unidades al stock del producto</li>
+      <li>Si aumentas la cantidad, se agregarán más productos a la salida (si hay stock disponible)</li>
+    </ul>
+  </div>
+  
+  <div class="card shadow-lg rounded-4">
+    <div class="card-header bg-gradient text-white fw-bold">
+      <i class="bi bi-pencil-square me-2"></i>Editar Salida
+    </div>
+    <div class="card-body p-4">
+      <form method="post">
+        {% csrf_token %}
+        <h4 class="fw-bold mb-3 text-primary"><i class="bi bi-box-seam me-2"></i>Productos enviados</h4>
+        <div class="table-responsive mb-3">
+          <table class="unified-table mb-0" id="tabla-productos-edit">
+            <thead>
+              <tr>
+                <th class="text-left">Producto</th>
+                <th class="text-left">Código SKU</th>
+                <th class="text-center">Cantidad original</th>
+                <th class="text-center">Cantidad a mantener</th>
+                <th class="text-center">Precio unitario</th>
+                <th class="text-center">Estado</th>
+                <th class="text-center">Subtotal</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for detalle in detalles %}
+              <tr class="producto-row" data-producto-id="{{ detalle.producto.id_producto }}">
+                <td class="text-left">
+                  <span class="fw-semibold">
+                    {% if detalle.producto.nombre and detalle.producto.nombre != '---' and detalle.producto.nombre != '—' and detalle.producto.nombre != '' %}
+                      {{ detalle.producto.nombre }}
+                    {% else %}
+                      <span class="text-muted fst-italic">Sin nombre</span>
+                    {% endif %}
+                  </span>
+                  <br>
+                  <small class="text-muted">Stock: {{ detalle.producto.stock_actual }}</small>
+                </td>
+                <td class="text-left">
+                  {% with cod=detalle.producto.codigo_set.first %}
+                    {% if cod %}{{ cod.codigo }}{% else %}<span class="text-muted fst-italic">Sin código</span>{% endif %}
+                  {% endwith %}
+                </td>
+                <td class="text-center">
+                  <span class="badge bg-secondary rounded-pill" style="border-radius: 50rem !important;">{{ detalle.cantidad }} unid.</span>
+                </td>
+                <td class="text-center">
+                  <div class="input-group input-group-sm">
+                    <input type="number" 
+                           name="cantidad_{{ detalle.id_detalle }}" 
+                           value="{{ detalle.cantidad }}" 
+                           min="0" 
+                           max="{{ detalle.cantidad|add:detalle.producto.stock_actual }}"
+                           class="form-control form-control-sm text-center" 
+                           data-cantidad-original="{{ detalle.cantidad }}" 
+                           required />
+                    <span class="input-group-text">unid.</span>
+                  </div>
+                </td>
+                <td class="text-center precio-unitario" data-precio="{{ detalle.precio_unitario }}">${{ detalle.precio_unitario|floatformat:0|intcomma }}</td>
+                <td class="text-center">
+                  <span class="badge rounded {% if detalle.estado == 'ACTIVO' %}bg-success{% else %}bg-danger{% endif %}" style="border-radius: 0.375rem !important;">
+                    {{ detalle.estado|upper }}
+                  </span>
+                </td>
+                <td class="text-center subtotal">${{ detalle.subtotal|floatformat:0|intcomma }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+            <tfoot>
+              <tr>
+                <th colspan="6" class="text-end">Total salida:</th>
+                <th class="text-center" id="total-venta">${{ venta.total_venta|floatformat:0|intcomma }}</th>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+        <div class="row g-3 align-items-end mb-0">
+          <div class="col-12 col-md-10">
+            <label for="observaciones" class="form-label fw-semibold">Observaciones:</label>
+            <textarea name="observaciones" id="observaciones" class="form-control" rows="2" maxlength="100">{% if venta.observaciones and venta.observaciones != '---' and venta.observaciones != '—' and venta.observaciones != '' %}{{ venta.observaciones }}{% endif %}</textarea>
+            <div class="form-text text-end">
+              <span id="observaciones-counter">0</span>/100
+            </div>
+          </div>
+          <div class="col-12 col-md-2 d-grid">
+            <button type="submit" class="btn btn-warning fw-bold"><i class="bi bi-save me-2"></i>Guardar</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Función para actualizar subtotales
+  function actualizarSubtotal(input) {
+    const row = input.closest('tr');
+    const cantidad = parseInt(input.value) || 0;
+    const precio = parseFloat(row.querySelector('.precio-unitario').getAttribute('data-precio')) || 0;
+    const subtotal = cantidad * precio;
+    row.querySelector('.subtotal').textContent = `$${subtotal.toLocaleString('es-CL', {maximumFractionDigits: 0})}`;
+    
+    // Actualizar totales
+    actualizarTotales();
+  }
+  
+  // Función para actualizar totales
+  function actualizarTotales() {
+    let totalVenta = 0;
+    
+    document.querySelectorAll('.producto-row').forEach(row => {
+      const input = row.querySelector('input[name*="cantidad"]');
+      const cantidadActual = parseInt(input.value) || 0;
+      const precio = parseFloat(row.querySelector('.precio-unitario').getAttribute('data-precio')) || 0;
+      totalVenta += cantidadActual * precio;
+    });
+    
+    document.getElementById('total-venta').textContent = `$${totalVenta.toLocaleString('es-CL', {maximumFractionDigits: 0})}`;
+  }
+  
+  // Event listeners para inputs de cantidad
+  document.querySelectorAll('input[name*="cantidad"]').forEach(input => {
+    input.setAttribute('data-cantidad-original', input.value);
+    input.addEventListener('change', function() {
+      // Validar y ajustar si es mayor al máximo
+      const maxValue = parseInt(this.getAttribute('max')) || 9999;
+      const currentValue = parseInt(this.value);
+      
+      if (!isNaN(currentValue) && currentValue > maxValue) {
+        this.value = maxValue;
+        // Mostrar mensaje de advertencia
+        mostrarMensajeAdvertencia(`La cantidad máxima disponible es ${maxValue} unidades. Se ajustó automáticamente.`);
+      }
+      
+      actualizarSubtotal(this);
+    });
+    input.addEventListener('input', function() {
+      actualizarSubtotal(this);
+    });
+    input.addEventListener('blur', function() {
+      // Si el campo está vacío, establecer a 0
+      if (this.value === '' || this.value === null) {
+        this.value = 0;
+        actualizarSubtotal(this);
+        return;
+      }
+      
+      // Validar y ajustar si es mayor al máximo
+      const maxValue = parseInt(this.getAttribute('max')) || 9999;
+      const currentValue = parseInt(this.value);
+      
+      if (!isNaN(currentValue) && currentValue > maxValue) {
+        this.value = maxValue;
+        // Mostrar mensaje de advertencia
+        mostrarMensajeAdvertencia(`La cantidad máxima disponible es ${maxValue} unidades. Se ajustó automáticamente.`);
+        actualizarSubtotal(this);
+      }
+    });
+  });
+  
+  // Inicializar totales
+  actualizarTotales();
+  
+  // Función para actualizar el estado de los detalles de venta desde el servidor
+  function actualizarEstadoDetallesVenta() {
+    const ventaId = '{{ venta.id_venta }}';
+    console.log('Actualizando estado de venta:', ventaId);
+    
+    // Evitar múltiples actualizaciones simultáneas
+    if (window.actualizandoEstado) {
+      return;
+    }
+    
+    window.actualizandoEstado = true;
+    
+    fetch(`/ventas/estado/${ventaId}/`)
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          console.log('Estado actualizado correctamente');
+          
+          // Actualizar el total de la venta
+          const totalElement = document.getElementById('total-venta');
+          if (totalElement) {
+            totalElement.textContent = `$${data.total_venta.toLocaleString('es-CL', {maximumFractionDigits: 0})}`;
+          }
+          
+          // Actualizar cada detalle
+          data.detalles.forEach(detalle => {
+            // Buscar la fila por el input que contiene el nombre del detalle
+            const input = document.querySelector(`input[name="cantidad_${detalle.id_detalle}"]`);
+            if (input) {
+              const row = input.closest('tr');
+              if (row) {
+                // Buscar el badge de estado en esta fila
+                const badge = row.querySelector('.badge');
+                if (badge) {
+                  let nuevaClase = '';
+                  let nuevoTexto = '';
+                  switch (detalle.estado) {
+                    case 'ACTIVO':
+                      nuevaClase = 'bg-success';
+                      nuevoTexto = 'ACTIVO';
+                      break;
+                    default:
+                      nuevaClase = 'bg-success';
+                      nuevoTexto = 'ACTIVO';
+                  }
+                  
+                  badge.textContent = nuevoTexto;
+                  badge.className = `badge ${nuevaClase}`;
+                }
+                
+                // Actualizar la cantidad si cambió
+                const cantidadActual = parseInt(input.value) || 0;
+                if (cantidadActual !== detalle.cantidad) {
+                  input.value = detalle.cantidad;
+                  input.setAttribute('data-cantidad-original', detalle.cantidad);
+                  
+                  // Actualizar el subtotal de la fila
+                  const precio = parseFloat(row.querySelector('.precio-unitario').getAttribute('data-precio')) || 0;
+                  const subtotal = detalle.cantidad * precio;
+                  const subtotalElement = row.querySelector('.subtotal');
+                  if (subtotalElement) {
+                    subtotalElement.textContent = `$${subtotal.toLocaleString('es-CL', {maximumFractionDigits: 0})}`;
+                  }
+                  
+                  // Actualizar los subtotales
+                  actualizarSubtotal(input);
+                }
+              }
+            }
+          });
+          
+          // Actualizar totales después de los cambios
+          actualizarTotales();
+          
+        } else {
+          console.error('Error al actualizar estado:', data.message);
+          mostrarMensaje('Error al actualizar estado', 'error');
+        }
+      })
+      .catch(error => {
+        console.error('Error en la petición:', error);
+        mostrarMensaje('Error al actualizar estado', 'error');
+      })
+      .finally(() => {
+        // Permitir nuevas actualizaciones después de un breve delay
+        setTimeout(() => {
+          window.actualizandoEstado = false;
+        }, 1000);
+      });
+  }
+  
+  // Función para mostrar mensajes de advertencia
+  function mostrarMensajeAdvertencia(mensaje) {
+    // Usar el mismo diseño que mostrarMensajeEnPagina para warning
+    let notificationContainer = document.getElementById('notification-container');
+    if (!notificationContainer) {
+      notificationContainer = document.createElement('div');
+      notificationContainer.id = 'notification-container';
+      notificationContainer.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 9999;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        max-width: 350px;
+      `;
+      document.body.appendChild(notificationContainer);
+    }
+    
+    // Crear la notificación (diseño minimalista y pequeño, igual que en ventas.js)
+    const notification = document.createElement('div');
+    notification.className = 'notification';
+    notification.style.cssText = `
+      background: #fff3cd;
+      color: #856404;
+      padding: 10px 14px;
+      border-radius: 6px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      border: 1px solid #ffecb5;
+      transform: translateX(400px);
+      transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+      position: relative;
+      overflow: hidden;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-weight: 400;
+      font-size: 13px;
+    `;
+    
+    // Agregar barra de progreso (más sutil)
+    const progressBar = document.createElement('div');
+    progressBar.style.cssText = `
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      height: 2px;
+      background: rgba(133, 100, 4, 0.2);
+      width: 100%;
+      transform: scaleX(1);
+      transform-origin: left;
+      transition: transform 5s linear;
+    `;
+    notification.appendChild(progressBar);
+    
+    // Contenido de la notificación (minimalista)
+    notification.innerHTML += `
+      <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+        <div style="flex: 1;">
+          <div style="font-size: 13px; font-weight: 400; text-align: center; line-height: 1.4;">
+            ${mensaje}
+          </div>
+        </div>
+        <button onclick="this.parentElement.parentElement.remove()" 
+                style="background: none; border: none; color: #856404; font-size: 16px; cursor: pointer; padding: 0; opacity: 0.5; transition: opacity 0.2s; flex-shrink: 0; line-height: 1;">
+          ×
+        </button>
+      </div>
+    `;
+    
+    // Agregar la notificación al contenedor
+    notificationContainer.appendChild(notification);
+    
+    // Animar entrada
+    setTimeout(() => {
+      notification.style.transform = 'translateX(0)';
+    }, 10);
+    
+    // Animar barra de progreso
+    setTimeout(() => {
+      progressBar.style.transform = 'scaleX(0)';
+    }, 100);
+    
+    // Auto-remover después de 5 segundos
+    setTimeout(() => {
+      if (notification.parentElement) {
+        notification.style.transform = 'translateX(400px)';
+        setTimeout(() => {
+          if (notification.parentElement) {
+            notification.remove();
+          }
+        }, 300);
+      }
+    }, 5000);
+    
+    // Efecto hover (más sutil)
+    notification.addEventListener('mouseenter', () => {
+      notification.style.transform = 'translateX(0)';
+      notification.style.boxShadow = '0 2px 12px rgba(0,0,0,0.15)';
+      progressBar.style.transition = 'none';
+    });
+    
+    notification.addEventListener('mouseleave', () => {
+      notification.style.transform = 'translateX(0)';
+      notification.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
+      progressBar.style.transition = 'transform 5s linear';
+    });
+  }
+  
+  // Función para mostrar mensajes
+  function mostrarMensaje(mensaje, tipo) {
+    // Solo mostrar mensajes de error, los de éxito serán muy sutiles
+    if (tipo === 'success') {
+      // Mostrar un indicador sutil en lugar de un alert completo
+      const ventaId = '{{ venta.id_venta }}';
+      const indicator = document.createElement('div');
+      indicator.id = 'estado-indicator';
+      indicator.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: #28a745;
+        color: white;
+        padding: 8px 16px;
+        border-radius: 4px;
+        font-size: 12px;
+        z-index: 9999;
+        opacity: 0;
+        transform: translateX(100px);
+        transition: all 0.3s ease;
+      `;
+      indicator.innerHTML = `<i class="bi bi-check-circle me-1"></i>${mensaje}`;
+      
+      document.body.appendChild(indicator);
+      
+      // Animar entrada
+      setTimeout(() => {
+        indicator.style.opacity = '1';
+        indicator.style.transform = 'translateX(0)';
+      }, 10);
+      
+      // Auto-remover después de 2 segundos
+      setTimeout(() => {
+        indicator.style.opacity = '0';
+        indicator.style.transform = 'translateX(100px)';
+        setTimeout(() => {
+          if (indicator.parentElement) {
+            indicator.remove();
+          }
+        }, 300);
+      }, 2000);
+      
+      return;
+    }
+    
+    // Para errores, mostrar alert normal
+    const alertClass = 'alert-danger';
+    const alertHTML = `
+      <div class="alert ${alertClass} alert-dismissible fade show" role="alert">
+        <i class="bi bi-exclamation-triangle me-2"></i>
+        ${mensaje}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+      </div>
+    `;
+    
+    // Insertar al inicio del contenedor principal
+    const container = document.querySelector('.container');
+    container.insertAdjacentHTML('afterbegin', alertHTML);
+    
+    // Auto-remover después de 5 segundos
+    setTimeout(() => {
+      const alert = container.querySelector('.alert');
+      if (alert) {
+        alert.remove();
+      }
+    }, 5000);
+  }
+  
+  // Contador de observaciones
+  const observacionesInput = document.getElementById('observaciones');
+  const observacionesCounter = document.getElementById('observaciones-counter');
+  
+  if (observacionesInput && observacionesCounter) {
+    function updateCounter() {
+      observacionesCounter.textContent = observacionesInput.value.length;
+    }
+    
+    // Inicializar contador
+    updateCounter();
+    
+    // Actualizar contador al escribir
+    observacionesInput.addEventListener('input', updateCounter);
+  }
+  
+});
+</script>
+{% endblock %} 
