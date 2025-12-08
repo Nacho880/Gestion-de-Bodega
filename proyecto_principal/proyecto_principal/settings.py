@@ -203,9 +203,25 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
 STATIC_URL = '/static/'
-STATIC_ROOT= os.path.join(BASE_DIR, 'staticfiles')
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+# Directorios adicionales donde Django buscará archivos estáticos
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'static'),  # Carpeta static en la raíz del proyecto
+]
+
+# WhiteNoise para servir archivos estáticos en producción
+# Usar CompressedManifestStaticFilesStorage para producción
+# o CompressedStaticFilesStorage si hay problemas con manifest
+if DEBUG:
+    STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
+else:
+    STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
+# Configuración de WhiteNoise
+WHITENOISE_USE_FINDERS = True  # Buscar archivos estáticos en STATICFILES_DIRS
+WHITENOISE_AUTOREFRESH = DEBUG  # Solo en desarrollo
+WHITENOISE_ROOT = STATIC_ROOT  # Directorio raíz de archivos estáticos
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
