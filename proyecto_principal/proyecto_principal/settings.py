@@ -15,6 +15,13 @@ from decouple import config
 import os
 import dj_database_url
 
+# Configurar PyMySQL como driver de MySQL (necesario para Vercel/serverless)
+try:
+    import pymysql
+    pymysql.install_as_MySQLdb()
+except ImportError:
+    pass
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -124,6 +131,14 @@ if DATABASE_URL:
         }
         # Configuración adicional para conexiones persistentes
         db_config['CONN_MAX_AGE'] = 300  # Reducir tiempo de conexión persistente
+    elif db_config.get('ENGINE') == 'django.db.backends.mysql':
+        # Configuración para MySQL con PyMySQL (compatible con Vercel/serverless)
+        db_config['OPTIONS'] = {
+            'charset': 'utf8mb4',
+            'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
+        }
+        # Reducir tiempo de conexión persistente para entornos serverless
+        db_config['CONN_MAX_AGE'] = 0  # Desactivar conexiones persistentes en serverless
     
     DATABASES = {
         'default': db_config
@@ -131,15 +146,25 @@ if DATABASE_URL:
 else:
     # Configuración para base de datos local (fallback)
     # Usa variables de entorno o configura en .env
-    DATABASES = {
-        'default': {
-            'ENGINE': config('DB_ENGINE', default='django.db.backends.sqlite3'),
-            'NAME': config('DB_NAME', default=BASE_DIR / 'db.sqlite3'),
-            'USER': config('DB_USER', default=''),
-            'PASSWORD': config('DB_PASSWORD', default=''),
-            'HOST': config('DB_HOST', default=''),
-            'PORT': config('DB_PORT', default=''),
+    db_engine = config('DB_ENGINE', default='django.db.backends.sqlite3')
+    db_config = {
+        'ENGINE': db_engine,
+        'NAME': config('DB_NAME', default=BASE_DIR / 'db.sqlite3'),
+        'USER': config('DB_USER', default=''),
+        'PASSWORD': config('DB_PASSWORD', default=''),
+        'HOST': config('DB_HOST', default=''),
+        'PORT': config('DB_PORT', default=''),
+    }
+    
+    # Si es MySQL, agregar opciones para PyMySQL
+    if db_engine == 'django.db.backends.mysql':
+        db_config['OPTIONS'] = {
+            'charset': 'utf8mb4',
+            'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
         }
+    
+    DATABASES = {
+        'default': db_config
     }
 
 
