@@ -43,9 +43,17 @@
   <script>
   // Establecer tema inmediatamente para evitar flash
   (function() {
-    const savedTheme = localStorage.getItem('theme') || 'light';
-    document.documentElement.setAttribute('data-theme', savedTheme);
-    document.documentElement.style.colorScheme = savedTheme;
+    // Detectar preferencia del sistema si no hay tema guardado
+    const savedTheme = localStorage.getItem('theme');
+    let theme = savedTheme;
+    
+    if (!savedTheme) {
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      theme = prefersDark ? 'dark' : 'light';
+    }
+    
+    document.documentElement.setAttribute('data-theme', theme);
+    document.documentElement.style.colorScheme = theme;
   })();
   </script>
   <style>
@@ -175,7 +183,13 @@ document.addEventListener('DOMContentLoaded', function() {
   
   // Función para obtener el tema actual
   function getCurrentTheme() {
-    return localStorage.getItem('theme') || 'light';
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme) {
+      return savedTheme;
+    }
+    // Si no hay tema guardado, detectar preferencia del sistema
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    return prefersDark ? 'dark' : 'light';
   }
   
   // Función para establecer el tema
@@ -214,11 +228,14 @@ document.addEventListener('DOMContentLoaded', function() {
   // Event listener para el botón de cambio de tema
   themeToggle.addEventListener('click', toggleTheme);
   
-  // Detectar preferencia del sistema si no hay tema guardado
-  if (!localStorage.getItem('theme')) {
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    setTheme(prefersDark ? 'dark' : 'light');
-  }
+  // Escuchar cambios en la preferencia del sistema (solo si no hay tema guardado)
+  const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+  mediaQuery.addEventListener('change', function(e) {
+    // Solo actualizar si el usuario no ha establecido una preferencia manual
+    if (!localStorage.getItem('theme')) {
+      setTheme(e.matches ? 'dark' : 'light');
+    }
+  });
   
   // Log inicial para debug
   console.log('Tema inicial:', savedTheme);

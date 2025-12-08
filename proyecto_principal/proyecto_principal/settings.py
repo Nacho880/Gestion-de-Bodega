@@ -203,6 +203,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
 STATIC_URL = '/static/'
+# STATIC_ROOT debe estar en la raíz del proyecto para que Vercel pueda acceder
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 # Directorios adicionales donde Django buscará archivos estáticos
@@ -210,18 +211,26 @@ STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'static'),  # Carpeta static en la raíz del proyecto
 ]
 
-# WhiteNoise para servir archivos estáticos en producción
-# Usar CompressedManifestStaticFilesStorage para producción
-# o CompressedStaticFilesStorage si hay problemas con manifest
-if DEBUG:
-    STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
-else:
-    STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+# Finders para buscar archivos estáticos en las apps
+STATICFILES_FINDERS = [
+    'django.contrib.staticfiles.finders.FileSystemFinder',
+    'django.contrib.staticfiles.finders.AppDirectoriesFinder',
+]
 
-# Configuración de WhiteNoise
-WHITENOISE_USE_FINDERS = True  # Buscar archivos estáticos en STATICFILES_DIRS
-WHITENOISE_AUTOREFRESH = DEBUG  # Solo en desarrollo
-WHITENOISE_ROOT = STATIC_ROOT  # Directorio raíz de archivos estáticos
+# WhiteNoise para servir archivos estáticos en producción
+# En Vercel/serverless, usar CompressedStaticFilesStorage (sin manifest)
+# Esto permite que WhiteNoise busque archivos en tiempo de ejecución si no están en staticfiles
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
+
+# Configuración de WhiteNoise optimizada para Vercel/serverless
+# WHITENOISE_USE_FINDERS permite buscar archivos en STATICFILES_DIRS y apps si no están en staticfiles
+# Esto es importante en Vercel porque los archivos pueden no estar en la ubicación esperada
+WHITENOISE_USE_FINDERS = True  # CRÍTICO: Permite buscar archivos en tiempo de ejecución
+WHITENOISE_AUTOREFRESH = False  # Desactivar auto-refresh en producción
+WHITENOISE_ROOT = STATIC_ROOT  # Directorio donde están los archivos recopilados
+WHITENOISE_MANIFEST_STRICT = False  # No fallar si falta un archivo
+WHITENOISE_MAX_AGE = 31536000  # Cache por 1 año
+WHITENOISE_INDEX_FILE = False  # No buscar index.html
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')

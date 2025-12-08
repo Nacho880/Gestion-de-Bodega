@@ -1,12 +1,18 @@
 #!/bin/bash
 # Build script for Vercel deployment
 
-# Install dependencies
+# Instalar dependencias
+echo "Instalando dependencias..."
 pip install -r requirements.txt
 
-# Collect static files
+# Ir al directorio del proyecto Django
 cd proyecto_principal
-python manage.py collectstatic --noinput
 
-# Run migrations (optional, can be done via Vercel environment)
-# python manage.py migrate --noinput
+# Ejecutar collectstatic para recopilar archivos estáticos
+echo "Recopilando archivos estáticos..."
+python manage.py collectstatic --noinput --clear
+
+# Volver al directorio raíz
+cd ..
+
+echo "Build completado"
