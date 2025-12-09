@@ -338,7 +338,7 @@ def verificar_eliminar_producto(request, id):
     if ventas_asociadas or compras_asociadas:
         return JsonResponse({
             'puede_eliminar': False,
-            'message': 'No se puede eliminar el producto porque está asociado a ventas o compras.'
+            'message': 'No se puede eliminar el producto porque está asociado a alguna salida o entrada.'
         })
     
     return JsonResponse({

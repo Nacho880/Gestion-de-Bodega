@@ -243,7 +243,7 @@ document.addEventListener('click', function(event) {
     document.getElementById('btnConfirmarEliminar').style.display = 'inline-block';
   } else {
     // No se puede eliminar, mostrar mensaje de error
-    document.getElementById('error-message').textContent = 'No se puede eliminar el producto porque está asociado a ventas o compras.';
+    document.getElementById('error-message').textContent = 'No se puede eliminar el producto porque está asociado a alguna salida o entrada.';
     document.getElementById('modalContentError').style.display = 'block';
   }
   
