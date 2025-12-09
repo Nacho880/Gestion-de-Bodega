@@ -295,11 +295,9 @@
 function actualizarReloj() {
     const ahora = new Date();
     
-    // Ajustar fecha y hora para el video: restar 2 días y 12 horas
-    const horasAjuste = -12; // Restar 12 horas
+    // Ajustar fecha para el video: restar 2 días (hora se mantiene normal)
     const diasAjuste = -2; // Restar 2 días
     ahora.setDate(ahora.getDate() + diasAjuste);
-    ahora.setHours(ahora.getHours() + horasAjuste);
     
     const opciones = { 
         year: 'numeric', 
