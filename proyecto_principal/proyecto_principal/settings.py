@@ -227,10 +227,17 @@ STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
 # Esto es importante en Vercel porque los archivos pueden no estar en la ubicación esperada
 WHITENOISE_USE_FINDERS = True  # CRÍTICO: Permite buscar archivos en tiempo de ejecución
 WHITENOISE_AUTOREFRESH = DEBUG  # Auto-refresh solo en desarrollo
-# Crear el directorio STATIC_ROOT si no existe (para evitar warnings)
+# Crear el directorio STATIC_ROOT si no existe (solo en desarrollo local, no en Vercel)
+# En Vercel el sistema de archivos es de solo lectura, así que solo intentamos en desarrollo
+# y manejamos el error silenciosamente si no se puede crear
 import os
-if not os.path.exists(STATIC_ROOT):
-    os.makedirs(STATIC_ROOT, exist_ok=True)
+if DEBUG:
+    try:
+        if not os.path.exists(STATIC_ROOT):
+            os.makedirs(STATIC_ROOT, exist_ok=True)
+    except (OSError, PermissionError):
+        # Ignorar errores si no se puede crear (ej: sistema de solo lectura en Vercel/serverless)
+        pass
 WHITENOISE_ROOT = STATIC_ROOT  # Directorio donde están los archivos recopilados
 WHITENOISE_MANIFEST_STRICT = False  # No fallar si falta un archivo
 WHITENOISE_MAX_AGE = 31536000  # Cache por 1 año
