@@ -1538,7 +1538,7 @@ body.dark-mode .accordion-button .obs-label {
           >
             <i class="bi bi-sliders me-1"></i>
             <span>Filtros</span>
-            <span class="ms-1" id="filterCount">(0)</span>
+            <span class="ms-1" id="filterCount">({% with total=filter_estados|length %}{% if request.GET.fecha_inicio or request.GET.fecha_fin %}{{ total|add:1 }}{% else %}{{ total }}{% endif %}{% endwith %})</span>
           </button>
 
           <form method="get" action="" class="d-flex align-items-center gap-2">
@@ -1569,6 +1569,42 @@ body.dark-mode .accordion-button .obs-label {
             />
           </form>
         </div>
+        
+        <!-- Badges de filtros activos -->
+        {% if filter_estados or request.GET.fecha_inicio or request.GET.fecha_fin %}
+          <div class="d-flex align-items-center gap-2 ms-2 flex-wrap">
+            {% if request.GET.fecha_inicio %}
+              <span class="badge bg-primary">
+                Desde: {{ request.GET.fecha_inicio }}
+                <a href="?{% if request.GET.search %}search={{ request.GET.search }}&{% endif %}{% if request.GET.mostrar %}mostrar={{ request.GET.mostrar }}&{% endif %}{% if request.GET.orden %}orden={{ request.GET.orden }}&{% endif %}{% if request.GET.fecha_fin %}fecha_fin={{ request.GET.fecha_fin }}&{% endif %}{% for estado in filter_estados %}filter_estado={{ estado }}&{% endfor %}" class="text-white ms-1" style="text-decoration: none;">×</a>
+              </span>
+            {% endif %}
+            {% if request.GET.fecha_fin %}
+              <span class="badge bg-primary">
+                Hasta: {{ request.GET.fecha_fin }}
+                <a href="?{% if request.GET.search %}search={{ request.GET.search }}&{% endif %}{% if request.GET.mostrar %}mostrar={{ request.GET.mostrar }}&{% endif %}{% if request.GET.orden %}orden={{ request.GET.orden }}&{% endif %}{% if request.GET.fecha_inicio %}fecha_inicio={{ request.GET.fecha_inicio }}&{% endif %}{% for estado in filter_estados %}filter_estado={{ estado }}&{% endfor %}" class="text-white ms-1" style="text-decoration: none;">×</a>
+              </span>
+            {% endif %}
+            {% for estado in filter_estados %}
+              {% if estado == 'ENTREGADO' %}
+                <span class="badge bg-success">
+                  Estado: Entregado
+                  <a href="?{% if request.GET.search %}search={{ request.GET.search }}&{% endif %}{% if request.GET.mostrar %}mostrar={{ request.GET.mostrar }}&{% endif %}{% if request.GET.orden %}orden={{ request.GET.orden }}&{% endif %}{% if request.GET.fecha_inicio %}fecha_inicio={{ request.GET.fecha_inicio }}&{% endif %}{% if request.GET.fecha_fin %}fecha_fin={{ request.GET.fecha_fin }}&{% endif %}{% for e in filter_estados %}{% if e != estado %}filter_estado={{ e }}&{% endif %}{% endfor %}" class="text-white ms-1" style="text-decoration: none;">×</a>
+                </span>
+              {% elif estado == 'PENDIENTE' %}
+                <span class="badge bg-warning text-dark">
+                  Estado: No entregado
+                  <a href="?{% if request.GET.search %}search={{ request.GET.search }}&{% endif %}{% if request.GET.mostrar %}mostrar={{ request.GET.mostrar }}&{% endif %}{% if request.GET.orden %}orden={{ request.GET.orden }}&{% endif %}{% if request.GET.fecha_inicio %}fecha_inicio={{ request.GET.fecha_inicio }}&{% endif %}{% if request.GET.fecha_fin %}fecha_fin={{ request.GET.fecha_fin }}&{% endif %}{% for e in filter_estados %}{% if e != estado %}filter_estado={{ e }}&{% endif %}{% endfor %}" class="text-dark ms-1" style="text-decoration: none;">×</a>
+                </span>
+              {% elif estado == 'ANULADA' %}
+                <span class="badge bg-danger">
+                  Estado: Anulada
+                  <a href="?{% if request.GET.search %}search={{ request.GET.search }}&{% endif %}{% if request.GET.mostrar %}mostrar={{ request.GET.mostrar }}&{% endif %}{% if request.GET.orden %}orden={{ request.GET.orden }}&{% endif %}{% if request.GET.fecha_inicio %}fecha_inicio={{ request.GET.fecha_inicio }}&{% endif %}{% if request.GET.fecha_fin %}fecha_fin={{ request.GET.fecha_fin }}&{% endif %}{% for e in filter_estados %}{% if e != estado %}filter_estado={{ e }}&{% endif %}{% endfor %}" class="text-white ms-1" style="text-decoration: none;">×</a>
+                </span>
+              {% endif %}
+            {% endfor %}
+          </div>
+        {% endif %}
       </div>
       
       <!-- Contenedor de tabla que se actualiza con AJAX -->
@@ -1885,6 +1921,7 @@ body.dark-mode .accordion-button .obs-label {
                   name="fecha_inicio"
                   value="{{ request.GET.fecha_inicio|default_if_none:'' }}"
                   style="flex: 1;"
+                  onchange="updateFilterBadge()"
                 >
               </div>
               <div class="d-flex align-items-center gap-2">
@@ -1896,6 +1933,7 @@ body.dark-mode .accordion-button .obs-label {
                   name="fecha_fin"
                   value="{{ request.GET.fecha_fin|default_if_none:'' }}"
                   style="flex: 1;"
+                  onchange="updateFilterBadge()"
                 >
               </div>
             </div>
@@ -2102,6 +2140,9 @@ function updateFilterBadge() {
   
   filterCount.textContent = `(${totalFilters})`;
 }
+
+// Hacer función global para que pueda ser llamada desde onchange
+window.updateFilterBadge = updateFilterBadge;
 
 // Función para abrir/cerrar panel de filtros
 function toggleFilterPanel() {

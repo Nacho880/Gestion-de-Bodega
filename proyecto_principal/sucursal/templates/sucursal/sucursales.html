@@ -299,6 +299,36 @@ body.modal-open .messages {
         style="max-width: 400px !important; width: 400px !important;"
       />
     </form>
+    
+    <!-- Badges de filtros activos -->
+    {% if filter_tipos or filter_paises or filter_ciudades or filter_comunas %}
+      <div class="d-flex align-items-center gap-2 ms-2 flex-wrap">
+        {% for tipo in filter_tipos %}
+          <span class="badge {% if tipo == 'BODEGA' %}bg-secondary{% else %}bg-info{% endif %} text-white">
+            Tipo: {% if tipo == 'BODEGA' %}Bodega{% else %}Tienda{% endif %}
+            <a href="?{% if request.GET.search %}search={{ request.GET.search }}&{% endif %}{% if request.GET.sort %}sort={{ request.GET.sort }}&order={{ request.GET.order }}&{% endif %}{% if request.GET.per_page %}per_page={{ request.GET.per_page }}&{% endif %}{% for t in filter_tipos %}{% if t != tipo %}filter_tipo={{ t }}&{% endif %}{% endfor %}{% for pais in filter_paises %}filter_pais={{ pais }}&{% endfor %}{% for ciudad in filter_ciudades %}filter_ciudad={{ ciudad }}&{% endfor %}{% for comuna in filter_comunas %}filter_comuna={{ comuna }}&{% endfor %}" class="text-white ms-1" style="text-decoration: none;">×</a>
+          </span>
+        {% endfor %}
+        {% for pais in filter_paises %}
+          <span class="badge bg-primary">
+            País: {{ pais }}
+            <a href="?{% if request.GET.search %}search={{ request.GET.search }}&{% endif %}{% if request.GET.sort %}sort={{ request.GET.sort }}&order={{ request.GET.order }}&{% endif %}{% if request.GET.per_page %}per_page={{ request.GET.per_page }}&{% endif %}{% for tipo in filter_tipos %}filter_tipo={{ tipo }}&{% endfor %}{% for p in filter_paises %}{% if p != pais %}filter_pais={{ p }}&{% endif %}{% endfor %}{% for ciudad in filter_ciudades %}filter_ciudad={{ ciudad }}&{% endfor %}{% for comuna in filter_comunas %}filter_comuna={{ comuna }}&{% endfor %}" class="text-white ms-1" style="text-decoration: none;">×</a>
+          </span>
+        {% endfor %}
+        {% for ciudad in filter_ciudades %}
+          <span class="badge bg-info text-white">
+            Ciudad: {{ ciudad }}
+            <a href="?{% if request.GET.search %}search={{ request.GET.search }}&{% endif %}{% if request.GET.sort %}sort={{ request.GET.sort }}&order={{ request.GET.order }}&{% endif %}{% if request.GET.per_page %}per_page={{ request.GET.per_page }}&{% endif %}{% for tipo in filter_tipos %}filter_tipo={{ tipo }}&{% endfor %}{% for pais in filter_paises %}filter_pais={{ pais }}&{% endfor %}{% for c in filter_ciudades %}{% if c != ciudad %}filter_ciudad={{ c }}&{% endif %}{% endfor %}{% for comuna in filter_comunas %}filter_comuna={{ comuna }}&{% endfor %}" class="text-white ms-1" style="text-decoration: none;">×</a>
+          </span>
+        {% endfor %}
+        {% for comuna in filter_comunas %}
+          <span class="badge bg-secondary text-white">
+            Comuna: {{ comuna }}
+            <a href="?{% if request.GET.search %}search={{ request.GET.search }}&{% endif %}{% if request.GET.sort %}sort={{ request.GET.sort }}&order={{ request.GET.order }}&{% endif %}{% if request.GET.per_page %}per_page={{ request.GET.per_page }}&{% endif %}{% for tipo in filter_tipos %}filter_tipo={{ tipo }}&{% endfor %}{% for pais in filter_paises %}filter_pais={{ pais }}&{% endfor %}{% for ciudad in filter_ciudades %}filter_ciudad={{ ciudad }}&{% endfor %}{% for c in filter_comunas %}{% if c != comuna %}filter_comuna={{ c }}&{% endif %}{% endfor %}" class="text-white ms-1" style="text-decoration: none;">×</a>
+          </span>
+        {% endfor %}
+      </div>
+    {% endif %}
   </div>
 </div>
 
@@ -1391,6 +1421,21 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   });
   
+  // Inicializar badge basado en la URL al cargar
+  const filterCount = document.getElementById('filterCount');
+  if (filterCount) {
+    const urlParams = new URLSearchParams(window.location.search);
+    const tiposCount = urlParams.getAll('filter_tipo').length;
+    const paisesCount = urlParams.getAll('filter_pais').length;
+    const ciudadesCount = urlParams.getAll('filter_ciudad').length;
+    const comunasCount = urlParams.getAll('filter_comuna').length;
+    const totalFilters = tiposCount + paisesCount + ciudadesCount + comunasCount;
+    filterCount.textContent = `(${totalFilters})`;
+  }
+  
+  // Actualizar badge cuando cambien los checkboxes
+  updateFilterBadge();
+  
   const filterForm = document.getElementById('filterForm');
   if (filterForm) {
     filterForm.addEventListener('submit', function(e) {
@@ -1405,6 +1450,20 @@ document.addEventListener('DOMContentLoaded', function() {
       url.searchParams.delete('filter_ciudad');
       url.searchParams.delete('filter_comuna');
       url.searchParams.set('page', '1'); // Resetear a página 1
+      
+      // Preservar otros parámetros
+      if (formData.get('sort')) {
+        url.searchParams.set('sort', formData.get('sort'));
+      }
+      if (formData.get('order')) {
+        url.searchParams.set('order', formData.get('order'));
+      }
+      if (formData.get('search')) {
+        url.searchParams.set('search', formData.get('search'));
+      }
+      if (formData.get('per_page')) {
+        url.searchParams.set('per_page', formData.get('per_page'));
+      }
       
       // Agregar nuevos filtros
       const tipos = formData.getAll('filter_tipo');
@@ -1574,19 +1633,21 @@ function filterComunaOptions(searchTerm) {
 // Función para actualizar el badge de filtros
 function updateFilterBadge() {
   const filterCount = document.getElementById('filterCount');
+  if (!filterCount) return;
   
-  // Verificar si hay filtros activos en la URL
-  const urlParams = new URLSearchParams(window.location.search);
-  const tiposCount = urlParams.getAll('filter_tipo').length;
-  const paisesCount = urlParams.getAll('filter_pais').length;
-  const ciudadesCount = urlParams.getAll('filter_ciudad').length;
-  const comunasCount = urlParams.getAll('filter_comuna').length;
-  const totalFilters = tiposCount + paisesCount + ciudadesCount + comunasCount;
+  // Contar checkboxes marcados en el formulario
+  const tiposMarcados = document.querySelectorAll('#filterForm input[name="filter_tipo"]:checked');
+  const paisesMarcados = document.querySelectorAll('#filterForm input[name="filter_pais"]:checked');
+  const ciudadesMarcadas = document.querySelectorAll('#filterForm input[name="filter_ciudad"]:checked');
+  const comunasMarcadas = document.querySelectorAll('#filterForm input[name="filter_comuna"]:checked');
   
-  if (filterCount) {
-    filterCount.textContent = `(${totalFilters})`;
-  }
+  const totalFilters = tiposMarcados.length + paisesMarcados.length + ciudadesMarcadas.length + comunasMarcadas.length;
+  
+  filterCount.textContent = `(${totalFilters})`;
 }
+
+// Hacer función global
+window.updateFilterBadge = updateFilterBadge;
 </script>
 <style>
 /* Estilos para filas clickeables */
