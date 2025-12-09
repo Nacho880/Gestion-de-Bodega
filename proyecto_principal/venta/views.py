@@ -63,6 +63,8 @@ def ventas(request):
     fecha_fin = request.GET.get('fecha_fin')
     search_query = request.GET.get('search', '').strip()
     filter_estados = request.GET.getlist('filter_estado')
+    filter_bodegas = request.GET.getlist('filter_bodega')
+    filter_tiendas = request.GET.getlist('filter_tienda')
 
     ventas_qs = Venta.objects.filter(eliminado=False)
     if fecha_inicio:
@@ -79,6 +81,10 @@ def ventas(request):
             ventas_qs = ventas_qs.filter(fecha__lte=fecha_fin_datetime)
     if filter_estados:
         ventas_qs = ventas_qs.filter(estado__in=filter_estados)
+    if filter_bodegas:
+        ventas_qs = ventas_qs.filter(bodega_salida__id_sucursal__in=filter_bodegas)
+    if filter_tiendas:
+        ventas_qs = ventas_qs.filter(tienda_llegada__id_sucursal__in=filter_tiendas)
     if search_query:
         # Buscar por nombre de producto en los detalles de venta
         ventas_qs = ventas_qs.filter(
@@ -177,6 +183,10 @@ def ventas(request):
     # Calcular total de ventas filtradas
     total_ventas = ventas_qs.aggregate(total=models.Sum('total_venta'))['total'] or 0
 
+    # Obtener todas las bodegas y tiendas para los filtros
+    bodegas = Sucursal.objects.filter(tipo='BODEGA', eliminado=False).order_by('nombre')
+    tiendas = Sucursal.objects.filter(tipo='TIENDA', eliminado=False).order_by('nombre')
+
     context = {
         'ventas': lista_ventas,
         'ventas_con_detalles': page_obj.object_list,
@@ -190,6 +200,10 @@ def ventas(request):
         'mostrar': mostrar,
         'orden': orden,
         'filter_estados': filter_estados,
+        'filter_bodegas': filter_bodegas,
+        'filter_tiendas': filter_tiendas,
+        'bodegas': bodegas,
+        'tiendas': tiendas,
         'total_ventas': total_ventas,
         'bodega_salida_seleccionada': bodega_salida_seleccionada,
         'tienda_llegada_seleccionada': tienda_llegada_seleccionada,

@@ -31,6 +31,12 @@
       {% for estado in filter_estados %}
         <input type="hidden" name="filter_estado" value="{{ estado }}">
       {% endfor %}
+      {% for bodega in filter_bodegas %}
+        <input type="hidden" name="filter_bodega" value="{{ bodega }}">
+      {% endfor %}
+      {% for tienda in filter_tiendas %}
+        <input type="hidden" name="filter_tienda" value="{{ tienda }}">
+      {% endfor %}
       <input
         type="text"
         class="form-control"
@@ -73,6 +79,12 @@
         {% for estado in filter_estados %}
           <input type="hidden" name="filter_estado" value="{{ estado }}">
         {% endfor %}
+        {% for bodega in filter_bodegas %}
+          <input type="hidden" name="filter_bodega" value="{{ bodega }}">
+        {% endfor %}
+        {% for tienda in filter_tiendas %}
+          <input type="hidden" name="filter_tienda" value="{{ tienda }}">
+        {% endfor %}
         <select name="mostrar" class="form-select form-select-sm" style="width: auto;">
           <option value="5" {% if mostrar == 5 %}selected{% endif %}>5</option>
           <option value="10" {% if mostrar == 10 %}selected{% endif %}>10</option>
@@ -107,7 +119,7 @@
           </li>
         {% else %}
           <li class="page-item">
-            <a class="page-link" href="?page={{ num }}&mostrar={{ mostrar }}&orden={{ orden }}{% if request.GET.fecha_inicio %}&fecha_inicio={{ request.GET.fecha_inicio }}{% endif %}{% if request.GET.fecha_fin %}&fecha_fin={{ request.GET.fecha_fin }}{% endif %}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% for estado in filter_estados %}&filter_estado={{ estado }}{% endfor %}">{{ num }}</a>
+            <a class="page-link" href="?page={{ num }}&mostrar={{ mostrar }}&orden={{ orden }}{% if request.GET.fecha_inicio %}&fecha_inicio={{ request.GET.fecha_inicio }}{% endif %}{% if request.GET.fecha_fin %}&fecha_fin={{ request.GET.fecha_fin }}{% endif %}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% for estado in filter_estados %}&filter_estado={{ estado }}{% endfor %}{% for bodega in filter_bodegas %}&filter_bodega={{ bodega }}{% endfor %}{% for tienda in filter_tiendas %}&filter_tienda={{ tienda }}{% endfor %}">{{ num }}</a>
           </li>
         {% endif %}
       {% endif %}

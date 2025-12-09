@@ -160,30 +160,30 @@
           <input type="hidden" name="id" id="edit-id" />
           <div class="row">
             <div class="col-12 col-md-6 mb-3">
-              <label for="edit-nombre" class="form-label fw-semibold">Nombre de Usuario</label>
-              <input type="text" id="edit-nombre" name="nombre_usuario" class="form-control rounded px-3" required 
-                     pattern="^[a-zA-Z0-9_]+$" minlength="3" maxlength="30" 
-                     title="Solo letras, números y guiones bajos" 
-                     placeholder="usuario123" autocomplete="off" />
-              <div id="edit-username-help" class="form-text">
-                <i class="bi bi-info-circle me-1"></i>
-                Entre 3 y 30 caracteres, solo letras, números y guiones bajos
-              </div>
-              <div id="edit-username-error" class="mt-1" style="display: none;">
-                <small class="text-danger">
-                  <i class="bi bi-x-circle me-1"></i> <span class="error-text"></span>
-                </small>
-              </div>
+            <label for="edit-nombre" class="form-label fw-semibold">Nombre de Usuario</label>
+            <input type="text" id="edit-nombre" name="nombre_usuario" class="form-control rounded px-3" required 
+                   pattern="^[a-zA-Z0-9_]+$" minlength="3" maxlength="30" 
+                   title="Solo letras, números y guiones bajos" 
+                   placeholder="usuario123" autocomplete="off" />
+            <div id="edit-username-help" class="form-text">
+              <i class="bi bi-info-circle me-1"></i>
+              Entre 3 y 30 caracteres, solo letras, números y guiones bajos
             </div>
+            <div id="edit-username-error" class="mt-1" style="display: none;">
+              <small class="text-danger">
+                <i class="bi bi-x-circle me-1"></i> <span class="error-text"></span>
+              </small>
+            </div>
+          </div>
             <div class="col-12 col-md-6 mb-3">
-              <label for="edit-correo" class="form-label fw-semibold">Correo Electrónico</label>
-              <input type="email" id="edit-correo" name="correo" class="form-control rounded px-3" 
-                     placeholder="usuario@correo.com" autocomplete="off" />
-              <div id="edit-email-error" class="mt-1" style="display: none;">
-                <small class="text-danger">
-                  <i class="bi bi-x-circle me-1"></i> <span class="error-text"></span>
-                </small>
-              </div>
+            <label for="edit-correo" class="form-label fw-semibold">Correo Electrónico</label>
+            <input type="email" id="edit-correo" name="correo" class="form-control rounded px-3" 
+                   placeholder="usuario@correo.com" autocomplete="off" />
+            <div id="edit-email-error" class="mt-1" style="display: none;">
+              <small class="text-danger">
+                <i class="bi bi-x-circle me-1"></i> <span class="error-text"></span>
+              </small>
+            </div>
             </div>
           </div>
           
@@ -200,9 +200,9 @@
               <div class="form-text">
                 <i class="bi bi-info-circle me-1"></i>
                 Selecciona la sucursal donde trabaja el perfil
-              </div>
             </div>
-            
+          </div>
+          
             {# Campos de roles - solo visible si es dueño (opcionales) #}
             {% if usuario_actual_es_dueño %}
             <div class="col-12 col-md-6 mb-3">
@@ -222,8 +222,8 @@
               <div class="form-text">
                 <i class="bi bi-info-circle me-1"></i>
                 Selecciona los roles del perfil. Si no seleccionas ninguno, será usuario del sistema.
-              </div>
             </div>
+              </div>
             {% endif %}
           </div>
         </div>
@@ -249,69 +249,69 @@
         <div id="add-form-section" class="modal-body px-4 py-3">
           <div class="row">
             <div class="col-12 col-md-6 mb-3">
-              <label for="add-username" class="form-label fw-semibold">Nombre de Usuario</label>
-              <input type="text" id="add-username" name="username" class="form-control rounded px-3" required 
-                     pattern="^[a-zA-Z0-9_]+$" minlength="3" maxlength="30" 
-                     title="Solo letras, números y guiones bajos" 
-                     placeholder="usuario123" autocomplete="off" />
-              <div id="add-username-help" class="form-text">
-                <i class="bi bi-info-circle me-1"></i>
-                Entre 3 y 30 caracteres, solo letras, números y guiones bajos
-              </div>
-              <div id="add-username-error" class="mt-1" style="display: none;">
-                <small class="text-danger">
-                  <i class="bi bi-x-circle me-1"></i> <span class="error-text"></span>
-                </small>
-              </div>
+            <label for="add-username" class="form-label fw-semibold">Nombre de Usuario</label>
+            <input type="text" id="add-username" name="username" class="form-control rounded px-3" required 
+                   pattern="^[a-zA-Z0-9_]+$" minlength="3" maxlength="30" 
+                   title="Solo letras, números y guiones bajos" 
+                   placeholder="usuario123" autocomplete="off" />
+            <div id="add-username-help" class="form-text">
+              <i class="bi bi-info-circle me-1"></i>
+              Entre 3 y 30 caracteres, solo letras, números y guiones bajos
             </div>
+            <div id="add-username-error" class="mt-1" style="display: none;">
+              <small class="text-danger">
+                <i class="bi bi-x-circle me-1"></i> <span class="error-text"></span>
+              </small>
+            </div>
+          </div>
             <div class="col-12 col-md-6 mb-3">
-              <label for="add-email" class="form-label fw-semibold">Correo Electrónico</label>
-              <input type="email" id="add-email" name="email" class="form-control rounded px-3" required 
-                     placeholder="usuario@correo.com" autocomplete="off" />
-              <div id="add-email-error" class="mt-1" style="display: none;">
-                <small class="text-danger">
-                  <i class="bi bi-x-circle me-1"></i> <span class="error-text"></span>
-                </small>
-              </div>
+            <label for="add-email" class="form-label fw-semibold">Correo Electrónico</label>
+            <input type="email" id="add-email" name="email" class="form-control rounded px-3" required 
+                   placeholder="usuario@correo.com" autocomplete="off" />
+            <div id="add-email-error" class="mt-1" style="display: none;">
+              <small class="text-danger">
+                <i class="bi bi-x-circle me-1"></i> <span class="error-text"></span>
+              </small>
             </div>
+          </div>
           </div>
           
           <div class="row">
             <div class="col-12 col-md-6 mb-3">
-              <label for="add-password" class="form-label fw-semibold">Contraseña</label>
-              <input type="password" id="add-password" name="password" class="form-control rounded px-3" required 
-                     minlength="8" maxlength="50" 
-                     placeholder="Contraseña123" autocomplete="off" />
-              <div id="add-password-help" class="form-text">
-                <i class="bi bi-shield-lock me-1"></i>
-                Mínimo 8 caracteres, al menos una mayúscula y un número
-              </div>
-              <div id="add-password-requirements" class="mt-2">
-                <small id="add-req-length" class="d-block text-muted">
-                  <i class="bi bi-circle me-1"></i> Mínimo 8 caracteres
-                </small>
-                <small id="add-req-uppercase" class="d-block text-muted">
-                  <i class="bi bi-circle me-1"></i> Al menos una letra mayúscula
-                </small>
-                <small id="add-req-number" class="d-block text-muted">
-                  <i class="bi bi-circle me-1"></i> Al menos un número
-                </small>
-              </div>
+            <label for="add-password" class="form-label fw-semibold">Contraseña</label>
+            <input type="password" id="add-password" name="password" class="form-control rounded px-3" required 
+                   minlength="8" maxlength="50" 
+                   placeholder="Contraseña123" autocomplete="off" />
+            <div id="add-password-help" class="form-text">
+              <i class="bi bi-shield-lock me-1"></i>
+              Mínimo 8 caracteres, al menos una mayúscula y un número
             </div>
+            <div id="add-password-requirements" class="mt-2">
+              <small id="add-req-length" class="d-block text-muted">
+                <i class="bi bi-circle me-1"></i> Mínimo 8 caracteres
+              </small>
+              <small id="add-req-uppercase" class="d-block text-muted">
+                <i class="bi bi-circle me-1"></i> Al menos una letra mayúscula
+              </small>
+              <small id="add-req-number" class="d-block text-muted">
+                <i class="bi bi-circle me-1"></i> Al menos un número
+              </small>
+            </div>
+          </div>
             <div class="col-12 col-md-6 mb-3">
-              <label for="add-password2" class="form-label fw-semibold">Confirmar Contraseña</label>
-              <input type="password" id="add-password2" name="password2" class="form-control rounded px-3" required 
-                     placeholder="Contraseña123" autocomplete="off" />
-              <div id="add-password2-help" class="form-text">
-                <i class="bi bi-check-circle me-1"></i>
-                Debe coincidir con la contraseña
-              </div>
-              <div id="add-password-match" class="mt-1" style="display: none;">
-                <small class="text-danger">
-                  <i class="bi bi-x-circle me-1"></i> Las contraseñas no coinciden
-                </small>
-              </div>
+            <label for="add-password2" class="form-label fw-semibold">Confirmar Contraseña</label>
+            <input type="password" id="add-password2" name="password2" class="form-control rounded px-3" required 
+                   placeholder="Contraseña123" autocomplete="off" />
+            <div id="add-password2-help" class="form-text">
+              <i class="bi bi-check-circle me-1"></i>
+              Debe coincidir con la contraseña
             </div>
+            <div id="add-password-match" class="mt-1" style="display: none;">
+              <small class="text-danger">
+                <i class="bi bi-x-circle me-1"></i> Las contraseñas no coinciden
+              </small>
+          </div>
+          </div>
           </div>
           
           <div class="mb-3">
@@ -1794,7 +1794,7 @@ document.addEventListener('DOMContentLoaded', function() {
           if (modal) {
             modal.hide();
           } else {
-            $('#deleteModal').modal('hide');
+          $('#deleteModal').modal('hide');
           }
           
           // Guardar datos del usuario eliminado en sessionStorage para poder restaurarlo
@@ -1808,9 +1808,9 @@ document.addEventListener('DOMContentLoaded', function() {
           
           // Eliminar fila de la tabla (DOM directo, el sistema unificado maneja la actualización)
           if (filaUsuario && filaUsuario.length) {
-            filaUsuario.fadeOut(300, function() {
-              $(this).remove();
-            });
+          filaUsuario.fadeOut(300, function() {
+            $(this).remove();
+          });
           }
           
           // Eliminar cualquier mensaje existente
@@ -1844,7 +1844,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (modal) {
                   modal.show();
                 } else {
-                  $('#deleteModal').modal('show');
+                $('#deleteModal').modal('show');
                 }
                 return;
               }
@@ -1867,7 +1867,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (modal) {
                   modal.show();
                 } else {
-                  $('#deleteModal').modal('show');
+                $('#deleteModal').modal('show');
                 }
                 return;
               }
@@ -1882,7 +1882,7 @@ document.addEventListener('DOMContentLoaded', function() {
           if (modal) {
             modal.hide();
           } else {
-            $('#deleteModal').modal('hide');
+          $('#deleteModal').modal('hide');
           }
           mostrarMensajeEnPagina(mensaje, 'danger');
         }

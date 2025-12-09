@@ -355,6 +355,12 @@
             {% for estado in filter_estados %}
               <input type="hidden" name="filter_estado" value="{{ estado }}">
             {% endfor %}
+            {% for bodega in filter_bodegas %}
+              <input type="hidden" name="filter_bodega" value="{{ bodega }}">
+            {% endfor %}
+            {% for tienda in filter_tiendas %}
+              <input type="hidden" name="filter_tienda" value="{{ tienda }}">
+            {% endfor %}
             <input
               type="text"
               class="form-control"
@@ -397,6 +403,12 @@
               {% for estado in filter_estados %}
                 <input type="hidden" name="filter_estado" value="{{ estado }}">
               {% endfor %}
+              {% for bodega in filter_bodegas %}
+                <input type="hidden" name="filter_bodega" value="{{ bodega }}">
+              {% endfor %}
+              {% for tienda in filter_tiendas %}
+                <input type="hidden" name="filter_tienda" value="{{ tienda }}">
+              {% endfor %}
               <select name="mostrar" class="form-select form-select-sm" style="width: auto;">
                 <option value="5" {% if mostrar == 5 %}selected{% endif %}>5</option>
                 <option value="10" {% if mostrar == 10 %}selected{% endif %}>10</option>
@@ -411,7 +423,7 @@
         <ul class="pagination justify-content-center mb-0">
           {% if page_obj.has_previous %}
             <li class="page-item">
-              <a class="page-link" href="?page={{ page_obj.previous_page_number }}&mostrar={{ mostrar }}&orden={{ orden }}{% if request.GET.fecha_inicio %}&fecha_inicio={{ request.GET.fecha_inicio }}{% endif %}{% if request.GET.fecha_fin %}&fecha_fin={{ request.GET.fecha_fin }}{% endif %}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% for estado in filter_estados %}&filter_estado={{ estado }}{% endfor %}" aria-label="Página anterior">
+              <a class="page-link" href="?page={{ page_obj.previous_page_number }}&mostrar={{ mostrar }}&orden={{ orden }}{% if request.GET.fecha_inicio %}&fecha_inicio={{ request.GET.fecha_inicio }}{% endif %}{% if request.GET.fecha_fin %}&fecha_fin={{ request.GET.fecha_fin }}{% endif %}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% for estado in filter_estados %}&filter_estado={{ estado }}{% endfor %}{% for bodega in filter_bodegas %}&filter_bodega={{ bodega }}{% endfor %}{% for tienda in filter_tiendas %}&filter_tienda={{ tienda }}{% endfor %}" aria-label="Página anterior">
                 <i class="bi bi-chevron-left" aria-hidden="true"></i>
               </a>
             </li>
@@ -431,7 +443,7 @@
                 </li>
               {% else %}
                 <li class="page-item">
-                  <a class="page-link" href="?page={{ num }}&mostrar={{ mostrar }}&orden={{ orden }}{% if request.GET.fecha_inicio %}&fecha_inicio={{ request.GET.fecha_inicio }}{% endif %}{% if request.GET.fecha_fin %}&fecha_fin={{ request.GET.fecha_fin }}{% endif %}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% for estado in filter_estados %}&filter_estado={{ estado }}{% endfor %}">{{ num }}</a>
+                  <a class="page-link" href="?page={{ num }}&mostrar={{ mostrar }}&orden={{ orden }}{% if request.GET.fecha_inicio %}&fecha_inicio={{ request.GET.fecha_inicio }}{% endif %}{% if request.GET.fecha_fin %}&fecha_fin={{ request.GET.fecha_fin }}{% endif %}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% for estado in filter_estados %}&filter_estado={{ estado }}{% endfor %}{% for bodega in filter_bodegas %}&filter_bodega={{ bodega }}{% endfor %}{% for tienda in filter_tiendas %}&filter_tienda={{ tienda }}{% endfor %}">{{ num }}</a>
                 </li>
               {% endif %}
             {% endif %}
@@ -439,7 +451,7 @@
 
           {% if page_obj.has_next %}
             <li class="page-item">
-              <a class="page-link" href="?page={{ page_obj.next_page_number }}&mostrar={{ mostrar }}&orden={{ orden }}{% if request.GET.fecha_inicio %}&fecha_inicio={{ request.GET.fecha_inicio }}{% endif %}{% if request.GET.fecha_fin %}&fecha_fin={{ request.GET.fecha_fin }}{% endif %}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% for estado in filter_estados %}&filter_estado={{ estado }}{% endfor %}" aria-label="Página siguiente">
+              <a class="page-link" href="?page={{ page_obj.next_page_number }}&mostrar={{ mostrar }}&orden={{ orden }}{% if request.GET.fecha_inicio %}&fecha_inicio={{ request.GET.fecha_inicio }}{% endif %}{% if request.GET.fecha_fin %}&fecha_fin={{ request.GET.fecha_fin }}{% endif %}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% for estado in filter_estados %}&filter_estado={{ estado }}{% endfor %}{% for bodega in filter_bodegas %}&filter_bodega={{ bodega }}{% endfor %}{% for tienda in filter_tiendas %}&filter_tienda={{ tienda }}{% endfor %}" aria-label="Página siguiente">
                 <i class="bi bi-chevron-right" aria-hidden="true"></i>
               </a>
             </li>
@@ -648,7 +660,7 @@
         <i class="bi bi-sliders me-2"></i> Filtrar
       </h5>
       <div class="d-flex align-items-center gap-2">
-        <a href="?{% if request.GET.search %}search={{ request.GET.search }}&{% endif %}{% if request.GET.mostrar %}mostrar={{ request.GET.mostrar }}&{% endif %}{% if request.GET.orden %}orden={{ request.GET.orden }}{% endif %}" class="text-primary text-decoration-none fw-semibold">Limpiar filtros</a>
+        <a href="?{% if request.GET.search %}search={{ request.GET.search }}{% if request.GET.mostrar or request.GET.orden %}&{% endif %}{% endif %}{% if request.GET.mostrar %}mostrar={{ request.GET.mostrar }}{% if request.GET.orden %}&{% endif %}{% endif %}{% if request.GET.orden %}orden={{ request.GET.orden }}{% endif %}" class="text-primary text-decoration-none fw-semibold">Limpiar filtros</a>
         <button type="button" class="btn-close" aria-label="Cerrar"></button>
       </div>
     </div>
@@ -665,6 +677,12 @@
       {% endif %}
       {% for estado in filter_estados %}
         <input type="hidden" name="filter_estado" value="{{ estado }}">
+      {% endfor %}
+      {% for bodega in filter_bodegas %}
+        <input type="hidden" name="filter_bodega" value="{{ bodega }}">
+      {% endfor %}
+      {% for tienda in filter_tiendas %}
+        <input type="hidden" name="filter_tienda" value="{{ tienda }}">
       {% endfor %}
       
       <!-- Sección Fechas -->
@@ -753,6 +771,50 @@
                      onchange="updateFilterBadge()">
               <span>Enviado</span>
             </label>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Sección Bodegas -->
+      <div class="filter-section">
+        <div class="filter-section-header" onclick="toggleFilterSection('bodega')">
+          <span class="filter-section-title">Bodegas de Salida</span>
+          <i class="bi bi-chevron-down filter-section-icon" id="bodega-icon"></i>
+        </div>
+        <div class="filter-section-content" id="bodega-content" style="display: none;">
+          <div class="filter-options-list">
+            {% for bodega in bodegas %}
+            <label class="filter-option">
+              <input type="checkbox" name="filter_bodega" value="{{ bodega.id_sucursal }}" 
+                     {% if bodega.id_sucursal|stringformat:"s" in filter_bodegas %}checked{% endif %}
+                     onchange="updateFilterBadge()">
+              <span>{{ bodega.nombre }}</span>
+            </label>
+            {% empty %}
+            <p class="text-muted small mb-0">No hay bodegas disponibles</p>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+      
+      <!-- Sección Tiendas -->
+      <div class="filter-section">
+        <div class="filter-section-header" onclick="toggleFilterSection('tienda')">
+          <span class="filter-section-title">Tiendas de Llegada</span>
+          <i class="bi bi-chevron-down filter-section-icon" id="tienda-icon"></i>
+        </div>
+        <div class="filter-section-content" id="tienda-content" style="display: none;">
+          <div class="filter-options-list">
+            {% for tienda in tiendas %}
+            <label class="filter-option">
+              <input type="checkbox" name="filter_tienda" value="{{ tienda.id_sucursal }}" 
+                     {% if tienda.id_sucursal|stringformat:"s" in filter_tiendas %}checked{% endif %}
+                     onchange="updateFilterBadge()">
+              <span>{{ tienda.nombre }}</span>
+            </label>
+            {% empty %}
+            <p class="text-muted small mb-0">No hay tiendas disponibles</p>
+            {% endfor %}
           </div>
         </div>
       </div>
@@ -2252,6 +2314,7 @@
 
 {% block extra_scripts %}
 {{ block.super }}
+<script src="{% static 'home/js/unified-table.js' %}"></script>
 <script src="{% static 'venta/js/ventas.js' %}"></script>
 <script>
 // Función para actualizar badge de filtros
@@ -2263,6 +2326,14 @@ function updateFilterBadge() {
   const estadosMarcados = document.querySelectorAll('#filterForm input[name="filter_estado"]:checked');
   const cantidadEstados = estadosMarcados.length;
   
+  // Contar checkboxes de bodegas marcados
+  const bodegasMarcadas = document.querySelectorAll('#filterForm input[name="filter_bodega"]:checked');
+  const cantidadBodegas = bodegasMarcadas.length;
+  
+  // Contar checkboxes de tiendas marcados
+  const tiendasMarcadas = document.querySelectorAll('#filterForm input[name="filter_tienda"]:checked');
+  const cantidadTiendas = tiendasMarcadas.length;
+  
   // Contar si hay fechas en los inputs del formulario
   const fechaInicioInput = document.getElementById('fecha-inicio-custom');
   const fechaFinInput = document.getElementById('fecha-fin-custom');
@@ -2270,7 +2341,7 @@ function updateFilterBadge() {
   const tieneFechaFin = fechaFinInput && fechaFinInput.value ? 1 : 0;
   const tieneFiltroFecha = tieneFechaInicio || tieneFechaFin ? 1 : 0;
   
-  const totalFilters = tieneFiltroFecha + cantidadEstados;
+  const totalFilters = tieneFiltroFecha + cantidadEstados + cantidadBodegas + cantidadTiendas;
   
   filterCount.textContent = `(${totalFilters})`;
 }
@@ -2411,8 +2482,10 @@ document.addEventListener('DOMContentLoaded', function() {
     const fechaInicio = urlParams.get('fecha_inicio');
     const fechaFin = urlParams.get('fecha_fin');
     const estados = urlParams.getAll('filter_estado');
+    const bodegas = urlParams.getAll('filter_bodega');
+    const tiendas = urlParams.getAll('filter_tienda');
     const tieneFiltroFecha = fechaInicio || fechaFin ? 1 : 0;
-    const totalFilters = tieneFiltroFecha + estados.length;
+    const totalFilters = tieneFiltroFecha + estados.length + bodegas.length + tiendas.length;
     filterCount.textContent = `(${totalFilters})`;
   }
   
@@ -2460,12 +2533,16 @@ document.addEventListener('DOMContentLoaded', function() {
       url.searchParams.delete('fecha_inicio');
       url.searchParams.delete('fecha_fin');
       url.searchParams.delete('filter_estado');
+      url.searchParams.delete('filter_bodega');
+      url.searchParams.delete('filter_tienda');
       url.searchParams.set('page', '1'); // Resetear a página 1
       
       // Agregar nuevos filtros
       const fechaInicio = formData.get('fecha_inicio');
       const fechaFin = formData.get('fecha_fin');
       const estados = formData.getAll('filter_estado');
+      const bodegas = formData.getAll('filter_bodega');
+      const tiendas = formData.getAll('filter_tienda');
       
       if (fechaInicio) {
         url.searchParams.set('fecha_inicio', fechaInicio);
@@ -2478,6 +2555,20 @@ document.addEventListener('DOMContentLoaded', function() {
       estados.forEach(estado => {
         if (estado) {
           url.searchParams.append('filter_estado', estado);
+        }
+      });
+      
+      // Agregar bodegas seleccionadas
+      bodegas.forEach(bodega => {
+        if (bodega) {
+          url.searchParams.append('filter_bodega', bodega);
+        }
+      });
+      
+      // Agregar tiendas seleccionadas
+      tiendas.forEach(tienda => {
+        if (tienda) {
+          url.searchParams.append('filter_tienda', tienda);
         }
       });
       
@@ -2497,8 +2588,30 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
   
-  // Si hay fechas en la URL, abrir la sección de fechas
+  // Si hay filtros en la URL, abrir las secciones correspondientes
   const urlParams = new URLSearchParams(window.location.search);
+  
+  // Abrir sección de bodegas si hay filtros activos
+  if (urlParams.getAll('filter_bodega').length > 0) {
+    const bodegaContent = document.getElementById('bodega-content');
+    const bodegaIcon = document.getElementById('bodega-icon');
+    if (bodegaContent && bodegaIcon) {
+      bodegaContent.style.display = 'block';
+      bodegaIcon.classList.remove('bi-chevron-down');
+      bodegaIcon.classList.add('bi-chevron-up');
+    }
+  }
+  
+  // Abrir sección de tiendas si hay filtros activos
+  if (urlParams.getAll('filter_tienda').length > 0) {
+    const tiendaContent = document.getElementById('tienda-content');
+    const tiendaIcon = document.getElementById('tienda-icon');
+    if (tiendaContent && tiendaIcon) {
+      tiendaContent.style.display = 'block';
+      tiendaIcon.classList.remove('bi-chevron-down');
+      tiendaIcon.classList.add('bi-chevron-up');
+    }
+  }
   if (urlParams.get('fecha_inicio') || urlParams.get('fecha_fin')) {
     const fechaContent = document.getElementById('fecha-content');
     const fechaIcon = document.getElementById('fecha-icon');

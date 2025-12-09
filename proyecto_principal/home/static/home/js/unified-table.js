@@ -91,7 +91,7 @@ function initializeTableEvents() {
     });
 }
 
-// Manejar búsqueda con debounce
+// Manejar búsqueda con debounce automático después de dejar de escribir
 let searchTimeout;
 const searchInputsInitialized = new WeakSet();
 const formsInitialized = new WeakSet();
@@ -133,40 +133,61 @@ function initializeSearchInputs() {
             if (e.key === 'Enter') {
                 e.preventDefault();
                 e.stopPropagation();
+                clearTimeout(searchTimeout); // Cancelar búsqueda automática pendiente
                 performSearch(this);
                 return false;
             }
         };
         input.addEventListener('keypress', keypressHandler, { capture: true });
         
-        // Búsqueda automática mientras escribe (con debounce de 500ms)
-        // Usar capture para asegurar que se ejecute antes que otros listeners
+        // Búsqueda automática después de dejar de escribir (debounce)
         const inputHandler = function(e) {
             e.stopPropagation();
+            const inputElement = this;
+            
+            // Cancelar búsqueda anterior pendiente
             clearTimeout(searchTimeout);
-            const inputValue = this.value;
+            
+            // Programar nueva búsqueda después de 800ms sin escribir
             searchTimeout = setTimeout(() => {
-                performSearch(this);
-            }, 500);
+                // Verificar que el input aún existe y tiene contenido
+                const currentInput = document.querySelector('input[name="search"]');
+                if (currentInput && currentInput === inputElement) {
+                    const currentValue = currentInput.value;
+                    const cursorPosition = currentInput.selectionStart;
+                    const hasFocus = (document.activeElement === currentInput);
+                    
+                    // Solo buscar si hay contenido o si se borró todo (para limpiar resultados)
+                    performSearch(currentInput, currentValue, cursorPosition, hasFocus);
+                }
+            }, 800); // Esperar 800ms después de dejar de escribir
         };
         input.addEventListener('input', inputHandler, { capture: true });
         
-        // También agregar como listener normal (sin capture) como respaldo
-        input.addEventListener('input', inputHandler);
+        // Búsqueda cuando se pierde el foco (al hacer clic fuera o cambiar de campo)
+        const blurHandler = function(e) {
+            // Cancelar búsqueda automática pendiente
+            clearTimeout(searchTimeout);
+            // Buscar inmediatamente al perder el foco
+            if (this.value.trim().length > 0) {
+                performSearch(this);
+            }
+        };
+        input.addEventListener('blur', blurHandler);
     });
 }
 
-function performSearch(input) {
+function performSearch(input, searchValue = null, cursorPosition = null, hasFocus = null) {
     const form = input.closest('form');
     const url = new URL(window.location.href);
     
-    // Guardar estado del input antes de actualizar
-    const searchValue = input.value;
-    const cursorPosition = input.selectionStart;
-    const hasFocus = (document.activeElement === input);
+    // Guardar estado del input antes de actualizar (usar valores pasados si están disponibles)
+    const finalSearchValue = searchValue !== null ? searchValue : input.value;
+    const finalCursorPosition = cursorPosition !== null ? cursorPosition : input.selectionStart;
+    const finalHasFocus = hasFocus !== null ? hasFocus : (document.activeElement === input);
     
     // Actualizar parámetro de búsqueda
-    url.searchParams.set('search', searchValue);
+    url.searchParams.set('search', finalSearchValue);
     url.searchParams.set('page', '1'); // Resetear a página 1
     
     // Preservar otros parámetros del formulario
@@ -180,7 +201,7 @@ function performSearch(input) {
     }
     
     // Actualizar tabla mediante AJAX preservando el foco
-    updateTableContent(url.toString(), searchValue, cursorPosition, hasFocus);
+    updateTableContent(url.toString(), finalSearchValue, finalCursorPosition, finalHasFocus);
 }
 
 // Función para inicializar todo
@@ -394,28 +415,37 @@ function updateTableContent(url, searchValue = null, cursorPosition = null, rest
                 updateFilterBadge();
             }
             
-            // Restaurar estado del input de búsqueda
+            // Restaurar estado del input de búsqueda con múltiples intentos para asegurar que funcione
             if (savedSearchValue !== null) {
-                setTimeout(() => {
+                const restoreInput = (attempt = 0) => {
                     const newSearchInput = document.querySelector('input[name="search"]');
                     if (newSearchInput) {
                         newSearchInput.value = savedSearchValue;
-                        if (savedCursorPosition !== null) {
-                            newSearchInput.setSelectionRange(savedCursorPosition, savedCursorPosition);
-                        }
-                        if (shouldRestoreFocus) {
-                            // Restaurar foco de manera robusta
+                        if (savedCursorPosition !== null && savedCursorPosition <= savedSearchValue.length) {
+                            // Usar requestAnimationFrame para asegurar que el valor se estableció
                             requestAnimationFrame(() => {
-                                setTimeout(() => {
+                                newSearchInput.setSelectionRange(savedCursorPosition, savedCursorPosition);
+                                if (shouldRestoreFocus) {
                                     newSearchInput.focus();
-                                    if (savedCursorPosition !== null) {
+                                    // Asegurar posición del cursor después de enfocar
+                                    setTimeout(() => {
                                         newSearchInput.setSelectionRange(savedCursorPosition, savedCursorPosition);
-                                    }
-                                }, 0);
+                                    }, 0);
+                                }
                             });
+                        } else if (shouldRestoreFocus) {
+                            newSearchInput.focus();
                         }
+                    } else if (attempt < 5) {
+                        // Reintentar si no se encontró el input (hasta 5 intentos)
+                        setTimeout(() => restoreInput(attempt + 1), 50);
                     }
-                }, 150);
+                };
+                
+                // Primer intento después de 100ms
+                setTimeout(() => restoreInput(), 100);
+                // Segundo intento después de 200ms como respaldo
+                setTimeout(() => restoreInput(), 200);
             }
             
             // Remover minHeight después de que el contenido se haya renderizado
@@ -515,28 +545,37 @@ function refreshTable(tableId) {
                 updateFilterBadge();
             }
             
-            // Restaurar estado del input de búsqueda
+            // Restaurar estado del input de búsqueda con múltiples intentos para asegurar que funcione
             if (savedSearchValue !== null) {
-                setTimeout(() => {
+                const restoreInput = (attempt = 0) => {
                     const newSearchInput = document.querySelector('input[name="search"]');
                     if (newSearchInput) {
                         newSearchInput.value = savedSearchValue;
-                        if (savedCursorPosition !== null) {
-                            newSearchInput.setSelectionRange(savedCursorPosition, savedCursorPosition);
-                        }
-                        if (shouldRestoreFocus) {
-                            // Restaurar foco de manera robusta
+                        if (savedCursorPosition !== null && savedCursorPosition <= savedSearchValue.length) {
+                            // Usar requestAnimationFrame para asegurar que el valor se estableció
                             requestAnimationFrame(() => {
-                                setTimeout(() => {
+                                newSearchInput.setSelectionRange(savedCursorPosition, savedCursorPosition);
+                                if (shouldRestoreFocus) {
                                     newSearchInput.focus();
-                                    if (savedCursorPosition !== null) {
+                                    // Asegurar posición del cursor después de enfocar
+                                    setTimeout(() => {
                                         newSearchInput.setSelectionRange(savedCursorPosition, savedCursorPosition);
-                                    }
-                                }, 0);
+                                    }, 0);
+                                }
                             });
+                        } else if (shouldRestoreFocus) {
+                            newSearchInput.focus();
                         }
+                    } else if (attempt < 5) {
+                        // Reintentar si no se encontró el input (hasta 5 intentos)
+                        setTimeout(() => restoreInput(attempt + 1), 50);
                     }
-                }, 150);
+                };
+                
+                // Primer intento después de 100ms
+                setTimeout(() => restoreInput(), 100);
+                // Segundo intento después de 200ms como respaldo
+                setTimeout(() => restoreInput(), 200);
             }
         }
     })

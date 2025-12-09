@@ -173,7 +173,7 @@
                       {% elif usuario.id_usuario in admins_ids %}
                         <small class="text-muted">Administrador</small>
                       {% else %}
-                        <small class="text-muted">Usuario del sistema</small>
+                    <small class="text-muted">Usuario del sistema</small>
                       {% endif %}
                     </div>
                   </div>
@@ -198,20 +198,20 @@
                 <div class="btn-group" role="group">
                   {% if usuario_actual_es_dueño %}
                     {# Botón editar - siempre visible para dueños #}
-                    <button 
-                      type="button"
-                      class="btn btn-warning btn-sm"
-                      data-bs-toggle="modal"
-                      data-bs-target="#editPerfilModal"
-                      data-id="{{ usuario.id_usuario }}"
-                      data-nombre="{{ usuario.nombre_usuario|escapejs }}"
+                  <button 
+                    type="button"
+                    class="btn btn-warning btn-sm" 
+                    data-bs-toggle="modal" 
+                    data-bs-target="#editPerfilModal"
+                    data-id="{{ usuario.id_usuario }}" 
+                    data-nombre="{{ usuario.nombre_usuario|escapejs }}"
                       data-correo="{{ usuario.correo|escapejs }}"
                       data-sucursal-id="{{ usuario.sucursal.id_sucursal|default:'' }}"
                       data-es-admin="{{ usuario.es_admin|yesno:'true,false' }}"
                       data-es-dueño="{{ usuario.es_dueño|yesno:'true,false' }}"
-                      title="Editar perfil">
-                      <i class="bi bi-pencil"></i>
-                    </button>
+                    title="Editar perfil">
+                    <i class="bi bi-pencil"></i>
+                  </button>
 
                     {# Botón eliminar - siempre visible para dueños #}
                     <button 
@@ -242,17 +242,17 @@
                       title="Editar perfil">
                       <i class="bi bi-pencil"></i>
                     </button>
-                    <button 
-                      type="button"
-                      class="btn btn-danger btn-sm"
-                      data-bs-toggle="modal"
-                      data-bs-target="#deleteModal"
-                      data-id="{{ usuario.id_usuario }}"
-                      data-nombre="{{ usuario.nombre_usuario|escapejs }}"
-                      title="Eliminar perfil"
-                    >
-                      <i class="bi bi-trash"></i>
-                    </button>
+                  <button 
+                    type="button"
+                    class="btn btn-danger btn-sm"
+                    data-bs-toggle="modal"
+                    data-bs-target="#deleteModal"
+                    data-id="{{ usuario.id_usuario }}"
+                    data-nombre="{{ usuario.nombre_usuario|escapejs }}"
+                    title="Eliminar perfil"
+                  >
+                    <i class="bi bi-trash"></i>
+                  </button>
                     {% endif %}
                   {% endif %}
                 </div>

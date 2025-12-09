@@ -444,7 +444,7 @@ def nuevo_perfil(request):
         if es_dueño_usuario:
             es_admin_rol = request.POST.get('es_admin', '') == 'on'
             es_dueño_rol = request.POST.get('es_dueño', '') == 'on'
-        
+
         # Verificar si el nombre de usuario ya existe (incluyendo usuarios eliminados) - insensible a mayúsculas
         usuario_existente = Usuario.all_objects.filter(nombre_usuario__iexact=nombre).first()
         if usuario_existente:
@@ -556,7 +556,7 @@ def nuevo_perfil(request):
         if es_dueño_usuario:
             es_admin_rol = request.POST.get('es_admin', '') == 'on'
             es_dueño_rol = request.POST.get('es_dueño', '') == 'on'
-        
+
         # Generar código de verificación
         codigo = str(random.randint(100000, 999999))
         
@@ -1151,7 +1151,7 @@ def editar_perfil_ajax(request, id_usuario):
                     sucursal_obj = Sucursal.objects.get(id_sucursal=int(sucursal_id), eliminado=False)
                 except (Sucursal.DoesNotExist, ValueError):
                     pass
-            
+
             # Actualizar datos básicos
             usuario.nombre_usuario = nombre
             usuario.correo = correo
