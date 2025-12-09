@@ -1,56 +1,6 @@
 {% load humanize %}
 {% load static %}
 
-<!-- Action Bar -->
-<div class="action-bar d-flex align-items-center justify-content-between mb-3">
-  <div class="d-flex align-items-center gap-2">
-    <button
-      type="button"
-      class="btn btn-outline-primary"
-      id="filterBtn"
-      title="Filtrar por fecha"
-    >
-      <i class="bi bi-sliders me-1"></i>
-      <span>Filtros</span>
-      <span class="ms-1" id="filterCount">(0)</span>
-    </button>
-
-    <form method="get" action="" class="d-flex align-items-center gap-2">
-      {% if request.GET.mostrar %}
-        <input type="hidden" name="mostrar" value="{{ request.GET.mostrar }}">
-      {% endif %}
-      {% if request.GET.orden %}
-        <input type="hidden" name="orden" value="{{ request.GET.orden }}">
-      {% endif %}
-      {% if request.GET.fecha_inicio %}
-        <input type="hidden" name="fecha_inicio" value="{{ request.GET.fecha_inicio }}">
-      {% endif %}
-      {% if request.GET.fecha_fin %}
-        <input type="hidden" name="fecha_fin" value="{{ request.GET.fecha_fin }}">
-      {% endif %}
-      {% for estado in filter_estados %}
-        <input type="hidden" name="filter_estado" value="{{ estado }}">
-      {% endfor %}
-      {% for bodega in filter_bodegas %}
-        <input type="hidden" name="filter_bodega" value="{{ bodega }}">
-      {% endfor %}
-      {% for tienda in filter_tiendas %}
-        <input type="hidden" name="filter_tienda" value="{{ tienda }}">
-      {% endfor %}
-      <input
-        type="text"
-        class="form-control"
-        name="search"
-        placeholder="Buscar por Producto..."
-        aria-label="Buscar venta"
-        id="searchVentas"
-        value="{{ request.GET.search|default_if_none:'' }}"
-        style="max-width: 300px;"
-      />
-    </form>
-  </div>
-</div>
-
 <!-- Informaciรณn de pรกgina y selector de elementos por pรกgina -->
 {% if page_obj %}
 <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-3">

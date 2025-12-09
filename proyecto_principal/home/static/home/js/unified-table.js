@@ -430,7 +430,7 @@ function updateTableContent(url, searchValue = null, cursorPosition = null, rest
                                     // Asegurar posición del cursor después de enfocar
                                     setTimeout(() => {
                                         newSearchInput.setSelectionRange(savedCursorPosition, savedCursorPosition);
-                                    }, 0);
+                                }, 0);
                                 }
                             });
                         } else if (shouldRestoreFocus) {
@@ -560,7 +560,7 @@ function refreshTable(tableId) {
                                     // Asegurar posición del cursor después de enfocar
                                     setTimeout(() => {
                                         newSearchInput.setSelectionRange(savedCursorPosition, savedCursorPosition);
-                                    }, 0);
+                                }, 0);
                                 }
                             });
                         } else if (shouldRestoreFocus) {

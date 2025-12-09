@@ -1526,8 +1526,8 @@ body.dark-mode .accordion-button .obs-label {
     <div class="card-header bg-gradient text-white fw-bold" style="background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);">
       <i class="bi bi-receipt me-2"></i>Historial de Entradas
     </div>
-    <div class="card-body" id="table-wrapper">
-      <!-- Action Bar -->
+    <div class="card-body">
+      <!-- Action Bar - Fuera del table-wrapper para que no se actualice -->
       <div class="action-bar d-flex align-items-center justify-content-between mb-3">
         <div class="d-flex align-items-center gap-2">
           <button
@@ -1565,13 +1565,15 @@ body.dark-mode .accordion-button .obs-label {
               aria-label="Buscar compra"
               id="searchCompras"
               value="{{ request.GET.search|default_if_none:'' }}"
-              style="max-width: 300px;"
+              style="max-width: 400px !important; width: 400px !important;"
             />
           </form>
         </div>
       </div>
       
-      <!-- Información de página y selector de elementos por página -->
+      <!-- Contenedor de tabla que se actualiza con AJAX -->
+      <div id="table-wrapper">
+        <!-- Información de página y selector de elementos por página -->
       {% if page_obj %}
       <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-3">
         <div class="d-flex align-items-center gap-3">
@@ -1823,8 +1825,9 @@ body.dark-mode .accordion-button .obs-label {
       {% else %}
         <div class="alert alert-info mb-0">No hay entradas registradas.</div>
       {% endif %}
-    </div>
-  </div>
+      </div> <!-- Fin de table-wrapper -->
+    </div> <!-- Fin de card-body -->
+  </div> <!-- Fin de card -->
 
   <!-- Resumen total de compras -->
   {% if compras_con_detalles %}
@@ -2076,7 +2079,7 @@ body.dark-mode .accordion-button .obs-label {
 {% endblock %}
 
 {% block extra_scripts %}
-<script src="{% static 'home/js/unified-table.js' %}"></script>
+{{ block.super }}
 <script src="{% static 'compra/js/compras.js' %}"></script>
 <script>
 // Función para actualizar badge de filtros

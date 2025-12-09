@@ -1,4 +1,19 @@
 /* ===== ESTILOS PARA SISTEMA DE TABLAS UNIFICADO ===== */
+/* Estandarizar tamaño de barras de búsqueda - MÁXIMA ESPECIFICIDAD */
+input[name="search"],
+input.form-control[name="search"],
+form input[name="search"],
+form input.form-control[name="search"],
+.action-bar input[name="search"],
+.action-bar input.form-control[name="search"],
+.d-flex input[name="search"],
+.d-flex input.form-control[name="search"],
+.form-control[name="search"],
+input[type="text"][name="search"] {
+  max-width: 400px !important;
+  width: 400px !important;
+}
+
 /* Anular transiciones globales para elementos sortable - DEBE IR PRIMERO */
 .unified-table thead th.sortable,
 .unified-table thead th.sortable *,
@@ -993,7 +1008,7 @@
   #tablaProductos thead th:nth-child(4),
   #tablaProductos tbody td:nth-child(4) {
     min-width: 150px !important;
-    max-width: 300px !important;
+    max-width: 450px !important;
   }
   
   #tablaProductos thead th:first-child,
