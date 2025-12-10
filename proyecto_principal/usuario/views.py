@@ -1577,6 +1577,9 @@ def configuracion_perfil(request):
                 'nombre_usuario': nombre_usuario
             })
 
+        # Refrescar el usuario desde la base de datos para asegurar que tenemos la versión más reciente
+        usuario.refresh_from_db()
+        
         # Actualizar datos básicos
         usuario.nombre_usuario = nombre
         usuario.correo = correo
@@ -1598,16 +1601,32 @@ def configuracion_perfil(request):
                     'message': 'Error: no se encontró la contraseña en la sesión. Por favor, intenta nuevamente.'
                 })
             
-            # Actualizar contraseña usando la que se guardó en sesión
+            # Actualizar contraseña usando la que se guardó en sesión (ya está hasheada)
+            # Asignar directamente al campo ya que la contraseña ya está hasheada
             usuario.contraseña = password_hasheada
             
-            # Limpiar datos de verificación de la sesión
+            # Limpiar datos de verificación de la sesión DESPUÉS de obtener la contraseña
             request.session.pop('config_perfil_verificado', None)
             request.session.pop('config_perfil_codigo', None)
             request.session.pop('config_perfil_password', None)
-        
-        # Guardar cambios
-        usuario.save()
+            
+            # Usar QuerySet update para forzar la actualización de la contraseña
+            # Esto asegura que el cambio se persista en la base de datos
+            Usuario.objects.filter(id_usuario=usuario.id_usuario).update(
+                nombre_usuario=usuario.nombre_usuario,
+                correo=usuario.correo,
+                contraseña=password_hasheada
+            )
+            # Refrescar el objeto desde la BD después del update
+            usuario.refresh_from_db()
+        else:
+            # Si no se cambia la contraseña, guardar solo nombre y correo usando update también
+            Usuario.objects.filter(id_usuario=usuario.id_usuario).update(
+                nombre_usuario=usuario.nombre_usuario,
+                correo=usuario.correo
+            )
+            # Refrescar el objeto desde la BD después del update
+            usuario.refresh_from_db()
         
         # Actualizar la sesión con los nuevos datos
         request.session['usuario_nombre'] = usuario.nombre_usuario
@@ -1652,15 +1671,38 @@ def verificar_config_perfil(request):
         codigo_ingresado = request.POST.get('codigo', '').strip()
         
         if codigo_ingresado == codigo_correcto:
-            # Guardar en sesión que el código está verificado
-            request.session['config_perfil_verificado'] = True
-            request.session.modified = True
-            request.session.save()
+            # Verificar que la contraseña esté en la sesión antes de actualizar
+            password_en_sesion = request.session.get('config_perfil_password')
+            if not password_en_sesion:
+                return JsonResponse({
+                    'success': False,
+                    'message': 'Error: no se encontró la contraseña en la sesión. Por favor, intenta nuevamente desde el principio.'
+                })
             
-            return JsonResponse({
-                'success': True,
-                'message': 'Código verificado correctamente.'
-            })
+            # Obtener el usuario actual
+            usuario_id_sesion = request.session.get('usuario_id')
+            try:
+                usuario = Usuario.objects.get(id_usuario=usuario_id_sesion)
+                
+                # Actualizar la contraseña directamente en la base de datos
+                Usuario.objects.filter(id_usuario=usuario_id_sesion).update(
+                    contraseña=password_en_sesion
+                )
+                
+                # Limpiar datos de verificación de la sesión después de actualizar
+                request.session.pop('config_perfil_verificado', None)
+                request.session.pop('config_perfil_codigo', None)
+                request.session.pop('config_perfil_password', None)
+                
+                return JsonResponse({
+                    'success': True,
+                    'message': 'Código verificado correctamente. Tu contraseña ha sido actualizada.'
+                })
+            except Usuario.DoesNotExist:
+                return JsonResponse({
+                    'success': False,
+                    'message': 'Error: no se pudo encontrar el usuario. Por favor, inicia sesión nuevamente.'
+                })
         else:
             return JsonResponse({
                 'success': False,

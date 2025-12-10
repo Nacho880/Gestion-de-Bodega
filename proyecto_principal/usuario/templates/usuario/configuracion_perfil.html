@@ -660,22 +660,37 @@ document.addEventListener('DOMContentLoaded', function() {
       .then(response => response.json())
       .then(data => {
         if (data.success) {
-          // Código verificado - ahora se puede guardar el formulario
-          // Ocultar sección de verificación y campos de contraseña (ya no se necesitan)
+          // Código verificado - la contraseña ya fue actualizada en el servidor
+          // Ocultar sección de verificación y campos de contraseña
           document.getElementById('verification-section').classList.add('d-none');
           document.getElementById('passwordFields').classList.add('d-none');
+          document.getElementById('password-section').classList.add('d-none');
           
-          // Marcar que el código está verificado para permitir guardar
-          cambiarPasswordCheckbox.setAttribute('data-codigo-verificado', 'true');
+          // Desmarcar el checkbox de cambiar contraseña ya que ya se cambió
+          cambiarPasswordCheckbox.checked = false;
+          cambiarPasswordCheckbox.value = 'false';
+          cambiarPasswordCheckbox.removeAttribute('data-codigo-verificado');
           
-          // Cambiar botón a "Guardar Cambios"
+          // Limpiar campos de contraseña
+          document.getElementById('password').value = '';
+          document.getElementById('password2').value = '';
+          
+          // Limpiar campos de código
+          for (let i = 0; i < 6; i++) {
+            const input = document.getElementById(`codigo-${i}`);
+            if (input) input.value = '';
+          }
+          const codigoHidden = document.getElementById('codigo');
+          if (codigoHidden) codigoHidden.value = '';
+          
+          // Cambiar botón a "Guardar Cambios" (por si quiere cambiar otros datos)
           cambiarEstadoBoton('guardar');
           
-          // Mostrar mensaje de éxito
+          // Mostrar mensaje de éxito indicando que la contraseña fue actualizada
           const messagesContainer = document.getElementById('messages-container');
           messagesContainer.innerHTML = `
             <div class="alert alert-success alert-dismissible fade show" role="alert">
-              <i class="bi bi-check-circle me-2"></i>${data.message || 'Código verificado correctamente. Ahora puedes guardar los cambios.'}
+              <i class="bi bi-check-circle me-2"></i>${data.message || 'Código verificado correctamente. Tu contraseña ha sido actualizada.'}
               <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
           `;
