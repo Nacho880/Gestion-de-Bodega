@@ -262,9 +262,9 @@ DEFAULT_FROM_EMAIL = 'noreply@tuapp.com'
 '''
 #Envio de correos con Gmail-> Verificacion de dos pasos y contraseña de aplicación
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = ''
+EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_USE_TLS = True
-EMAIL_PORT = 
-EMAIL_HOST_USER = ''#Mail de prueba
-EMAIL_HOST_PASSWORD = ''  # la que creaste, no tu contraseña normal-> GOOGLE DJANGO
-DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+EMAIL_PORT = 587
+EMAIL_HOST_USER = config('EMAIL_HOST_USER', default='tu-email@gmail.com') #Mail de prueba
+EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='tu-password-de-aplicacion') # la que creaste, no tu contraseña normal-> GOOGLE DJANGO
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER 
